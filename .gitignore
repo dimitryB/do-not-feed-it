@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.next/
+.wrangler/
+.miniflare/
+artifacts/
+cache/
+coverage/
+.env*
+!.env.example
+.dev.vars*
+!.dev.vars.example
+*.tsbuildinfo
+.DS_Store
+ignition/deployments/
+ignition/parameters/*mainnet*.json
+
+# User-provided judging source documents remain local research material.
+research/source-material/

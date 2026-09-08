@@ -1,0 +1,325 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-08",
+  "project": "Do Not Feed It",
+  "upstream": {
+    "repository": "https://github.com/dimitryB/proofOfPatience",
+    "commit": "5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c",
+    "license": "MIT",
+    "licenseFile": "licenses/ProofOfPatience-MIT.txt"
+  },
+  "interpretation": "Provenance at scaffold creation. adaptedSha256 values, added by the local manifest generation step, are a historical snapshot and do not need to match after subsequent intentional edits. Pattern adaptation means a new implementation informed by the named source, not an exact copied file.",
+  "files": [
+    {
+      "path": "package.json",
+      "sourcePath": "package.json",
+      "sourceGitBlobSha": "ebbfa9502ff87aafc762645a0c07c6ffa97e8ada",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/package.json",
+      "kind": "copied or adapted",
+      "changes": "Retained dependency stack; renamed project and replaced scripts for the new scaffold.",
+      "adaptedSha256": "7b3b8b7b5c31ed57934f24a49f232223498295c8b1bf9456185153db207ab62f",
+      "adaptedBytes": 1839
+    },
+    {
+      "path": "package-lock.json",
+      "sourcePath": "package-lock.json",
+      "sourceGitBlobSha": "8ec7aa31ea3766b499637873e787f9bd8da22ae4",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/package-lock.json",
+      "kind": "copied or adapted",
+      "changes": "Retained locked POP versions; refreshed project metadata and added the official Sites Vite plugin.",
+      "adaptedSha256": "7b455029041e7c3e27ce33910e55295096a1b75821bda0bfa33c0708b33fddb8",
+      "adaptedBytes": 472892
+    },
+    {
+      "path": "tsconfig.json",
+      "sourcePath": "tsconfig.json",
+      "sourceGitBlobSha": "1f505eef0bcbde2d71bf9aa39aca0c8b33743b44",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/tsconfig.json",
+      "kind": "copied or adapted",
+      "changes": "Retained application settings; enabled explicit TypeScript import extensions for native replay tests.",
+      "adaptedSha256": "086a42762da375ba8ccd04d9551a4f2d429be93537f966ffa76d4a8465bdee71",
+      "adaptedBytes": 826
+    },
+    {
+      "path": "next.config.ts",
+      "sourcePath": "next.config.ts",
+      "sourceGitBlobSha": "e9ffa3083ad279ecf95fd8eae59cb253e9a539c4",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/next.config.ts",
+      "kind": "copied or adapted",
+      "changes": "Retained compatible Next/Vinext configuration.",
+      "adaptedSha256": "614bce25b089c3f19b1e17a6346c74b858034040154c6621e7d35303004767cc",
+      "adaptedBytes": 133
+    },
+    {
+      "path": "postcss.config.mjs",
+      "sourcePath": "postcss.config.mjs",
+      "sourceGitBlobSha": "61e36849cf7cfa9f1f71b4a3964a4953e3e243d3",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/postcss.config.mjs",
+      "kind": "copied or adapted",
+      "changes": "Retained PostCSS configuration.",
+      "adaptedSha256": "dfac7ac2d86d326a0e5adb024e7943c181393ed17a5fcb8f0315b24c7da6ddde",
+      "adaptedBytes": 94
+    },
+    {
+      "path": "hardhat.config.ts",
+      "sourcePath": "hardhat.config.ts",
+      "sourceGitBlobSha": "eb18214a7e7c1eef7a9ec9feb7af1804ddcf4641",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/hardhat.config.ts",
+      "kind": "copied or adapted",
+      "changes": "Retained Solidity/compiler and Hemi network configuration pattern; no deployment identity.",
+      "adaptedSha256": "a5788e9fe1dc4339bd4b3d3d58fdd82a41e305d88aed269530e2fdf154de4487",
+      "adaptedBytes": 1291
+    },
+    {
+      "path": "vite.config.ts",
+      "sourcePath": "vite.config.ts",
+      "sourceGitBlobSha": "ae08f93676d3ba1a026104ec8774505bf8d6725e",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/vite.config.ts",
+      "kind": "copied or adapted",
+      "changes": "Retained local Workers bindings pattern; replaced local Sites plugin with official package and kept fresh local placeholders.",
+      "adaptedSha256": "34031c189f675a3e432d77c4ede5c1184c885802b3de0bc3d8dc73a00cd8969f",
+      "adaptedBytes": 1729
+    },
+    {
+      "path": "eslint.config.mjs",
+      "sourcePath": "eslint.config.mjs",
+      "sourceGitBlobSha": "05e726d1b4201bc8c7716d2b058279676582e8c0",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/eslint.config.mjs",
+      "kind": "copied or adapted",
+      "changes": "Adapted generic lint configuration and ignores.",
+      "adaptedSha256": "1eb5161d0c2a24de90f2ca28700fbccb6260984a33a3768071d84c1b5d3b96f5",
+      "adaptedBytes": 347
+    },
+    {
+      "path": ".gitignore",
+      "sourcePath": ".gitignore",
+      "sourceGitBlobSha": "e989509d0ed07048eb40b72bb64238bf403d9032",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/.gitignore",
+      "kind": "copied or adapted",
+      "changes": "Adapted generic generated-file and secret exclusions; added local research exclusion.",
+      "adaptedSha256": "384a6ea567a61a3d50d450d96ac516c52dfebcffe55a865994128bfa14feceb5",
+      "adaptedBytes": 309
+    },
+    {
+      "path": "licenses/ProofOfPatience-MIT.txt",
+      "sourcePath": "LICENSE",
+      "sourceGitBlobSha": "1779f8f286a421a96da355b58ca0d28b6450747f",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/LICENSE",
+      "kind": "copied or adapted",
+      "changes": "Preserved upstream license without edits.",
+      "adaptedSha256": "d575f0e10f642112d7e7677f8bd3f9d27f7b2f21a0243af213f90fb8cbe25832",
+      "adaptedBytes": 1113
+    },
+    {
+      "path": "LICENSE",
+      "sourcePath": "LICENSE",
+      "sourceGitBlobSha": "1779f8f286a421a96da355b58ca0d28b6450747f",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/LICENSE",
+      "kind": "copied or adapted",
+      "changes": "New project MIT notice with attribution for adapted upstream portions.",
+      "adaptedSha256": "4f3d803a266cf29aab809dfd1bf1ffd9d13a32a325d6a4fed646c2b221be7c6c",
+      "adaptedBytes": 1169
+    },
+    {
+      "path": "lib/engine/types.ts",
+      "sourcePath": "lib/render/types.ts",
+      "sourceGitBlobSha": "766b9c6d26d0c8cf8850753f2d8942dff9dd3c71",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/lib/render/types.ts",
+      "kind": "copied or adapted",
+      "changes": "Extracted generic engine types; excluded POP gameplay, renderer scene and audio-specific types.",
+      "adaptedSha256": "88b6176410ad95efe23e0df6a77aa3acbd87d496812a2bb5baa09451aabb78bc",
+      "adaptedBytes": 8517
+    },
+    {
+      "path": "lib/engine/core.ts",
+      "sourcePath": "lib/engine/core.ts",
+      "sourceGitBlobSha": "4bfff0206672e84cbb5fcf33e1833e4f6fd03685",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/lib/engine/core.ts",
+      "kind": "copied or adapted",
+      "changes": "Detached type import from POP renderer and updated module documentation.",
+      "adaptedSha256": "6ca6434694661300140ccd46c04bfde49a9f6b1c9b1d759617df1e66304025ee",
+      "adaptedBytes": 55330
+    },
+    {
+      "path": "lib/engine/fx.ts",
+      "sourcePath": "lib/engine/fx.ts",
+      "sourceGitBlobSha": "e7249e0aa348e7a5b1864704d519d2b2887c6c39",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/lib/engine/fx.ts",
+      "kind": "copied or adapted",
+      "changes": "Replaced POP runtime dimension/letter imports with generic presentation configuration; updated terminology.",
+      "adaptedSha256": "ddec22e2b04cc7e2e4496d9d56509c5f308319b6a1e4e02d6fedb4cc823a9619",
+      "adaptedBytes": 71459
+    },
+    {
+      "path": "lib/engine/postfx.ts",
+      "sourcePath": "lib/engine/postfx.ts",
+      "sourceGitBlobSha": "624dfb8a71cf49f0266479360850408e3adae70f",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/lib/engine/postfx.ts",
+      "kind": "copied or adapted",
+      "changes": "Detached type imports and renamed PopPostParams to ArcadePostParams; preserved effects implementations.",
+      "adaptedSha256": "3cee05dc9954b40fd67c664bb086642f9b5e920ea9d6ccd7979fcbb28db9c379",
+      "adaptedBytes": 71332
+    },
+    {
+      "path": "lib/engine/textures.ts",
+      "sourcePath": "lib/engine/textures.ts",
+      "sourceGitBlobSha": "8fab7a82e176c39f837753f64bc6e4657a7d29cd",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/lib/engine/textures.ts",
+      "kind": "copied or adapted",
+      "changes": "Detached type imports and updated documentation; retained unused blocking companion with explicit lint annotation.",
+      "adaptedSha256": "d9faadc992112c220e457f05c68e5fc77930eea5435f18c30122b7d4d397261b",
+      "adaptedBytes": 96012
+    },
+    {
+      "path": "lib/engine/audio.ts",
+      "sourcePath": "lib/engine/audio.ts",
+      "sourceGitBlobSha": "bca584391604055d6faee3f586496b4f57e9d77d",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/lib/engine/audio.ts",
+      "kind": "pattern adaptation",
+      "changes": "Reimplemented a small lazy Web Audio mixer/cue engine using upstream lifecycle patterns; excluded POP music/crowd synthesis.",
+      "adaptedSha256": "a8454bf58d50de897b91debf63ff737c5d9c06424af6a2ea2a140ee904ba9bcf",
+      "adaptedBytes": 3957
+    },
+    {
+      "path": "app/components/focusTrap.ts",
+      "sourcePath": "app/components/focusTrap.ts",
+      "sourceGitBlobSha": "b76d1471c8d26dbcd5a47295bf76e6e141350779",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/app/components/focusTrap.ts",
+      "kind": "copied or adapted",
+      "changes": "Retained accessible dialog focus helper.",
+      "adaptedSha256": "c4c344aa596f8dce4da6a9d4135107132ae4bfc3ce39eada02f24a2467faf31f",
+      "adaptedBytes": 3465
+    },
+    {
+      "path": "app/components/Odometer.tsx",
+      "sourcePath": "app/components/Odometer.tsx",
+      "sourceGitBlobSha": "3e5bf8f4a0ce093dd0b20688a0aa5caa02459c86",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/app/components/Odometer.tsx",
+      "kind": "copied or adapted",
+      "changes": "Retained score counter component.",
+      "adaptedSha256": "504dcd42227a18b5d487e25a12b7401c737163037125df5ffe32b448cad10a80",
+      "adaptedBytes": 2414
+    },
+    {
+      "path": "app/components/engagement.ts",
+      "sourcePath": "app/components/engagement.ts",
+      "sourceGitBlobSha": "2eb9657944d7f85295e74d8d2b4857553b317f9f",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/app/components/engagement.ts",
+      "kind": "copied or adapted",
+      "changes": "Retained optional interaction/focus helper; not currently wired to the practice page.",
+      "adaptedSha256": "9c5452db6a063bcd99c69701bbe69a13f67459c967633fbfbc72e6e80d3b3e91",
+      "adaptedBytes": 1104
+    },
+    {
+      "path": "app/components/audioSettings.ts",
+      "sourcePath": "app/components/audioSettings.ts",
+      "sourceGitBlobSha": "afeab43cbeb1c6b5b2c2671e5fed1504f09fd3ac",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/app/components/audioSettings.ts",
+      "kind": "copied or adapted",
+      "changes": "New persistence key and defaults; crowd channel renamed ambience.",
+      "adaptedSha256": "438f8f8a15cdfdf24c220e0e9b711150a83b423002e53fa29e0d3fc36d5bce52",
+      "adaptedBytes": 4350
+    },
+    {
+      "path": "app/components/AudioPanel.tsx",
+      "sourcePath": "app/components/AudioPanel.tsx",
+      "sourceGitBlobSha": "6a6e58dbfabd4c1c6956f19b740fc9512cefbc0c",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/app/components/AudioPanel.tsx",
+      "kind": "copied or adapted",
+      "changes": "Retained accessible mixer controls; renamed branding/channels, removed POP copy and disclosed unimplemented content.",
+      "adaptedSha256": "3d9b4934a459e0f8fb67185986deb5e35605080d0e0c16bb6dbecf9f038c96db",
+      "adaptedBytes": 6866
+    },
+    {
+      "path": "db/chainState.ts",
+      "sourcePath": "db/chainState.ts",
+      "sourceGitBlobSha": "992b7e0d5d56e9cc98bf64b3d42c2aa441dc6590",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/db/chainState.ts",
+      "kind": "copied or adapted",
+      "changes": "Renamed table namespace to dnfi_; retained atomic ticket/attestation/counter/snapshot behavior.",
+      "adaptedSha256": "5dae3ea313fbd34c453d196bee02cdb77161db5183fc68c5a4631fa9b0a1da0b",
+      "adaptedBytes": 5876
+    },
+    {
+      "path": "db/schema.ts",
+      "sourcePath": "db/schema.ts",
+      "sourceGitBlobSha": "d1605fcf72270e1540f519df2f9651adadb0e8a1",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/db/schema.ts",
+      "kind": "copied or adapted",
+      "changes": "Renamed exports and tables to DNFI namespace; schema is provisional foundation.",
+      "adaptedSha256": "a1bb2df159855be21d926fb7f301c5aeb3d99c6f4132708e15bc0e73405d18e7",
+      "adaptedBytes": 1726
+    },
+    {
+      "path": "drizzle/0000_dnfi_chain_state.sql",
+      "sourcePath": "drizzle/0000_pop_chain_state.sql",
+      "sourceGitBlobSha": "4d4310cb5f8abd83b56496e24bb3c2714e8e2d5d",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/drizzle/0000_pop_chain_state.sql",
+      "kind": "copied or adapted",
+      "changes": "Renamed migration tables/indexes to dnfi_.",
+      "adaptedSha256": "0d66f3d109dd5b44075c3eb1b7ddfa2fe6bb999e8804fe5e547f9a873d8db23a",
+      "adaptedBytes": 889
+    },
+    {
+      "path": "tests/chain-state.test.mjs",
+      "sourcePath": "tests/chain-state.test.mjs",
+      "sourceGitBlobSha": "b13f6d01b5c2d28152e5056d3f074f18b30ebb98",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/tests/chain-state.test.mjs",
+      "kind": "copied or adapted",
+      "changes": "Adapted original behavioral tests to new tables and migration.",
+      "adaptedSha256": "f9f5390fbb24094a830e1842e1f398d7b8a45a54c9a89855990aa95bb7ab699d",
+      "adaptedBytes": 3519
+    },
+    {
+      "path": "lib/chain.ts",
+      "sourcePath": "lib/chain.ts",
+      "sourceGitBlobSha": "1aa8bd0714f847a5efddcf9e81faee6aa26c36ce",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/lib/chain.ts",
+      "kind": "pattern adaptation",
+      "changes": "New DNFI EIP-712 schema/domain/ABI based on Hemi and dual-signature patterns.",
+      "adaptedSha256": "b69495bf112c1216e9f17c8ba3f1904b904af1646db5a5b4bbea8b9959910477",
+      "adaptedBytes": 2733
+    },
+    {
+      "path": "contracts/FeedRegistry.sol",
+      "sourcePath": "contracts/ProofOfPatienceScores.sol",
+      "sourceGitBlobSha": "ef1e4957d1ebd67eb4b09e618bf57729574c36bd",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/contracts/ProofOfPatienceScores.sol",
+      "kind": "pattern adaptation",
+      "changes": "New V0 registry with DNFI metrics and bounds, player/verifier signatures and relayer support; excludes old score/cooldown rules.",
+      "adaptedSha256": "c6f6f3515a95a38fb8405d2e0e2aefd94ad8d2b4e09a9d99ab931ad97a2eb5fd",
+      "adaptedBytes": 4480
+    },
+    {
+      "path": "test/FeedRegistry.ts",
+      "sourcePath": "test/ProofOfPatienceScores.ts",
+      "sourceGitBlobSha": "97090ccc6a3b14ac34e944ccb3f55f6cfa18c6c4",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/test/ProofOfPatienceScores.ts",
+      "kind": "pattern adaptation",
+      "changes": "New focused DNFI tests using upstream Hardhat/viem fixture and signature patterns.",
+      "adaptedSha256": "bbbc1e31c2376b903cd9a575208dfae6eef90d6b190e360de85f8c4bf1f92419",
+      "adaptedBytes": 3361
+    },
+    {
+      "path": "worker/index.ts",
+      "sourcePath": "worker/index.ts",
+      "sourceGitBlobSha": "f0618a4248df844f12156d1b8ee2b539f7f430a3",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/worker/index.ts",
+      "kind": "copied or adapted",
+      "changes": "Retained Workers/Vinext routing pattern with new disabled chain handler.",
+      "adaptedSha256": "839c409f8e73beac9e99d78f2c5b483e976ba42984570d9093dc4c43de6f3b03",
+      "adaptedBytes": 617
+    },
+    {
+      "path": "worker/chain.ts",
+      "sourcePath": "worker/chain.ts",
+      "sourceGitBlobSha": "b1d2787699ac67bd2f4a60ab10be4d34df5025fa",
+      "sourceUrl": "https://github.com/dimitryB/proofOfPatience/blob/5cc281e5740198e4d2bc7b6d4322d2a2b5d6a65c/worker/chain.ts",
+      "kind": "pattern adaptation",
+      "changes": "New closed API boundary and environment interface; original production chain worker was not transplanted.",
+      "adaptedSha256": "6662f0da236805b9dfebc5eadb6ab09d040c2c068318b847a1fa489201b3015e",
+      "adaptedBytes": 1006
+    }
+  ],
+  "originalProjectFiles": "Game kernel, practice page/CSS, presentationConfig, disabled-service behavior, documentation, runtime scripts and fresh hosting/environment placeholders are new unless listed above. No POP media, resource IDs, state or secrets were copied."
+}

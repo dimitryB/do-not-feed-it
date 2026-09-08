@@ -1,0 +1,4 @@
+# Future local Worker settings. Do not commit .dev.vars.
+HEMI_RPC_URL=https://rpc.hemi.network/rpc
+DNFI_CONTRACT_ADDRESS=
+DNFI_VERIFIER_PRIVATE_KEY=
