@@ -233,3 +233,17 @@ When publication is requested, use a fresh site/resource identity, bind real
 secrets in the provider, apply the reviewed production migrations, deploy the
 settled contract and verify the real chain path. Recheck current official Hemi,
 Workers and contest documentation at that time.
+
+## September 9 local arcade boundaries
+
+`lib/game/arcade.ts` now owns physical rules, bounded events, partial trajectory
+prediction and strict local replay. It is deliberately separate from V0 score
+contracts and the retained matching harness. `lib/render/scene.ts` projects its
+state using original images, mesh deformation and semantic effects. The small
+GameCanvas component owns DPI/resize/pointer mapping. React schedules fixed ticks,
+deduplicates event audio, owns HUD/controls/dialogs and device-local preferences.
+
+The arcade has no server-attestation endpoint and is not a frozen production
+rules version. Do not feed its scores to `FeedRegistry` V0: they use different
+bounds and meaningful metrics. Quantized floating-point local replay tests do
+not replace the planned browser/Workers fixture corpus or bot/abuse analysis.

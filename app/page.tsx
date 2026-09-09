@@ -1,143 +1,41 @@
 "use client";
-
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AudioPanel } from "./components/AudioPanel";
-import { DEFAULT_AUDIO_SETTINGS, applyAudioPatch, readAudioSettings, writeAudioSettings, type AudioSettings } from "./components/audioSettings";
-import { Odometer } from "./components/Odometer";
-import { createAudioEngine, type MixerAudioEngine } from "../lib/engine/audio";
-import { INGREDIENTS, INGREDIENT_LABELS, MUTATION_LABELS, ROUND_SECONDS, ROUND_TICKS, TICKS_PER_SECOND, type Ingredient } from "../lib/game/config";
-import { advanceTo, createRun, feed, type FeedCommand, type RunState } from "../lib/game/simulation";
-
-function snapshot(run: RunState): RunState { return { ...run, servings: { ...run.servings } }; }
-
-export default function Home() {
-  const [view, setView] = useState<RunState | null>(null);
-  const [selected, setSelected] = useState<Ingredient>("metal");
-  const [active, setActive] = useState(false);
-  const [audioOpen, setAudioOpen] = useState(false);
-  const [audio, setAudio] = useState<AudioSettings>(DEFAULT_AUDIO_SETTINGS);
-  const engineRef = useRef<MixerAudioEngine | null>(null);
-  const runRef = useRef<RunState | null>(null);
-  const commandsRef = useRef<FeedCommand[]>([]);
-
-  useEffect(() => {
-    const engine = createAudioEngine();
-    engineRef.current = engine;
-    const saved = readAudioSettings();
-    applyAudioPatch(engine, saved);
-    const handle = requestAnimationFrame(() => setAudio(saved));
-    return () => { cancelAnimationFrame(handle); engine.dispose(); engineRef.current = null; };
-  }, []);
-
-  const changeAudio = useCallback((patch: Partial<AudioSettings>) => {
-    engineRef.current?.unlock();
-    if (engineRef.current) applyAudioPatch(engineRef.current, patch);
-    setAudio(previous => { const next = { ...previous, ...patch }; writeAudioSettings(next); return next; });
-  }, []);
-
-  const start = useCallback(() => {
-    const seed = crypto.getRandomValues(new Uint32Array(1))[0];
-    runRef.current = createRun(seed);
-    commandsRef.current = [];
-    engineRef.current?.unlock();
-    engineRef.current?.play("ui-click");
-    setView(snapshot(runRef.current));
-    setActive(true);
-  }, []);
-
-  const serve = useCallback(() => {
-    const run = runRef.current;
-    if (!active || audioOpen || !run) return;
-    const correct = selected === run.wanted;
-    const mutations = run.mutationEvents;
-    const tick = run.tick;
-    if (feed(run, selected)) {
-      commandsRef.current.push({ tick, ingredient: selected });
-      engineRef.current?.play(run.mutationEvents > mutations ? "mutation" : correct ? "feed" : "mistake");
-      setView(snapshot(run));
-      if (run.phase !== "playing") setActive(false);
-    }
-  }, [active, audioOpen, selected]);
-
-  useEffect(() => {
-    if (!active) return;
-    let frameId = 0;
-    let lastTime = performance.now();
-    let remainder = 0;
-    let lastHud = 0;
-    const frame = (now: number) => {
-      const run = runRef.current;
-      if (!run) return;
-      // Practice may pause in hidden tabs and while a dialog is open.
-      // Ranked timing policy must be decided before implementing verification.
-      if (!document.hidden && !audioOpen) {
-        remainder += Math.min(.1, (now - lastTime) / 1000) * TICKS_PER_SECOND;
-        const ticks = Math.floor(remainder);
-        remainder -= ticks;
-        advanceTo(run, Math.min(ROUND_TICKS, run.tick + ticks));
-        if (now - lastHud > 100 || run.phase !== "playing") {
-          setView(snapshot(run));
-          lastHud = now;
-        }
-      }
-      lastTime = now;
-      if (run.phase !== "playing") { setActive(false); return; }
-      frameId = requestAnimationFrame(frame);
-    };
-    frameId = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(frameId);
-  }, [active, audioOpen]);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (audioOpen || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
-      if (event.target instanceof HTMLElement && event.target.closest("input, textarea, select, button, [contenteditable=true]")) return;
-      if (["1", "2", "3"].includes(event.key)) { event.preventDefault(); setSelected(INGREDIENTS[Number(event.key) - 1]); }
-      if (event.code === "Space") { event.preventDefault(); serve(); }
-      if (event.key.toLowerCase() === "r" && !active) { event.preventDefault(); start(); }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [active, audioOpen, serve, start]);
-
-  const seconds = view ? Math.ceil((ROUND_TICKS - view.tick) / TICKS_PER_SECOND) : ROUND_SECONDS;
-  return (
-    <main>
-      <header className="masthead">
-        <div><p className="eyebrow">HEMI ARCADE · LOCAL PRACTICE SCAFFOLD</p><h1>DO NOT FEED IT<span>.</span></h1></div>
-        <div className="sound-controls">
-          <label>Volume <input aria-label="Master volume" type="range" min="0" max="100" value={Math.round(audio.master * 100)} onChange={event => changeAudio({ master: Number(event.target.value) / 100 })} /></label>
-          <button onClick={() => changeAudio({ muted: !audio.muted })}>{audio.muted ? "Unmute" : "Mute"}</button>
-          <button onClick={() => setAudioOpen(true)}>Mixer</button>
-        </div>
-      </header>
-      <section className="kitchen" aria-label="Practice kitchen">
-        <div className="scoreboard">
-          <div><span className="eyebrow">SHIFT REMAINING</span><strong>{String(Math.floor(seconds / 60)).padStart(2, "0")}:{String(seconds % 60).padStart(2, "0")}</strong></div>
-          <div><span className="eyebrow">SCORE</span><Odometer value={view?.score ?? 0} label="Score" /></div>
-          <div><span className="eyebrow">COMBO</span><strong>×{view?.combo ?? 0}</strong></div>
-        </div>
-        <div className="practice-surface">
-          <p className="eyebrow">{active ? "CURRENT CRAVING" : view ? "SHIFT REPORT" : "THE FEEDING TEST"}</p>
-          <h2>{active && view ? INGREDIENT_LABELS[view.wanted].toUpperCase() : view ? view.phase === "survived" ? "YOU CLOCKED OUT." : "IT ATE THE STAFF." : "IT'S HUNGRY."}</h2>
-          <p className="announcement" role="status">{view?.announcement ?? "Choose an ingredient, then feed. Three correct servings of one ingredient announce a mutation."}</p>
-          {view?.mutation && <p className="mutation">{MUTATION_LABELS[view.mutation]}</p>}
-          <div className="meters">
-            <label>Fullness <meter min="0" max="100" low={25} value={view?.hunger ?? 70} /> <span>{view?.hunger ?? 70}%</span></label>
-            <label>Rage <meter min="0" max="100" high={75} optimum={0} value={view?.rage ?? 0} /> <span>{view?.rage ?? 0}%</span></label>
-          </div>
-          {!active && <button className="primary-control start" onClick={start}>{view ? "ANOTHER SHIFT" : "START PRACTICE"}</button>}
-        </div>
-        <div className="feeding-controls">
-          <fieldset><legend>Load ingredient</legend>{INGREDIENTS.map((ingredient, index) => <button key={ingredient} aria-pressed={selected === ingredient} onClick={() => setSelected(ingredient)}><kbd>{index + 1}</kbd>{INGREDIENT_LABELS[ingredient]}</button>)}</fieldset>
-          <button className="primary-control feed" disabled={!active} onClick={serve}>FEED <kbd>SPACE</kbd></button>
-        </div>
-      </section>
-      <footer>
-        <p><strong>Development scaffold.</strong> This tests cravings, scoring, mutations and replayable input. Projectile physics, creature artwork, and the communal monster are planned.</p>
-        <p>Practice is wallet-free. Mainnet recording is disabled. Original music and ambience are not included yet.</p>
-      </footer>
-      {audioOpen && <AudioPanel settings={audio} onChange={changeAudio} onClose={() => setAudioOpen(false)} />}
-    </main>
-  );
+import { useCallback,useEffect,useRef,useState } from 'react';
+import { GameCanvas } from './components/GameCanvas';
+import { AudioPanel } from './components/AudioPanel';
+import { useDialogFocusTrap } from './components/focusTrap';
+import { DEFAULT_AUDIO_SETTINGS,applyAudioPatch,readAudioSettings,writeAudioSettings,type AudioSettings } from './components/audioSettings';
+import { createAudioEngine,type MixerAudioEngine } from '../lib/engine/audio';
+import { ARENA,FOODS,createArcade,launchFood,stepArcade,type ArcadeState,type ArcadeCommand,type Ingredient } from '../lib/game/arcade';
+const LABELS:Record<Ingredient,string>={metal:'Tin can',balloon:'Air puff',pepper:'Hot pepper'};
+const TRAITS:Record<Ingredient,string>={metal:'Magnetic teeth',balloon:'Balloon belly',pepper:'Pressure burp'};
+const RULES:Record<Ingredient,string>={metal:'Metal curves toward its mouth.',balloon:'Everything floats. Aim a little lower.',pepper:'Watch the cheeks. Time the exhale.'};
+function Icon({name}:{name:'sound'|'mute'|'help'|'expand'|'pause'}){return <svg viewBox="0 0 24 24" aria-hidden="true">{name==='sound'||name==='mute'?<><path d="M11 4 6 8H3v8h3l5 4Z"/>{name==='sound'?<><path d="M15 8c3 2 3 6 0 8M18 5c5 4 5 10 0 14"/></>:<path d="m16 9 6 6m0-6-6 6"/>}</>:name==='help'?<><circle cx="12" cy="12" r="9"/><path d="M9.5 8.5c0-3 6-3 5 0-.5 2-2.5 1.5-2.5 4M12 16v.2"/></>:name==='expand'?<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>:<path d="M8 5v14M16 5v14"/>}</svg>}
+function Modal({kind,onClose,onRestart,reduced,onReduced}:{kind:'help'|'pause';onClose:()=>void;onRestart:()=>void;reduced:boolean;onReduced:(v:boolean)=>void}){const ref=useDialogFocusTrap(onClose);return <div className="modal-scrim" onMouseDown={onClose}><div className={kind==='help'?'help-modal':'pause-modal'} ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="dialog-title" onMouseDown={e=>e.stopPropagation()}><button className="modal-close" aria-label="Close" onClick={onClose}>×</button><p className="eyebrow">EMPLOYEE HANDBOOK · SECTOR 04</p><h2 id="dialog-title">{kind==='help'?'A very questionable job.':'Take a breather.'}</h2>{kind==='help'?<><p>Keep your unusual customer fed for two minutes. Try to leave the kitchen in one piece.</p><div className="help-steps"><div className="help-step"><span>1</span><div><strong>Load. Aim. Launch.</strong><p>Choose a snack with 1, 2, or 3. Drag in the kitchen or use ← → to aim. Press Space or Launch to fire.</p></div></div><div className="help-step"><span>2</span><div><strong>Three of a kind changes everything.</strong><p>Tin cans make magnetic teeth. Air puffs create lift. Peppers unleash a gust. Watch the warning, then adjust your shot.</p></div></div><div className="help-step"><span>3</span><div><strong>Feed the creature. Keep your job.</strong><p>Every snack counts. Cravings, precise shots, and rebounds earn extra. Misses raise irritation; an empty belly ends your shift.</p></div></div></div><label className="reduced-label"><input type="checkbox" checked={reduced} onChange={e=>onReduced(e.target.checked)}/> Reduce motion and particles</label><button className="primary-control" onClick={onClose}>Got it <span className="arrow">→</span></button></>:<><p>Your shift is paused. The creature can wait.</p><button className="primary-control" onClick={onClose}>Back to the kitchen <span className="arrow">→</span></button><button className="text-button" onClick={onRestart}>Restart shift</button></>}</div></div>}
+function clone(run:ArcadeState){return {...run,servings:{...run.servings},mutation:run.mutation?{...run.mutation}:null,events:[...run.events],projectiles:[...run.projectiles]};}
+export default function Home(){
+  const [view,setView]=useState<ArcadeState|null>(null);const [selected,setSelected]=useState<Ingredient>('metal');const [angle,setAngle]=useState<number>(ARENA.defaultAngle);const [active,setActive]=useState(false);const [dialog,setDialog]=useState<'audio'|'help'|'pause'|null>(null);const [audio,setAudio]=useState<AudioSettings>(DEFAULT_AUDIO_SETTINGS);const [reduced,setReduced]=useState(false);const [best,setBest]=useState(0);const [newBest,setNewBest]=useState(false);
+  const runRef=useRef<ArcadeState|null>(null);const engineRef=useRef<MixerAudioEngine|null>(null);const commands=useRef<ArcadeCommand[]>([]);const seenEvent=useRef(0);const shell=useRef<HTMLDivElement>(null);const bestRef=useRef(0);const angleRef=useRef<number>(ARENA.defaultAngle);const held=useRef(new Set<string>());
+  useEffect(()=>{const engine=createAudioEngine();engineRef.current=engine;const saved=readAudioSettings();applyAudioPatch(engine,saved);const handle=requestAnimationFrame(()=>{setAudio(saved);try{const n=Number(localStorage.getItem('dnfi-arcade-best-v1'));if(Number.isFinite(n)&&n>0){setBest(n);bestRef.current=n;}const motion=localStorage.getItem('dnfi-reduced-motion');setReduced(motion===null?matchMedia('(prefers-reduced-motion: reduce)').matches:motion==='true');}catch{}});return()=>{cancelAnimationFrame(handle);engine.dispose();engineRef.current=null;};},[]);
+  const changeAudio=useCallback((patch:Partial<AudioSettings>)=>{engineRef.current?.unlock();if(engineRef.current)applyAudioPatch(engineRef.current,patch);setAudio(prev=>{const next={...prev,...patch};writeAudioSettings(next);return next;});},[]);
+  const changeReduced=(v:boolean)=>{setReduced(v);try{localStorage.setItem('dnfi-reduced-motion',String(v));}catch{}};
+  const aim=useCallback((v:number)=>{const next=Math.round(Math.max(ARENA.minAngle,Math.min(ARENA.maxAngle,v)));angleRef.current=next;setAngle(next);},[]);
+  const start=useCallback(()=>{runRef.current=createArcade(crypto.getRandomValues(new Uint32Array(1))[0]);commands.current=[];seenEvent.current=0;held.current.clear();setSelected('metal');aim(ARENA.defaultAngle);setView(clone(runRef.current));setNewBest(false);setDialog(null);setActive(true);engineRef.current?.unlock();engineRef.current?.play('ui-click');requestAnimationFrame(()=>document.querySelector<HTMLCanvasElement>('.game-canvas')?.focus({preventScroll:true}));},[aim]);
+  const serve=useCallback(()=>{const run=runRef.current;if(!active||dialog||!run)return;engineRef.current?.unlock();if(launchFood(run,selected,angleRef.current)){commands.current.push({tick:run.tick,ingredient:selected,angle:angleRef.current});setView(clone(run));}},[active,dialog,selected]);
+  useEffect(()=>{if(!active)return;let frame=0,last=performance.now(),remainder=0,lastHud=0;const update=(now:number)=>{const run=runRef.current;if(!run)return;if(!dialog&&!document.hidden){remainder+=Math.min(.1,(now-last)/1000)*60;const steps=Math.floor(remainder);remainder-=steps;const dir=(held.current.has('ArrowRight')||held.current.has('d')?1:0)-(held.current.has('ArrowLeft')||held.current.has('a')?1:0);if(dir&&steps){const aimSteps=Math.floor((run.tick+steps)/2)-Math.floor(run.tick/2);if(aimSteps)aim(angleRef.current+dir*aimSteps);}for(let i=0;i<steps;i++)stepArcade(run);for(const event of run.events){if(event.id<=seenEvent.current)continue;seenEvent.current=event.id;if(event.type==='feed')engineRef.current?.play('feed');else if(event.type==='launch')engineRef.current?.play('launch');else if(event.type==='miss')engineRef.current?.play('mistake');else if(event.type==='mutation'||event.type==='warning')engineRef.current?.play('mutation');else if(event.type==='gust')engineRef.current?.play('gust');else if(event.type==='end')engineRef.current?.play('end');}if(now-lastHud>80||run.phase!=='playing'){setView(clone(run));lastHud=now;}}last=now;if(run.phase!=='playing'){setActive(false);if(run.score>bestRef.current){bestRef.current=run.score;setBest(run.score);setNewBest(true);try{localStorage.setItem('dnfi-arcade-best-v1',String(run.score));}catch{}}return;}frame=requestAnimationFrame(update);};frame=requestAnimationFrame(update);return()=>cancelAnimationFrame(frame);},[active,dialog,aim]);
+  useEffect(()=>{engineRef.current?.setPlaying(active&&!dialog);},[active,dialog]);
+  useEffect(()=>{const stop=()=>{held.current.clear();if(active)setDialog(current=>current??'pause');};const visibility=()=>{if(document.hidden)stop();};window.addEventListener('blur',stop);document.addEventListener('visibilitychange',visibility);return()=>{window.removeEventListener('blur',stop);document.removeEventListener('visibilitychange',visibility);};},[active]);
+  useEffect(()=>{const down=(e:KeyboardEvent)=>{if(dialog||e.ctrlKey||e.metaKey||e.altKey)return;if(e.key==='Escape'&&active){e.preventDefault();held.current.clear();setDialog('pause');return;}const target=e.target instanceof HTMLElement?e.target:null;if(target?.closest('input,textarea,select,button,[contenteditable=true]'))return;const key=e.key.length===1?e.key.toLowerCase():e.key;if(['ArrowLeft','ArrowRight','a','d'].includes(key)&&active){e.preventDefault();held.current.add(key);if(!e.repeat)aim(angleRef.current+(['ArrowRight','d'].includes(key)?1:-1));}if(e.repeat)return;if(['1','2','3'].includes(key)){e.preventDefault();setSelected(FOODS[Number(key)-1]);}if(e.code==='Space'){e.preventDefault();if(active)serve();else start();}if(key==='r'&&!active){e.preventDefault();start();}};const up=(e:KeyboardEvent)=>held.current.delete(e.key.length===1?e.key.toLowerCase():e.key);window.addEventListener('keydown',down);window.addEventListener('keyup',up);return()=>{window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);};},[active,dialog,serve,start,aim]);
+  const seconds=view?Math.ceil((ARENA.roundTicks-view.tick)/60):120;const mutation=view?.mutation;const ready=active&&!!view&&view.tick-view.lastLaunchTick>=ARENA.cooldownTicks;const ended=view&&!active;const progress=view?view.tick/ARENA.roundTicks:0;
+  const fullscreen=()=>{if(document.fullscreenElement)void document.exitFullscreen().catch(()=>{});else void shell.current?.requestFullscreen?.().catch(()=>{});};
+  return <main><header className="masthead"><div className="brand"><div className="brand-mark" aria-hidden="true">!</div><div><h1>DO NOT FEED IT</h1><p>DEPARTMENT OF QUESTIONABLE APPETITES</p></div></div><div className="header-actions"><span className="practice-label"><i className="status-dot"/> LOCAL PRACTICE</span><button className="icon-button" onClick={()=>changeAudio({muted:!audio.muted})} aria-label={audio.muted?'Unmute sound':'Mute sound'} title={audio.muted?'Unmute':'Mute'}><Icon name={audio.muted?'mute':'sound'}/></button><input className="volume-control" type="range" min="0" max="100" value={Math.round(audio.master*100)} onChange={e=>changeAudio({master:Number(e.target.value)/100})} aria-label="Master volume"/><button className="icon-button" onClick={()=>setDialog('help')} aria-label="How to play" title="How to play"><Icon name="help"/></button><button className="icon-button" onClick={fullscreen} aria-label="Toggle fullscreen" title="Fullscreen"><Icon name="expand"/></button>{active&&<button className="icon-button" onClick={()=>setDialog('pause')} aria-label="Pause game" title="Pause"><Icon name="pause"/></button>}</div></header>
+    <div className="game-shell" ref={shell}><section className={`stage ${ended?'is-result':''}`} aria-label="Creature feeding kitchen"><GameCanvas runRef={runRef} angle={angle} selected={selected} playing={active} reduced={reduced} onAim={aim}/><div className="stage-vignette"/>
+    <div className="hud"><div className="score-group"><div><div className="hud-label">{active?'SHIFT SCORE':'PERSONAL BEST'}</div><div className="hud-value">{String(active?view?.score??0:best).padStart(5,'0')}</div></div>{active&&<div><div className="hud-label">STREAK</div><div className="hud-value combo">×{view?.combo??0}</div></div>}</div><div className={`hud-timer ${seconds<=20?'low':''}`}><span className="hud-label">{active?'TIME TO CLOCK OUT':ended?'TIME LEFT AT CLOCK OUT':'NIGHT SHIFT · 004'}</span><div className="hud-value">{String(Math.floor(seconds/60)).padStart(2,'0')}:{String(seconds%60).padStart(2,'0')}</div></div></div>
+    {!active&&!ended&&<div className="start-copy"><div className="section-tag">YOUR SHIFT STARTS HERE</div><h2>DO NOT<br/>FEED <span>IT.</span></h2><p className="lede">It’s hungry. You’re on duty.<br/>Feed the creature. Deal with what it becomes.</p><button className="primary-control" onClick={start}>Start your shift <span className="arrow">→</span></button><p className="start-note">2 minutes · No wallet needed · Mildly inadvisable</p></div>}
+    {ended&&<div className="start-copy result-copy"><div className="section-tag">SHIFT REPORT</div><h2>{view.phase==='survived'?<>STILL<br/><span>EMPLOYED.</span></>:<>YOU’RE<br/><span>THE SNACK.</span></>}</h2><p className="lede">{view.announcement}</p><div className="result-score">{view.score.toLocaleString()} <span className="hud-label">PTS</span></div>{newBest&&<div className="record">✦ New personal best</div>}<div className="result-stats"><div><small>SNACKS FED</small><strong>{view.totalFeeds}</strong></div><div><small>ACCURACY</small><strong>{view.shots?Math.round(view.totalFeeds/view.shots*100):0}%</strong></div><div><small>MUTATIONS</small><strong>{view.mutationEvents}</strong></div></div><button className="primary-control" onClick={start}>Another shift <span className="arrow">↗</span></button></div>}
+    {active&&view&&<><div className="craving"><span className={`item-art ${view.wanted}`}/><div><small>CURRENT CRAVING</small><strong>{LABELS[view.wanted]}</strong></div><div className="serving-pips" aria-label={`${view.servings[view.wanted]%3} of 3 servings toward mutation`}>{[0,1,2].map(i=><i key={i} className={view.servings[view.wanted]%3>i?'filled':''}/>)}</div></div>{mutation&&<div className={`mutation-banner ${mutation.phase}`}><strong>{mutation.phase==='warning'?'⚠ Incoming: ':''}{TRAITS[mutation.ingredient]}</strong><small>{mutation.phase==='warning'?'Three servings. Something is changing…':RULES[mutation.ingredient]}</small></div>}<div className="live-caption"><div className="hint" role="status">{view.hunger<25?'Empty belly soon. Land a snack!':view.rage>=70?'Too many misses. Slow down and aim.':view.tick>=2280&&view.tick<2550?'Vent cycling. Watch the moving flap.':mutation?(mutation.phase==='warning'?'Your last three servings caused this.':mutation.ingredient==='metal'?'Try a wider shot. The teeth pull metal inward.':mutation.ingredient==='balloon'?'Use a flatter shot to counter the lift.':mutation.gustWarning?'Hold your shot. The cheeks are swelling.':mutation.gustActive?'Headwind! Let the exhale pass.':'Clear air. Now is your window.'):view.shots===0?'Drag to aim. Press Space to launch.':view.tick<900&&!mutation?'Three of the same snack causes a mutation.':view.announcement}</div><span className="shift-phase">{progress<.125?'01 / GET ACQUAINTED':progress<.55?'02 / FEED THE CURIOSITY':progress<.83?'03 / KITCHEN CHEMISTRY':'04 / THE LAST SERVING'}</span></div></>}
+    {!active&&<div className="scene-caption"><div className="subject-name">SPECIMEN 04 · “MUNCH”</div><p>Friendly disposition. Unverified.</p></div>}</section>
+    {active?<div className="control-deck"><div className="vitals"><div><div className="vital-row"><span>FULLNESS</span><strong>{Math.round(view?.hunger??78)}%</strong></div><div className="meter-track" role="meter" aria-label="Fullness" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(view?.hunger??78)}><div className="meter-fill" style={{width:`${view?.hunger??78}%`,background:(view?.hunger??78)<25?'var(--orange)':undefined}}/></div></div><div><div className="vital-row"><span>IRRITATION</span><strong>{view?.rage??0}%</strong></div><div className="meter-track" role="meter" aria-label="Irritation" aria-valuemin={0} aria-valuemax={100} aria-valuenow={view?.rage??0}><div className="meter-fill rage" style={{width:`${view?.rage??0}%`}}/></div></div></div><fieldset className="ingredients"><legend className="sr-only">Load ingredient</legend>{FOODS.map((food,index)=><button className="ingredient" key={food} aria-pressed={selected===food} onClick={event=>{setSelected(food);engineRef.current?.play('ui-click');if(event.detail>0&&active)document.querySelector<HTMLCanvasElement>('.game-canvas')?.focus({preventScroll:true});}}><span className={`item-art ${food}`} aria-hidden="true"/><span><span className="ingredient-name">{LABELS[food]}</span><span className="ingredient-desc">{TRAITS[food]}</span></span><kbd>{index+1}</kbd></button>)}</fieldset><div className="launch-area"><label className="aim-touch">Aim <input aria-label="Aim angle" type="range" min={ARENA.minAngle} max={ARENA.maxAngle} value={angle} onChange={e=>aim(Number(e.target.value))}/></label><button className="primary-control launch-button" style={{'--reload':`${view?Math.min(100,(view.tick-view.lastLaunchTick)/ARENA.cooldownTicks*100):100}%`} as React.CSSProperties} onClick={active?serve:start} disabled={active&&!ready}>{active?(ready?'Launch':'Reloading'):'Clock in'}<kbd>{active?'SPACE':'↗'}</kbd></button></div></div>:<div className="preflight"><span>AIM. FEED. ADAPT.</span><div className="preflight-foods"><span className="item-art metal"/><span className="item-art balloon"/><span className="item-art pepper"/><p>Three snacks. Unusual side effects.</p></div><button className="text-button" onClick={()=>setDialog('help')}>How to play ↗</button></div>}</div>
+    <footer className="underbar"><div className={`keyboard-guide ${active?'':'inactive'}`}><span><kbd>← →</kbd> Aim</span><span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Load</span><span><kbd>SPACE</kbd> Launch</span><span><kbd>ESC</kbd> Pause</span></div><div className="underbar-right"><span>Local practice · Scores saved on this device</span><button className="text-button" onClick={()=>setDialog('audio')}>Sound mix</button><button className="text-button" onClick={()=>setDialog('help')}>Field guide ↗</button></div></footer>
+    {dialog==='audio'&&<AudioPanel settings={audio} onChange={changeAudio} onClose={()=>setDialog(null)}/>} {(dialog==='help'||dialog==='pause')&&<Modal kind={dialog} onClose={()=>setDialog(null)} onRestart={start} reduced={reduced} onReduced={changeReduced}/>}
+  </main>;
 }

@@ -1,8 +1,8 @@
 # Acceptance checklist
 
 This checklist describes the release gates, not just compilation. Checked M0
-items describe this scaffold only. All later items remain unverified unless a
-future handoff records concrete evidence. Record release commit, environment,
+items describe this scaffold only. Selected local arcade items were checked September 9, 2026; see
+LOCAL_PLAYTEST.md for their scope and limitations. Unchecked items remain open. Record release commit, environment,
 date and result alongside final verification.
 
 ## M0: local foundation
@@ -21,27 +21,27 @@ date and result alongside final verification.
 
 ## Opening and core game
 
-- [ ] A new visitor can start without wallet setup or a long instruction screen.
+- [x] A new visitor can start without wallet setup or a long instruction screen.
 - [ ] Controls are obvious on desktop and touch; keyboard-only play is viable.
-- [ ] First successful feed feels responsive and has visual/audio confirmation.
+- [x] First successful feed feels responsive and has visual/audio confirmation.
 - [ ] First mutation occurs early enough to demonstrate the premise.
 - [ ] A spectator can identify what changed and why without reading a manual.
-- [ ] Food follows physical trajectories; the game is not only a craving quiz.
-- [ ] Metal, balloon and pepper produce distinct physical consequences.
+- [x] Food follows physical trajectories; the game is not only a craving quiz.
+- [x] Metal, balloon and pepper produce distinct physical consequences.
 - [ ] Supported mutation pairs are readable and bounded; expiry clears effects.
 - [ ] Creature pose/silhouette makes each major state understandable.
 - [ ] Wrong food, misses, rage, starvation and survival have coherent feedback.
 - [ ] A complete shift has a beginning, escalation and satisfying ending.
-- [ ] Loss explains its cause and restarting takes one obvious action.
+- [x] Loss explains its cause and restarting takes one obvious action.
 - [ ] The local game is enjoyable without recording a result onchain.
 
 ## Replay and server verification
 
-- [ ] Authoritative rules never call DOM, audio, network, wall time or unseeded RNG.
+- [x] Authoritative rules never call DOM, audio, network, wall time or unseeded RNG.
 - [ ] Input encoding, quantization, PRNG, tick/collision order and version are fixed.
 - [ ] Cross-runtime replay fixtures agree on exact meaningful outcomes.
 - [ ] All single and supported combined mutations have deterministic fixtures.
-- [ ] Input/trace size and replay CPU limits reject excessive work early.
+- [x] Input/trace size and replay CPU limits reject excessive work early.
 - [ ] Server tickets bind the settled player/session policy, version, seed,
   snapshot, epoch and expiry.
 - [ ] Score and diet metrics come from server replay, never browser assertions.
@@ -71,13 +71,13 @@ date and result alongside final verification.
 
 ## Presentation, access and performance
 
-- [ ] Original creature/art/sound assets have recorded license/provenance.
-- [ ] No borrowed POP game identity or unapproved likeness/voice is required.
-- [ ] Mixer mute/levels persist; every exposed final channel has actual behavior.
+- [x] Original creature/art/sound assets have recorded license/provenance.
+- [x] No borrowed POP game identity or unapproved likeness/voice is required.
+- [x] Mixer mute/levels persist; every exposed final channel has actual behavior.
 - [ ] Text and interaction targets remain readable on phone and stream layouts.
-- [ ] Ingredient/status information is available beyond color and audio alone.
-- [ ] Reduced motion/flash settings meaningfully reduce effects.
-- [ ] Dialog focus containment/restoration and keyboard navigation work.
+- [x] Ingredient/status information is available beyond color and audio alone.
+- [x] Reduced motion/flash settings meaningfully reduce effects.
+- [x] Dialog focus containment/restoration and keyboard navigation work.
 - [ ] Resize, touch cancellation, orientation and high-DPI transforms work.
 - [ ] Representative target browsers/devices have been exercised and recorded.
 - [ ] Startup, frame time, memory, replay cost and restart behavior are measured.
@@ -106,3 +106,10 @@ Compilation demonstrates compilation. Local EIP-712 tests demonstrate the tested
 contract behavior. Neither demonstrates game fun, browser compatibility, full
 replay integrity or a successful mainnet deployment. Keep those gates separate
 and attach the appropriate evidence when marking them complete.
+
+September 9 note: local replay bounds apply to the new arcade kernel only.
+No server-verification or full milestone completion is implied by those checks.
+
+Final local browser evidence: a120-second UI-driven shift survived, with33 catches
+and7 mutations; immediate restart and focus containment exercised. Independent
+critic approved reviewed screenshot states; human fun remains an open gate.

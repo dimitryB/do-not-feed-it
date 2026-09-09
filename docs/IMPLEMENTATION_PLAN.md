@@ -383,3 +383,13 @@ on unless new changes or failures justify broader testing.
 Do not estimate token savings as a measured percentage. Reusing documented,
 tested foundations should reduce rediscovery and integration work, but the new
 physics, art, replay verifier and community protocol still require original work.
+
+## September 9 execution checkpoint
+
+M1 physical interaction and single mutation implementation now exist; M2's local
+three-food shift, effects, original art/audio, results and controls are implemented.
+A complete real-UI 120-second run and independent screenshot review were recorded.
+Do not mark the milestones wholly complete: uncoached comprehension/fun testing,
+richer authored reactions and broader device/performance checks are still open.
+M3 production trace freezing/cross-runtime proof and M4 shared-world verification
+remain future work. See HANDOFF.md and LOCAL_PLAYTEST.md for current evidence.

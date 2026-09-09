@@ -277,3 +277,28 @@ With no verbal coaching, a new player starts, feeds successfully, recognizes a
 mutation and changes their next action because of it. An observer understands
 the resulting success or failure. If that does not happen, change the mechanic
 or presentation before adding a chain layer or more ingredients.
+
+## September 9 playable local implementation
+
+The new physical game is in `lib/game/arcade.ts`; the V0 matching harness remains
+as a historical test fixture. The actual local rules now accept every ingredient
+at the mouth, with a150-point craving bonus rather than refusing off-menu food.
+A successful catch scores100 base +40 per prior streak step (max5) + craving150,
+precision50, floor rebound75, or mutation assist40 when applicable. No chain
+schema has been migrated to this scoring.
+
+Logical mouth center(835,280), radii85×62 matches the generated creature artwork.
+Aim is an integer degree from−65 to−5, default−40. Food speed13.6 units/tick,
+normal gravity0.16; positions/velocities round to four decimal places. Max8 foods,
+42-tick reload,240-tick lifetime, one floor rebound and one vent deflection.
+
+Three accepted servings of an ingredient trigger a90-tick warning then480 active
+ticks. Metal attracts only metal; balloon reduces every food's gravity to0.025;
+pepper applies periodic headwinds after a visible cheek warning. Only one effect
+can run; crossings while one is active do not queue or replace it. A moving vent
+flap warns at38 seconds and becomes solid at40, with a5-second vertical cycle.
+Its collision and future positions are included in the partial trajectory guide.
+
+Rendering, animation, procedural sound and input timing never score independently.
+Pause is allowed in local practice. Actual browser and review evidence is in
+LOCAL_PLAYTEST.md. The original full shared-world promise remains future work.

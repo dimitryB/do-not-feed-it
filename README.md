@@ -7,7 +7,7 @@ Turbo Edition. The player works a short shift at a feeding machine. Ingredients
 change the creature and the physical rules of the kitchen. Completed, verified
 runs will contribute to the form the community encounters in later sessions.
 
-**Status: local development scaffold, September 8, 2026.** This is not the
+**Status: playable local physical arcade game, September 9, 2026.** This is not the
 finished game or a contest-ready submission. No website or contract has been
 deployed, and no production account, database, wallet or funding has been reused.
 
@@ -59,33 +59,34 @@ the Codex-bundled Node runtime if Node is not on the shell PATH:
 Use the local URL printed by the server. The launch script requires installed
 dependencies; it does not download or install Node automatically.
 
-## What the scaffold does
+## What you can play
 
-- Renders a responsive, wallet-free practice surface.
-- Runs a deterministic 120-second feeding kernel with cravings, score, combo,
-  fullness, rage, feeding cooldowns, mutation counters and end states.
-- Records accepted feed commands and provides a local replay function.
-- Reuses POP's accessible audio controls, persistent settings and score counter.
-- Provides new basic synthesized feeding/mistake/mutation cues.
-- Includes adapted camera/math, texture, particle and post-processing modules
-  for integration with the future canvas renderer.
-- Includes a local-test Solidity registry using POP's dual-signature pattern,
-  fresh DNFI result fields, duplicate protection, and relayer-compatible submits.
-- Includes adapted D1 run-ticket, idempotent attestation and rate-limit helpers.
-- Exposes a truthful, disabled `/api/chain/config` response. Other chain endpoints
-  return unavailable; no browser result is attested or sent onchain.
+Aim physical food into an illustrated creature's mouth across a two-minute shift.
+Every third serving of an ingredient can transform the kitchen: tin cans produce
+magnetic teeth, air puffs create buoyancy, and peppers trigger warned gusts.
+A moving vent adds a timed obstruction after the opening. Cravings, precision,
+rebounds and mutation-assisted catches reward skill; misses and hunger end shifts.
+
+Use **←/→ or A/D** to aim, **1/2/3** to load, **Space** to launch, and **Escape**
+to pause. Pointer players drag to aim and press Launch; narrow screens also have
+an aim slider. Practice has no wallet requirement. Personal best and audio/motion
+preferences stay on the device. The illustrated kitchen, three food sprites,
+launcher, procedural music and ambience are original assets/content.
+
+The canvas renderer is separate from the pure fixed-tick arcade simulation.
+Local trace replay and mutation/hazard tests are included. The original harness,
+D1 helpers and V0 dual-signature contract remain separate foundations. Chain
+routes remain disabled and cannot attest or submit these new arcade scores.
 
 ## What remains to build
 
-The defining gameplay is still ahead: aiming and launching food, collision and
-ricochet physics, a creature with readable animation, mutations that change
-physical play, authored encounters, original music/ambience, ranked replay
-verification, community mutation epochs, leaderboards, hosted mainnet operation,
-and the final onboarding and judging experience.
+Uncoached human playtesting, broader device/audio/performance validation and a
+richer authored creature rig remain. The production verified communal game—ranked
+replay, V1 contribution schema, community epochs, leaderboards and Hemi operation—
+has not been implemented. Nothing has been published or submitted.
 
-The current buttons are a **mechanics harness**, not the final interaction
-design. The copied visual effects are available but are not yet wired into that
-harness. The existing local replay verifies only these small scaffold rules.
+Read [the current handoff](docs/HANDOFF.md) first, then
+[local playtest evidence](docs/LOCAL_PLAYTEST.md) and the milestone plan.
 
 ## Checks
 

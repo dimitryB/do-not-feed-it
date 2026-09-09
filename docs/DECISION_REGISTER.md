@@ -64,3 +64,30 @@ For a meaningful change record: date, previous choice, new choice, why, playtest
 or technical evidence, affected files, and whether existing replay fixtures or
 recorded scores remain compatible. Prefer short appended decision notes over
 silently rewriting assumptions that earlier test results depended on.
+
+## September 9: local physical arcade implementation
+
+- **D25/D26:** Implemented a layered illustrated scene with localized canvas mesh
+  deformation, original generated kitchen/creature and food/launcher sprites.
+  Tactile dark teal machinery, amber light and lime interface accents. This is
+  a local presentation choice; a richer authored rig remains possible.
+- **Controls:** Drag to aim, explicit Launch to fire; keyboard equivalents and
+  a phone angle slider. No release-to-fire ambiguity. Pointer food selection
+  returns focus to the canvas; keyboard button focus retains native semantics.
+- **Rules:** New `arcade.ts` is separate from legacy `simulation.ts`. All accepted
+  food fills the belly; cravings give a larger score bonus. One mutation max,
+  90-tick warning, 480 active ticks; thresholds during an existing mutation do
+  not stack or replace it. Third accepted serving of an ingredient is the trigger.
+- **Difficulty:** 15-second initial hunger grace, two-minute shift, vent warning
+  at38 seconds and solid moving flap at40. One hazard deflection per projectile.
+  A scripted balance check justified larger craving bonus and timed obstruction.
+- **D27:** Original procedural music/ambience and layered effects implemented;
+  all mixer buses now have real behavior. No externally recorded soundtrack.
+- **D30/D31:** 60Hz quantized local physics; practice pauses for dialogs, blur and
+  hidden tabs. Production timing, cross-runtime reproducibility and versioned
+  ranked cohorts are still unresolved. Device-local best uses an arcade-specific
+  key and is never a global leaderboard.
+- **Authorization:** User requested new branch, full local game development and
+  parallel agents/visual review. No production account/resource or publication
+  was requested; chain config remains disabled. New scores are incompatible with
+  V0 registry bounds and must never be sent to that registry.

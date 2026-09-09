@@ -17,11 +17,11 @@ interface BusRow {
   note: string;
 }
 
-/** Retained mixer layout. Only sound effects have content in this scaffold. */
+/** Independent channels for the original procedural game audio. */
 const BUSES: readonly BusRow[] = [
-  { on: "music", level: "musicLevel", name: "MUSIC", note: "Reserved for the original game score." },
+  { on: "music", level: "musicLevel", name: "MUSIC", note: "A quiet, curious melody while the kitchen is open." },
   { on: "sfx", level: "sfxLevel", name: "SOUND EFFECTS", note: "Feeding, mutations, warnings and controls." },
-  { on: "ambience", level: "ambienceLevel", name: "AMBIENCE", note: "Reserved for kitchen and creature ambience." },
+  { on: "ambience", level: "ambienceLevel", name: "AMBIENCE", note: "Low ventilation and the kitchen’s electrical hum." },
 ];
 
 function percent(level: number): number {
@@ -140,7 +140,7 @@ export function AudioPanel({
           <p className="k-kicker">DO NOT FEED IT &middot; AUDIO</p>
           <h2 id="mix-title">SOUND MIX</h2>
           <p id="mix-lede" className="k-body">
-            Adjust feeding effects here. Music and ambience settings are reserved for later.
+            Find your balance of music, feeding effects and kitchen atmosphere.
           </p>
         </div>
 
