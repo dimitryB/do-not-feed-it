@@ -42,6 +42,7 @@
     "eslint-config-next": "16.2.6",
     "hardhat": "3.12.0",
     "miniflare": "4.20260515.0",
+    "playwright": "^1.58.0",
     "react-server-dom-webpack": "19.2.8",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",

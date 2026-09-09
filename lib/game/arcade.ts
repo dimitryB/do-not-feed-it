@@ -20,6 +20,10 @@ export interface ArcadeEvent {
   id: number; tick: number;
   type: "launch" | "feed" | "miss" | "bounce" | "warning" | "mutation" | "recovery" | "gust" | "end";
   x: number; y: number; label: string;
+  /** Presentation-only tag. Never read by the rules, replay or scoring. */
+  ingredient?: Ingredient;
+  /** Presentation-only tag: the craving matched on an accepted serving. */
+  craved?: boolean;
 }
 export interface ArcadeState {
   seed: number; tick: number; phase: "playing" | "survived" | "lost";
@@ -40,8 +44,9 @@ const MUTATION_LABELS: Record<Ingredient, string> = {
 };
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const quantize = (value: number) => Math.round(value * 10000) / 10000;
-function event(state: ArcadeState, type: ArcadeEvent["type"], x: number, y: number, label: string) {
-  state.events.push({ id: state.nextEventId++, tick: state.tick, type, x, y, label });
+function event(state: ArcadeState, type: ArcadeEvent["type"], x: number, y: number, label: string,
+               extra?: { ingredient?: Ingredient; craved?: boolean }) {
+  state.events.push({ id: state.nextEventId++, tick: state.tick, type, x, y, label, ...extra });
   if (state.events.length > MAX_EVENTS) state.events.splice(0, state.events.length - MAX_EVENTS);
 }
 export function createArcade(seed: number): ArcadeState {
@@ -72,7 +77,7 @@ export function launchFood(state: ArcadeState, ingredient: Ingredient, angle: nu
   state.projectiles.push(food);
   state.lastLaunchTick = state.tick;
   state.shots++;
-  event(state, "launch", food.x, food.y, ingredient);
+  event(state, "launch", food.x, food.y, ingredient, { ingredient });
   return true;
 }
 export interface KitchenHazard { x: number; y: number; width: number; height: number; warning: boolean }
@@ -175,7 +180,7 @@ function acceptFood(state: ArcadeState, food: Projectile) {
   state.rage = Math.max(0, state.rage - 7);
   state.announcement = food.bounces ? "A bank shot. It respects the technique." :
     food.assisted ? "A little kitchen chemistry." : craving ? "Exactly what it was craving." : "It eats anything. Some things eat back.";
-  event(state, "feed", food.x, food.y, `${food.bounces ? "BANK SHOT " : precision ? "PERFECT " : craving ? "CRAVING " : "TASTY "}+${points}`);
+  event(state, "feed", food.x, food.y, `${food.bounces ? "BANK SHOT " : precision ? "PERFECT " : craving ? "CRAVING " : "TASTY "}+${points}`, { ingredient: food.ingredient, craved: craving });
   // Three consecutive cravings of each food teach the mutation threshold.
   state.wanted = FOODS[Math.floor(state.totalFeeds / 3) % FOODS.length];
   // A busy kitchen never stacks or silently replaces a current effect. A
@@ -186,7 +191,7 @@ function acceptFood(state: ArcadeState, food: Projectile) {
       endsAt: state.tick + 570, gustWarning: false, gustActive: false };
     state.mutationEvents++;
     state.announcement = MUTATION_LABELS[food.ingredient];
-    event(state, "warning", ARENA.mouth.x, ARENA.mouth.y, MUTATION_LABELS[food.ingredient]);
+    event(state, "warning", ARENA.mouth.x, ARENA.mouth.y, MUTATION_LABELS[food.ingredient], { ingredient: food.ingredient });
   }
 }
 /** Mutates only the owned state; call exactly once per fixed 1/60-second tick. */
@@ -197,19 +202,19 @@ export function stepArcade(state: ArcadeState): void {
   if (state.mutation) {
     const mutation = state.mutation;
     if (state.tick >= mutation.endsAt) {
-      event(state, "recovery", ARENA.mouth.x, ARENA.mouth.y, "KITCHEN BACK TO NORMAL");
+      event(state, "recovery", ARENA.mouth.x, ARENA.mouth.y, "KITCHEN BACK TO NORMAL", { ingredient: mutation.ingredient });
       state.mutation = null;
       state.announcement = "Kitchen back to normal. Keep the snacks coming.";
     } else {
       if (state.tick >= mutation.startsAt && mutation.phase === "warning") {
         mutation.phase = "active";
-        event(state, "mutation", ARENA.mouth.x, ARENA.mouth.y, MUTATION_LABELS[mutation.ingredient]);
+        event(state, "mutation", ARENA.mouth.x, ARENA.mouth.y, MUTATION_LABELS[mutation.ingredient], { ingredient: mutation.ingredient });
       }
       const previousGust = mutation.gustActive;
       mutation.gustActive = gustAt(mutation, state.tick);
       mutation.gustWarning = mutation.phase === "active" && mutation.ingredient === "pepper" &&
         (state.tick - mutation.startsAt) % 180 < 30;
-      if (mutation.gustActive && !previousGust) event(state, "gust", ARENA.mouth.x, ARENA.mouth.y, "BURP! HEADWIND");
+      if (mutation.gustActive && !previousGust) event(state, "gust", ARENA.mouth.x, ARENA.mouth.y, "BURP! HEADWIND", { ingredient: "pepper" });
     }
   }
   const remaining: Projectile[] = [];
@@ -221,10 +226,10 @@ export function stepArcade(state: ArcadeState): void {
       state.combo = 0;
       state.rage = Math.min(100, state.rage + 7);
       state.announcement = "Snack down. Adjust your aim and try again.";
-      event(state, "miss", clamp(food.x, 50, 1150), clamp(food.y, 0, 620), "SNACK DOWN");
+      event(state, "miss", clamp(food.x, 50, 1150), clamp(food.y, 0, 620), "SNACK DOWN", { ingredient: food.ingredient });
     } else {
-      if (outcome === "bounced") event(state, "bounce", food.x, food.y, "ONE MORE CHANCE");
-      if (outcome === "hazard") event(state, "bounce", food.x, food.y, "VENT DEFLECTION");
+      if (outcome === "bounced") event(state, "bounce", food.x, food.y, "ONE MORE CHANCE", { ingredient: food.ingredient });
+      if (outcome === "hazard") event(state, "bounce", food.x, food.y, "VENT DEFLECTION", { ingredient: food.ingredient });
       remaining.push(food);
     }
   }

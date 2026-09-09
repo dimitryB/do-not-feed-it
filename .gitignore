@@ -17,3 +17,7 @@ ignition/parameters/*mainnet*.json
 
 # User-provided judging source documents remain local research material.
 research/source-material/
+
+# Creature review captures are large and fully regenerable with
+# `node scripts/creature-shots.mjs --iter N`. The log and manifests are kept.
+docs/qa/creature/**/*.png

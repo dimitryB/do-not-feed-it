@@ -67,5 +67,6 @@ export function createScene(){
       if(!reduced){for(let i=0;i<10;i++){const a=i*2.4;const r=age*1.4;ctx.fillStyle=good?COLORS[selected]:'#cd9b73';ctx.beginPath();ctx.arc(e.x+Math.cos(a)*r,e.y+Math.sin(a)*r+age*.25,Math.max(0,3-age/24),0,Math.PI*2);ctx.fill();}}ctx.restore();
     }}
   }
-  return {draw};
+  const ready=()=>[kitchen,items,cannon].every(image=>image.complete&&image.naturalWidth>0);
+  return {draw,ready};
 }
