@@ -141,3 +141,115 @@ centre of the kernel — replace with a linear radial falloff); give every state
 its own pose vocabulary instead of falling back to idle; put real squash,
 overshoot and settle into the gulp and miss beats; separate the three mutation
 warnings; keep colour grading on the creature; move the score text off its body.
+
+## Iteration 2 — fixing the rig's real bugs
+
+**Changed:**
+
+- **The tearing is gone.** Two causes. The belly and swallow deformers pushed
+  along a *normalised* radial direction, which flips sign through the centre of
+  its kernel — a discontinuity, and a discontinuity folds a warp cell. Both now
+  push proportionally to distance. On top of that the sampled grid is forced
+  monotone before any cell is drawn, so no cell can invert, and a cell whose
+  source rectangle is much larger than the cell itself is clipped to its own
+  bounds instead of smearing across the frame.
+- **Two sprite masks were built in the wrong coordinate space** — the feather
+  gradient was created before the transform that fills it, so the soft disc was
+  centred on a corner. The pupils and the tongue were nine-tenths transparent
+  and cut from the wrong part of the picture: the "tongue" in the mouth was
+  actually a crop of teeth. Fixed, and the eye landmarks were re-measured off
+  the painting (they were out by 7-8 px, which is why the pupil cut missed).
+- **Eyelids stopped being a veil.** The lid band feathered over half its length,
+  so a half-open lid laid a 50% skin wash across the whole eye. It is now opaque
+  for 84% of its length, drawn in nine slices whose lengths follow a curve so the
+  lid edge arcs, and the brow pivots at the *outer* corner (it was pivoting at
+  the inner one, which inverted every angry and worried brow).
+- **The closed mouth moved to where a closed mouth belongs**, mid-muzzle rather
+  than up under the nose, and the jaw kernel now compresses the chin instead of
+  lifting the mouth line.
+- Colour grading is masked to the creature's own silhouette, so irritation no
+  longer looks like the room's white balance drifting. Score pops are drawn as
+  a pill above the action instead of loose text over the creature's chest. The
+  balloon mutation's pasted arrow glyphs are gone. Each state is now sampled at
+  a time that suits it — a 90-tick warning is not readable 25 ticks in.
+- Pose work: idle actually looks at the launcher; peckish and starving are
+  separate reads; the three irritation steps have separate shapes; warnings are
+  partial and unstable where actives are committed; recovery sags past its
+  resting size before settling; craving and off-menu are a delight beat and a
+  shrug rather than two copies of the same settle.
+
+**Render timing:** 1.893 ms average, 3.300 ms max over 126 frames at 1920x1080.
+
+**Checks:** typecheck, lint, 23 tests and the production build all pass.
+`npm run test:contract` cannot run in this environment — Hardhat downloads the
+Solidity compiler from `binaries.soliditylang.org`, which the session's egress
+policy blocks. No Solidity file is touched by any commit on this branch.
+
+**Critique average: 3.7 / 10** (iteration 1 was 4.2). The score went down while
+the renderer got better, which is worth stating plainly: iteration 1's average
+was inflated by states that the first critic could not fault because they were
+all the same neutral frame. This critic named the real problem — six states are
+still interchangeable with idle, and the creature smiles through all of them —
+and found two artifacts that iteration 1 had hidden rather than fixed.
+
+| State | Score | Reason | Fix |
+|---|---|---|---|
+| attract-idle | 7 | On-model, warm, clean craft; gaze locked at camera | Angle the eyes and head toward the launcher |
+| hungry-mild | 3 | Pixel-identical to idle | Lowered brow, slack jaw, tongue lolling, body sunk |
+| hungry-severe | 3 | Broad grin reads delighted, not starving | Invert the mouth curve, hollow the cheeks, sag the head |
+| tracking-far | 4 | Eyes point at camera while the pellet is off to the left | Aim pupils and head at the projectile |
+| tracking-near | 6 | Wider maw reads "incoming" | Converge the pupils on the pellet |
+| gulp-metal | 3 | Closed smile plus specks; nothing says metal | Hard clamp, squash, clank spark, throat bulge |
+| gulp-balloon | 3 | Same as gulp-metal with a different particle hue | Puffed cheek, body lift, upward drift |
+| gulp-pepper | 2 | Eyes absent, antennae multiplied to five | Fix eye occlusion and the antenna artifact |
+| miss-floor | 3 | Untouched idle smile with a caption | Real flinch plus a hard side-eye at the mess |
+| miss-vent | 3 | Identical pose to miss-floor | Vent should be a head-jerk away |
+| irritation-1 | 2 | Indistinguishable from idle; no brow at all | Visible brow furrow, compressed asymmetric mouth |
+| irritation-2 | 3 | Eyes collapse into slits; reads sleepy | Keep the eyes open and narrow them into a glare |
+| irritation-3 | 6 | Bared teeth and flush land | Pull the corners down so it snarls, not guffaws |
+| warn-metal | 3 | Idle with slightly more teeth | Teeth lengthening into a rigid comb, cold specular |
+| warn-balloon | 2 | Closed smile, zero belly change | Start the swell at ~40% here |
+| warn-pepper | 2 | Eyes vanished, antennae duplicated | Fix the artifact, add cheek veining |
+| active-metal | 7 | Long spike teeth read instantly and stay on-model | Cold rim-light so they read as metal |
+| active-balloon | 4 | Hard cut-out seam along the sill; reads as a camera zoom | Inflate inside the hatch instead of scaling past it |
+| active-pepper | 4 | Exhale is flat arrow glyphs outside the hatch; eyes gone | Real heat haze from the mouth; restore the eyes |
+| recovery | 2 | Eyes absent, mouth wide, antennae multiplied | Closed-mouth exhale, half-lidded, body settling |
+| craving-satisfied | 3 | Closed smile with occluded eyes; caption clipped | Full-body delight beat |
+| off-menu | 3 | Same closed smile as craving-satisfied | Flat half-lidded shrug |
+| end-survived | 6 | Hooded eyes and smug closed smile read as full | Slower slump, rounder belly |
+| end-starved | 3 | A grey wash over a grinning face | Model starvation in the silhouette |
+| end-enraged | 6 | Open maw and hot rim-light read furious | Distinct lunging rage silhouette |
+| strip-gulp-metal | 2 | Mouth never closes; no beat at all | Anticipate, snap, bulge, overshoot, settle |
+| strip-gulp-balloon | 2 | Same curve as metal, different particle colour | Own timing: fast intake, slow float, soft bob |
+| strip-gulp-pepper | 3 | Mouth opens progressively — the opposite of a gulp | Snap shut first, then the wince opens it |
+| strip-miss-floor | 1 | Six identical smiling frames | Sharp recoil, hold, slow side-eye |
+| strip-onset-metal | 5 | Teeth grow, but a straight linear ramp | Quiver during growth, snap to alignment at the end |
+| strip-onset-balloon | 1 | No belly swell visible at any point | Ramp the belly with an elastic overshoot |
+| strip-onset-pepper | 3 | Colour ramp reads; creature eyeless throughout | Restore the eyes; reddening cheek geometry |
+| strip-pepper-exhale | 3 | Single-frame jump to fully open, then holds | Anticipation, burst, settle back |
+| reduced-hungry-severe | 3 | Wide happy grin with tongue out | Droop-and-desaturate silhouette |
+| reduced-irritation-3 | 6 | Bared teeth plus flush survive suppression | Deepen the brow |
+| reduced-gulp-metal | 2 | Idle smile plus a number | Persistent static tell: bulged throat, clenched jaw |
+| reduced-active-metal | 7 | Long teeth carry the state with no animation | Cold highlight for metal specificity |
+| reduced-active-balloon | 4 | Cut-out seam at the sill is obvious frozen | Fix the sill compositing |
+| reduced-active-pepper | 4 | Only the glyphs distinguish it; face eyeless | Bake reddened cheeks and heat shimmer into the pose |
+| reduced-end-survived | 6 | Hooded smug smile holds up static | Rounder belly |
+
+**Blocking defects:** the creature loses its eyes in eight states and two whole
+strips; antennae duplicate in four states; a hard cut-out seam where the
+inflated belly crosses the sill; the score caption clipped at the top edge; and
+the underlying one that explains most of the low scores — it smiles through
+starving, irritation, mutation and death.
+
+**HUD screens:** title livestream-ready; mid-play strong but crowded, with the
+mutation banner sitting over the creature's head; result has the right layout
+and the wrong creature — "YOU'RE THE SNACK / Empty belly" over a plump grinning
+monster.
+
+**Decision for iteration 3:** the four causes behind most of these scores, in
+order — (1) `Math.sign` in the antenna deformer is a step discontinuity across
+the head's centre line, which folds cells and duplicates the antennae; (2)
+expressive lid values reach 1.0 and close the eyes completely, so only a blink
+should ever do that; (3) the mouth curve is always convex-up, so every state
+smiles — the corner and apex offsets have to be able to invert the curve; (4)
+the floor gate lets the arms move with the body, which opens a seam at the sill.

@@ -57,9 +57,12 @@ export function createScene(){
         if(active&&!reduced){for(let i=0;i<4;i++){const r=85+((time*35+i*35)%145);ctx.globalAlpha=.32*(1-(r-85)/145);ctx.beginPath();ctx.ellipse(ARENA.mouth.x,ARENA.mouth.y,r,r*.65,0,Math.PI*.63,Math.PI*1.37);ctx.stroke();}}
         else if(active){ctx.globalAlpha=.28;ctx.beginPath();ctx.ellipse(ARENA.mouth.x,ARENA.mouth.y,150,98,0,Math.PI*.63,Math.PI*1.37);ctx.stroke();}
       }else if(m.ingredient==='balloon'){
-        ctx.strokeStyle='#9cecdf';for(let i=0;i<8;i++){const y=460-((reduced?0:time*50)+i*38)%200;const x=690+i*42;ctx.globalAlpha=.15+(460-y)/650;ctx.beginPath();ctx.moveTo(x,y+15);ctx.lineTo(x,y);ctx.lineTo(x-4,y+5);ctx.moveTo(x,y);ctx.lineTo(x+4,y+5);ctx.stroke();}
+        // Lift reads on the creature itself; the kitchen only gets a faint
+        // shimmer of rising air rather than a row of pasted arrow glyphs.
+        ctx.strokeStyle='#9cecdf';ctx.lineWidth=1.4;for(let i=0;i<7;i++){const y=470-((reduced?90:time*46)+i*44)%230;const x=560+i*26;ctx.globalAlpha=.1+(470-y)/1500;ctx.beginPath();ctx.moveTo(x,y+18);ctx.quadraticCurveTo(x+5,y+9,x,y);ctx.stroke();}
       }else if(m.gustActive){
-        for(let i=0;i<4;i++){const x=820-((reduced?200:time*450+i*83)%400);ctx.globalAlpha=.38;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x,225+i*28);ctx.quadraticCurveTo(x-55,204+i*28,x-120,225+i*28);ctx.stroke();ctx.beginPath();ctx.moveTo(x-105,218+i*28);ctx.lineTo(x-120,225+i*28);ctx.lineTo(x-107,230+i*28);ctx.stroke();}
+        // Headwind streaks live in the flight corridor, not over the creature.
+        for(let i=0;i<4;i++){const x=700-((reduced?160:time*430+i*79)%330);ctx.globalAlpha=.3;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x,238+i*26);ctx.quadraticCurveTo(x-52,218+i*26,x-112,238+i*26);ctx.stroke();ctx.beginPath();ctx.moveTo(x-98,231+i*26);ctx.lineTo(x-112,238+i*26);ctx.lineTo(x-100,243+i*26);ctx.stroke();}
       }ctx.restore();
     }
     if(playing){
@@ -73,8 +76,14 @@ export function createScene(){
       if(!state||tick-state.lastLaunchTick>=ARENA.cooldownTicks)item(ctx,selected,x,y,47,angle*Math.PI/180);
     }
     if(playing)state?.projectiles.forEach(p=>{if(active&&m.ingredient==='metal'&&p.assisted){ctx.save();ctx.strokeStyle='#d4f7b54a';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.quadraticCurveTo((p.x+ARENA.mouth.x)/2,p.y-45,ARENA.mouth.x,ARENA.mouth.y);ctx.stroke();ctx.restore();}ctx.save();ctx.strokeStyle=COLORS[p.ingredient];ctx.globalAlpha=.3;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(p.x-p.vx*2,p.y-p.vy*2);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();item(ctx,p.ingredient,p.x,p.y,48,reduced?0:p.age*.065);});
+    // Score pops are UI, so they read as UI: a pill above the action rather
+    // than loose text composited over the creature's body.
     for(const e of recent){const age=tick-e.tick;if(e.type==='feed'||e.type==='miss'||e.type==='bounce'){
-      const good=e.type==='feed';ctx.save();ctx.globalAlpha=Math.max(0,1-age/65);ctx.fillStyle=good?'#efffc3':'#ffc698';ctx.font=`bold ${good?18:14}px 'Helvetica Neue',sans-serif`;ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=8;ctx.fillText(e.label,e.x,e.y-25-(reduced?0:age*.65));ctx.shadowBlur=0;
+      const good=e.type==='feed';const x=Math.max(120,Math.min(1080,e.x));const y=good?68-(reduced?0:age*.4):Math.max(70,e.y-46-(reduced?0:age*.55));
+      ctx.save();ctx.globalAlpha=Math.max(0,1-age/65);ctx.font=`bold ${good?18:14}px 'Helvetica Neue',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      const w=ctx.measureText(e.label).width+22;ctx.fillStyle='#08131299';ctx.strokeStyle=good?'#cfe89066':'#e5a97a55';ctx.lineWidth=1;
+      ctx.beginPath();ctx.roundRect(x-w/2,y-13,w,26,13);ctx.fill();ctx.stroke();
+      ctx.fillStyle=good?'#efffc3':'#ffc698';ctx.fillText(e.label,x,y+1);ctx.textBaseline='alphabetic';
       if(!reduced){for(let i=0;i<10;i++){const a=i*2.4;const r=age*1.4;ctx.fillStyle=good?COLORS[selected]:'#cd9b73';ctx.beginPath();ctx.arc(e.x+Math.cos(a)*r,e.y+Math.sin(a)*r+age*.25,Math.max(0,3-age/24),0,Math.PI*2);ctx.fill();}}ctx.restore();
     }}
   }

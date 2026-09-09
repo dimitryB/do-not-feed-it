@@ -129,9 +129,9 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
     case "craving-satisfied": {
       state.tick = 720 + ticks;
       state.combo = 4;
-      state.wanted = "pepper";
-      selected = "pepper";
-      add(state, "feed", ticks, "CRAVING +410", { x: 838, y: 282, ingredient: "pepper", craved: true });
+      state.wanted = "balloon";
+      selected = "balloon";
+      add(state, "feed", ticks, "CRAVING +410", { x: 838, y: 282, ingredient: "balloon", craved: true });
       break;
     }
     case "off-menu": {

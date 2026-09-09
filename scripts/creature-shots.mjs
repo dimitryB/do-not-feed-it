@@ -30,6 +30,7 @@ const HEIGHT = 1080;
 const STREAM_WIDTH = 960;
 const STRIP_FRAMES = 6;
 const STRIP_STEP = 0.1;
+const SLOW_STRIP_STEP = 0.22;
 const HIDE_HUD = `
   .masthead,.underbar,.control-deck,.preflight,.hud,.craving,.mutation-banner,
   .live-caption,.start-copy,.scene-caption,.stage-vignette,.modal-scrim{display:none!important}
@@ -45,11 +46,24 @@ const STRIPS = [
   { name: "gulp-balloon", state: "gulp-balloon" },
   { name: "gulp-pepper", state: "gulp-pepper" },
   { name: "miss-floor", state: "miss-floor" },
-  { name: "onset-metal", state: "warn-metal" },
-  { name: "onset-balloon", state: "warn-balloon" },
-  { name: "onset-pepper", state: "warn-pepper" },
+  { name: "onset-metal", state: "warn-metal", from: 0.15, step: SLOW_STRIP_STEP },
+  { name: "onset-balloon", state: "warn-balloon", from: 0.15, step: SLOW_STRIP_STEP },
+  { name: "onset-pepper", state: "warn-pepper", from: 0.15, step: SLOW_STRIP_STEP },
   { name: "pepper-exhale", state: "active-pepper" },
 ];
+
+/**
+ * When to sample each state. A mutation warning is a 90-tick build-up, so
+ * sampling it at 0.4 s catches almost nothing; a gulp is over in half a second.
+ */
+const STATE_TIME = {
+  "warn-metal": 1.05, "warn-balloon": 1.05, "warn-pepper": 1.05,
+  "gulp-metal": 0.3, "gulp-balloon": 0.34, "gulp-pepper": 0.42,
+  "craving-satisfied": 0.95, "off-menu": 0.95,
+  "miss-floor": 0.46, "miss-vent": 0.46,
+  "recovery": 0.62,
+};
+const DEFAULT_TIME = 0.62;
 
 const REDUCED_STATES = [
   "hungry-severe", "irritation-3", "gulp-metal",
@@ -142,10 +156,10 @@ async function makeStreamCopies(page, files) {
 }
 
 /** Joins six frames left to right so motion reads as a filmstrip. */
-async function buildStrip(page, frames, outFile) {
+async function buildStrip(page, frames, outFile, stepMs = 100) {
   const sources = [];
   for (const frame of frames) sources.push(`data:image/png;base64,${(await readFile(frame)).toString("base64")}`);
-  const encoded = await page.evaluate(async ({ sources, cell }) => {
+  const encoded = await page.evaluate(async ({ sources, cell, stepMs }) => {
     const images = [];
     for (const source of sources) {
       const image = new Image();
@@ -164,12 +178,12 @@ async function buildStrip(page, frames, outFile) {
       context.drawImage(image, index * cell, 26, cell, height);
       context.fillStyle = "#c9d9a8";
       context.font = "600 15px ui-monospace, monospace";
-      context.fillText(`${index * 100} ms`, index * cell + 10, 18);
+      context.fillText(`+${index * stepMs} ms`, index * cell + 10, 18);
       context.strokeStyle = "#00000088";
       context.strokeRect(index * cell + 0.5, 26.5, cell - 1, height - 1);
     });
     return canvas.toDataURL("image/png").split(",")[1];
-  }, { sources, cell: 520 });
+  }, { sources, cell: 520, stepMs });
   await writeFile(outFile, Buffer.from(encoded, "base64"));
 }
 
@@ -386,9 +400,9 @@ async function main() {
 
     // 1. Stills.
     for (const state of states) {
-      await page.evaluate(async ({ state }) => {
-        await window.__dnfi.settle(state, 0.42, 1.4);
-      }, { state });
+      await page.evaluate(async ({ state, at }) => {
+        await window.__dnfi.settle(state, at, 1.5);
+      }, { state, at: STATE_TIME[state] ?? DEFAULT_TIME });
       const file = path.join(outDir, `${state}.png`);
       await capture(page, file);
       created.push(file);
@@ -398,7 +412,7 @@ async function main() {
     for (const strip of STRIPS) {
       const frames = [];
       for (let index = 0; index < STRIP_FRAMES; index++) {
-        const t = index * STRIP_STEP;
+        const t = (strip.from ?? 0) + index * (strip.step ?? STRIP_STEP);
         await page.evaluate(async ({ state, t }) => {
           await window.__dnfi.settle(state, t, 1.4);
         }, { state: strip.state, t });
@@ -407,16 +421,16 @@ async function main() {
         frames.push(file);
       }
       const stripFile = path.join(outDir, `strip-${strip.name}.png`);
-      await buildStrip(page, frames, stripFile);
+      await buildStrip(page, frames, stripFile, Math.round((strip.step ?? STRIP_STEP) * 1000));
       created.push(stripFile);
     }
 
     // 3. Reduced motion.
     await page.evaluate(() => window.__dnfi.reduced(true));
     for (const state of REDUCED_STATES) {
-      await page.evaluate(async ({ state }) => {
-        await window.__dnfi.settle(state, 0.42, 1.4);
-      }, { state });
+      await page.evaluate(async ({ state, at }) => {
+        await window.__dnfi.settle(state, at, 1.5);
+      }, { state, at: STATE_TIME[state] ?? DEFAULT_TIME });
       const file = path.join(outDir, `reduced-${state}.png`);
       await capture(page, file);
       created.push(file);

@@ -22,8 +22,8 @@ export const JAW_PIVOT = { x: 840, y: 250 };
 export const COUNTER_Y = 470;
 
 export const EYE = {
-  left: { x: 768, y: 153, rx: 26, ry: 19, pupil: { x: 776, y: 157, r: 13 } },
-  right: { x: 920, y: 155, rx: 27, ry: 19, pupil: { x: 909, y: 158, r: 13 } },
+  left: { x: 764, y: 150, rx: 26, ry: 22, pupil: { x: 769, y: 149, r: 16 } },
+  right: { x: 916, y: 151, rx: 28, ry: 23, pupil: { x: 901, y: 150, r: 16 } },
 } as const;
 
 export type EyeSide = keyof typeof EYE;
@@ -38,9 +38,9 @@ export const MOUTH = {
   cornerRight: { x: 966, y: 225 },
   center: 840,
   upperOpen: 184,
-  upperClosed: 204,
+  upperClosed: 276,
   lowerOpen: 366,
-  lowerClosed: 219,
+  lowerClosed: 296,
 } as const;
 
 /**
@@ -59,7 +59,7 @@ export const MOUTH_PATCH = { x: 672, y: 132, width: 340, height: 292 };
 /** Clean skin below the mouth, the source for the rebuilt muzzle. */
 export const CHIN_SOURCE = { x: 730, y: 384, width: 220, height: 54 };
 
-export const TONGUE = { x: 833, y: 314, rx: 62, ry: 31 };
+export const TONGUE = { x: 833, y: 313, rx: 53, ry: 25 };
 
 /** Soft silhouette used only for colour grading, never for cutting. */
 export const BODY_OUTLINE: readonly (readonly [number, number])[] = [

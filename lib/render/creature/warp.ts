@@ -75,30 +75,27 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
 
     // Jaw: closing the mouth lifts and compresses the whole lower face. The
     // kernel dies out well above the counter so it never meets the floor gate.
-    const chin = bump(x, y, 840, 330, 232, 142) * gate;
+    const chin = bump(x, y, 840, 348, 236, 126) * gate;
     if (chin > 0) dy -= jaw * chin;
 
     // Belly: inflation pushes out and up, never down into the counter.
+    // The push grows with distance from the centre rather than following a
+    // normalised direction: a normalised one flips sign through the centre,
+    // which is a discontinuity, and a discontinuity folds a warp cell.
     if (pose.bellySwell !== 0) {
-      const belly = bump(x, y, BELLY.x, BELLY.y, 322, 262) * gate;
+      const belly = bump(x, y, BELLY.x, BELLY.y, 340, 276) * gate;
       if (belly > 0) {
-        const rx = (x - BELLY.x) / 322;
-        const ry = (y - BELLY.y) / 262;
-        const length = Math.hypot(rx, ry) || 1;
-        dx += (rx / length) * pose.bellySwell * 38 * belly;
-        dy += (ry / length) * pose.bellySwell * 26 * belly - pose.bellySwell * 18 * belly;
+        dx += (x - BELLY.x) / 340 * pose.bellySwell * 54 * belly;
+        dy += (y - BELLY.y) / 276 * pose.bellySwell * 40 * belly - pose.bellySwell * 20 * belly;
       }
     }
 
     // Swallow: a travelling bulge from the throat into the belly.
     if (pose.throat > 0.01) {
-      const lump = bump(x, y, 840, throatY, 122, 92) * gate;
+      const lump = bump(x, y, 840, throatY, 138, 104) * gate;
       if (lump > 0) {
-        const rx = (x - 840) / 122;
-        const ry = (y - throatY) / 92;
-        const length = Math.hypot(rx, ry) || 1;
-        dx += (rx / length) * pose.throat * 15 * lump;
-        dy += (ry / length) * pose.throat * 11 * lump;
+        dx += (x - 840) / 138 * pose.throat * 34 * lump;
+        dy += (y - throatY) / 104 * pose.throat * 24 * lump;
       }
     }
 
@@ -112,8 +109,8 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
     }
 
     // Antennae: droop outward and down when the belly is empty.
-    if (pose.antennaDroop > 0.01 || pose.antennaShake > 0.01) {
-      const stalk = bump(x, y, 848, 84, 148, 82);
+    if (Math.abs(pose.antennaDroop) > 0.01 || pose.antennaShake > 0.01) {
+      const stalk = bump(x, y, 848, 78, 142, 60);
       if (stalk > 0) {
         dy += pose.antennaDroop * 19 * stalk;
         dx += Math.sign(x - 848) * pose.antennaDroop * 12 * stalk;
@@ -169,7 +166,27 @@ export function drawWarped(context: CanvasRenderingContext2D, source: HTMLCanvas
   // Cell transforms compose with whatever transform the scene already set.
   const base = context.getTransform();
   const A = base.a, B = base.b, C = base.c, D = base.d, E = base.e, F = base.f;
-  const bleed = 1.1;
+  // Keep the sampled grid monotone. A displacement gradient steeper than the
+  // grid spacing would invert a cell, and an inverted cell smears its source
+  // across the frame; clamping here removes the failure at its source.
+  const minX = stepX * 0.22;
+  const minYStep = stepY * 0.22;
+  for (let row = 0; row <= cellsY; row++) {
+    const base0 = row * (cellsX + 1);
+    for (let column = 1; column <= cellsX; column++) {
+      const at = base0 + column;
+      if (gridX[at] < gridX[at - 1] + minX) gridX[at] = gridX[at - 1] + minX;
+    }
+  }
+  for (let column = 0; column <= cellsX; column++) {
+    for (let row = 1; row <= cellsY; row++) {
+      const at = row * (cellsX + 1) + column;
+      const above = at - (cellsX + 1);
+      if (gridY[at] < gridY[above] + minYStep) gridY[at] = gridY[above] + minYStep;
+    }
+  }
+
+  const bleed = 0.8;
   for (let row = 0; row < cellsY; row++) {
     for (let column = 0; column < cellsX; column++) {
       const at = row * (cellsX + 1) + column;
@@ -180,21 +197,16 @@ export function drawWarped(context: CanvasRenderingContext2D, source: HTMLCanvas
       const vx = gridX[below] - gridX[at];
       const vy = gridY[below] - gridY[at];
       const det = ux * vy - uy * vx;
-      // A folded or near-degenerate cell would smear its source across the
-      // frame. Draw those straight instead of through a wild transform.
-      const area = stepX * stepY;
-      const degenerate = det < area * 0.2;
+      if (det <= 0) continue;
       const m11 = stepX * vy / det;
       const m21 = -stepX * vx / det;
       const m12 = -stepY * uy / det;
       const m22 = stepY * ux / det;
       const x0 = region.x + column * stepX;
       const y0 = region.y + row * stepY;
-      if (degenerate) {
-        context.drawImage(source, (x0 - origin.x) * HI, (y0 - origin.y) * HI, stepX * HI, stepY * HI,
-          x0, y0, stepX, stepY);
-        continue;
-      }
+      // Back to the scene transform before every cell: the clip rectangle is
+      // expressed in arena coordinates.
+      context.setTransform(base);
       const tx = x0 - (m11 * gridX[at] + m21 * gridY[at]);
       const ty = y0 - (m12 * gridX[at] + m22 * gridY[at]);
       const opposite = below + 1;
@@ -202,6 +214,16 @@ export function drawWarped(context: CanvasRenderingContext2D, source: HTMLCanvas
       const maxX = Math.max(gridX[at], gridX[right], gridX[below], gridX[opposite]) + bleed;
       const minY = Math.min(gridY[at], gridY[right], gridY[below], gridY[opposite]) - bleed;
       const maxY = Math.max(gridY[at], gridY[right], gridY[below], gridY[opposite]) + bleed;
+      // A skewed cell's source rectangle is much larger than the cell itself,
+      // and its image under the transform spills across the frame. Clip those
+      // to their own cell; the common near-identity cells need no clip.
+      const skewed = (maxX - minX) * (maxY - minY) > Math.abs(det) * 2.2;
+      if (skewed) {
+        context.save();
+        context.beginPath();
+        context.rect(x0 - 0.5, y0 - 0.5, stepX + 1, stepY + 1);
+        context.clip();
+      }
       context.setTransform(
         A * m11 + C * m12, B * m11 + D * m12,
         A * m21 + C * m22, B * m21 + D * m22,
@@ -209,6 +231,7 @@ export function drawWarped(context: CanvasRenderingContext2D, source: HTMLCanvas
       context.drawImage(source,
         (minX - origin.x) * HI, (minY - origin.y) * HI, (maxX - minX) * HI, (maxY - minY) * HI,
         minX, minY, maxX - minX, maxY - minY);
+      if (skewed) context.restore();
     }
   }
   context.setTransform(base);

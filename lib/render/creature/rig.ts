@@ -31,6 +31,8 @@ export interface CreatureRig {
   tooth: Patch;
   /** Soft creature silhouette, low resolution, for colour grading only. */
   bodyMask: HTMLCanvasElement;
+  /** Scratch surface for grading, so a tint can be masked to the creature. */
+  grade: HTMLCanvasElement;
   palette: {
     skinLit: string; skinMid: string; skinShadow: string;
     lipRim: string; lipShade: string; cavity: string; cavityDeep: string;
@@ -113,12 +115,14 @@ function cutEllipse(source: HTMLCanvasElement, x: number, y: number, rx: number,
   context.drawImage(source, (x - rx) * HI, (y - ry) * HI, rx * 2 * HI, ry * 2 * HI, 0, 0, patch.width, patch.height);
   const mask = canvasOf(patch.width, patch.height);
   const maskContext = contextOf(mask);
-  const gradient = maskContext.createRadialGradient(patch.width / 2, patch.height / 2, 0, patch.width / 2, patch.height / 2, patch.width / 2);
-  gradient.addColorStop(Math.max(0, 1 - feather), "#fff");
-  gradient.addColorStop(1, "#fff0");
   maskContext.save();
   maskContext.translate(patch.width / 2, patch.height / 2);
   maskContext.scale(1, patch.height / patch.width);
+  // The gradient is built after the transform, in the same space it is filled
+  // in; building it before would centre the soft disc on a corner.
+  const gradient = maskContext.createRadialGradient(0, 0, 0, 0, 0, patch.width / 2);
+  gradient.addColorStop(Math.max(0, 1 - feather), "#fff");
+  gradient.addColorStop(1, "#fff0");
   maskContext.fillStyle = gradient;
   maskContext.fillRect(-patch.width / 2, -patch.width / 2, patch.width, patch.width);
   maskContext.restore();
@@ -191,6 +195,9 @@ function buildTooth(art: HTMLCanvasElement, ivory: string): Patch {
   return { canvas: patch, x: 0, y: 0, width, height };
 }
 
+/** Fraction of an eyelid band that stays fully opaque before it feathers. */
+export const LID_SOLID = 0.84;
+
 /** A band of real skin, feathered on one edge, used as a moving eyelid. */
 function cutSkinBand(source: HTMLCanvasElement, rect: { x: number; y: number; width: number; height: number },
                      fadeFrom: "top" | "bottom"): Patch {
@@ -198,13 +205,15 @@ function cutSkinBand(source: HTMLCanvasElement, rect: { x: number; y: number; wi
   const context = contextOf(patch);
   context.drawImage(source, rect.x * HI, rect.y * HI, rect.width * HI, rect.height * HI, 0, 0, patch.width, patch.height);
   const fade = context.createLinearGradient(0, 0, 0, patch.height);
+  // Opaque for most of the band and feathered only at the very end: a long
+  // fade leaves a half-transparent veil over whatever the lid is covering.
   if (fadeFrom === "bottom") {
     fade.addColorStop(0, "#fff");
-    fade.addColorStop(0.5, "#fff");
+    fade.addColorStop(LID_SOLID, "#fff");
     fade.addColorStop(1, "#fff0");
   } else {
     fade.addColorStop(0, "#fff0");
-    fade.addColorStop(0.5, "#fff");
+    fade.addColorStop(1 - LID_SOLID, "#fff");
     fade.addColorStop(1, "#fff");
   }
   context.globalCompositeOperation = "destination-in";
@@ -334,6 +343,16 @@ function buildScleraPatch(art: HTMLCanvasElement, side: EyeSide): Patch {
   context.fill();
   context.restore();
   pullPushFill(patch, "rgb(196,146,26)");
+  // Feather the patch to an ellipse before it goes back onto the painting: a
+  // rectangular paste shows its own corners once anything else shifts.
+  context.save();
+  context.globalCompositeOperation = "destination-in";
+  context.filter = "blur(4px)";
+  context.fillStyle = "#fff";
+  context.beginPath();
+  context.ellipse((eye.x - rect.x) * HI, (eye.y - rect.y) * HI, (eye.rx + 4) * HI, (eye.ry + 4) * HI, 0, 0, Math.PI * 2);
+  context.fill();
+  context.restore();
   return { canvas: patch, x: rect.x, y: rect.y, width: rect.width, height: rect.height };
 }
 
@@ -395,5 +414,8 @@ export function buildRig(image: HTMLImageElement): CreatureRig {
   artContext.drawImage(mouthSkin.canvas, mouthSkin.x * HI, mouthSkin.y * HI);
   for (const patch of sclera) artContext.drawImage(patch.canvas, patch.x * HI, patch.y * HI);
 
-  return { art, pupil, lidUpper, lidLower, tongue, tooth, bodyMask: buildBodyMask(), palette };
+  return {
+    art, pupil, lidUpper, lidLower, tongue, tooth,
+    bodyMask: buildBodyMask(), grade: canvasOf(ARENA_WIDTH / 2, ARENA_HEIGHT / 2), palette,
+  };
 }
