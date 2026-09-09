@@ -582,3 +582,95 @@ framed at a different scale from the review stills and carrying three competing
 toasts; result strong typographically, undercut by a comfortable-looking
 creature under "YOU'RE THE SNACK" and by a "TIME LEFT AT CLOCK OUT" header on a
 screen announcing the shift is over.
+
+## Iteration 6 — expressions instead of maximums
+
+**Changed:** the pose model itself. Targets were being built by accumulating
+`Math.max` per channel, which is why eight states converged on the same resting
+smile: every state added its own emphasis on top of whatever was already there,
+and the average of many emphases is the middle. The face is now authored as
+whole named expressions, and a state blends *toward* one — pulling every channel
+the expression names, including the ones it wants at rest. A strong state
+overrides a weak one instead of averaging with it.
+
+Twenty-four expressions are authored in `lib/render/creature/pose.ts`: attract,
+peckish, starving, trackFar, trackNear, snap, clank, puff, burn, delight, shrug,
+startle, flinch, sideEye, annoy1/2/3, warnMetal, activeMetal, warnBalloon,
+activeBalloon, warnPepper, holdPepper, blowPepper, deflate, smug, collapse,
+rageEnd. Skin colour, the swallow, breathing, blink and eye aim are layered on
+afterwards, because two of those can be true at once and an expression cannot.
+
+Four channels were added because they carry silhouette at stream resolution:
+`lean` (head toward the camera), `antennaTwist` (one antenna up, one down),
+`browAsym` (a single raised brow) and `jawShift` (the mouth pulled to one side).
+
+Also: the rebuilt-muzzle relight is masked over a much wider band, so its
+boundary stopped reading as a second mouth across the chin; the warp grid went
+from 26x19 to 30x23 because a coarse grid makes the per-cell affine
+approximation visible as tile edges wherever the field compresses hard; and an
+undisplaced cell is now skipped entirely, which paid for the denser grid twice
+over (3.4 ms back down to 1.8 ms).
+
+**Render timing:** 2.305 ms average, 25.0 ms max at 1920x1080.
+
+**Critique average: 4.0 / 10** (iteration 5 was 4.5). Lower, and the reason is
+in the findings: this critic could finally tell the states apart well enough to
+name what is wrong with each, and found three real bugs the previous passes had
+been unable to see past — the balloon kernel, the shared flush, and dead eyes.
+
+Findings that mattered: the entire balloon line showed no swelling at all; the
+eyes never looked at the food; irritation-2, irritation-3, warn-pepper and
+gulp-pepper all shared one orange flush; the swallow bulge read as a hole
+punched in the body; event particles read as debug markers.
+
+## Iteration 7 — the bugs behind those findings
+
+**Changed:**
+
+- **The balloon mutation was being gated away.** Its kernel was centred on the
+  belly at y=424, and the floor gate that keeps the arms still reaches zero at
+  y=436 — so almost the whole swell was multiplied by nearly zero. It is now
+  centred at y=286 on the part of the body above the serving hatch, with its own
+  falloff reaching zero at the counter instead of being multiplied by the gate.
+  Two falloffs multiplied together also made a gradient steep enough to pinch
+  the arms where they rest on the sill; that is gone too.
+- **The eyes could not travel far enough to read.** Pupil offset was ±10 px
+  inside a 52 px eye. Now ±14, and `trackFar` is authored as a different shape
+  from idle rather than a slightly wider one.
+- **Irritation got its own colour.** `rageFlush` is a separate channel drawn as
+  a dark blood-red with veining; orange now means pepper and nothing else.
+- **A deflection is a startle, not a disappointment.** A `bounce` event wears a
+  new `startle` expression — narrow O of a mouth, head snapped back, eyes wide —
+  where a floor miss still wears the flat `sideEye`.
+- **Openness and curvature were fighting.** The frown offsets were folded into
+  the two lip apexes, so a snarl closed its own gap and lost the teeth it was
+  supposed to bare. The mouth is now a centre line plus a gap, and the frown
+  moves the centre.
+- Mouth width moves the corners 62 px rather than 18, which is the difference
+  between a shape change and nothing; teeth cannot cross the opposite row; the
+  lip roll thins as the mouth closes so it stops drawing a second arc; the score
+  pop holds full opacity and fades only at the end (it was spending most of its
+  life at 12% alpha, which is what two critics reported as a draw-order bug);
+  the swallow bulge is a lit lump rather than a dark ellipse; event particles are
+  fewer, softer and shorter-lived; magnetic arcs stay clear of the face.
+
+**Render timing:** 2.115 ms average, 12.3 ms max at 1920x1080.
+
+**Critique average: 4.7 / 10** — the best of the seven.
+
+Strongest: end-starved 7, irritation-3 7, gulp-pepper 7, reduced-irritation-3 7.
+Weakest: end-enraged 3 (the wide mouth is drawn over the nose and the left eye),
+strip-miss-floor 2 (a miss animates exactly like a catch), reduced-gulp-metal 2,
+hungry-mild 3, warn-metal 3, warn-balloon 3, recovery 3, miss-vent 3.
+
+**Blocking defects:** end-enraged draws its mouth over the nose and eye; a miss
+is visually identical to a catch; the balloon's inflated silhouette has a hard
+edge along the sill; teeth read as flat pasted triangles; the warn states still
+look like the idle pose; the projectile is nearly invisible against the dark
+half of the frame.
+
+**Decision for iteration 8:** clamp the mouth so it can never rise past the
+nose; give a miss its own flight and leave the snack on the counter; make the
+projectile emissive; shade the teeth with roots and a contact shadow; push
+peckish, warnMetal and deflate far enough apart from idle to read, and sample
+recovery at the peak of its sag rather than on the way there.

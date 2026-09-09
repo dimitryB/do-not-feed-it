@@ -25,15 +25,26 @@ const controlFor = (startY: number, endY: number, apex: number) => 2 * apex - 0.
 function aperture(pose: CreaturePose): Aperture {
   const lift = pose.cornerLift;
   const press = pose.lipPress;
-  const pull = (1 - pose.mouthWidth) * 18 + press * 10 + (1 - pose.jawOpen) * 15;
-  const leftX = MOUTH.cornerLeft.x + pull;
-  const rightX = MOUTH.cornerRight.x - pull;
+  // Mouth width has to move the corners a long way to read at all: eighteen
+  // pixels of travel is invisible on a mouth this wide.
+  const pull = (1 - pose.mouthWidth) * 62 + press * 10 + (1 - pose.jawOpen) * 15;
+  // A shifted jaw moves the whole mouth sideways and drops the trailing corner:
+  // the shape of not being impressed.
+  const shift = pose.jawShift * 11;
+  const leftX = MOUTH.cornerLeft.x + pull + shift;
+  const rightX = MOUTH.cornerRight.x - pull + shift;
   // The painted mouth curves upward, so a frown has to do two things at once:
   // drop the corners and raise the middle, until the curve inverts.
-  const leftY = MOUTH.cornerLeft.y - lift * 26;
-  const rightY = MOUTH.cornerRight.y - lift * 26;
-  const upperApex = mix(MOUTH.upperClosed, MOUTH.upperOpen, pose.jawOpen) + lift * 9 + press * 2;
-  const lowerApex = mix(MOUTH.lowerClosed, MOUTH.lowerOpen, pose.jawOpen) + lift * 30 - press * 2;
+  const leftY = MOUTH.cornerLeft.y - lift * 26 + pose.jawShift * 9;
+  const rightY = MOUTH.cornerRight.y - lift * 26 - pose.jawShift * 5;
+  // How far the mouth is open and how far it curves are separate: folding the
+  // frown into the apexes closed the gap, so a snarl lost its teeth.
+  const centre = mix((MOUTH.upperClosed + MOUTH.lowerClosed) / 2,
+                     (MOUTH.upperOpen + MOUTH.lowerOpen) / 2, pose.jawOpen) + lift * 30;
+  const gap = Math.max(4, mix(MOUTH.lowerClosed - MOUTH.upperClosed,
+                              MOUTH.lowerOpen - MOUTH.upperOpen, pose.jawOpen) - press * 6);
+  const upperApex = centre - gap / 2;
+  const lowerApex = centre + gap / 2;
   return {
     leftX, leftY, rightX, rightY, centerX: MOUTH.center,
     upperApex, lowerApex,
@@ -92,7 +103,7 @@ function drawTeeth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
     const t = mix(stop, 0.055 + index * (0.89 / (row.length - 1)), align);
     const spot = onCurve(shape, t, upper);
     const size = mix(scale, 0.9, align);
-    const height = Math.min(reach * size + root, gap * 0.6 + root + pose.teethBare * 14 + pose.teethLong * 22);
+    const height = Math.min(reach * size + root, gap * 0.44 + root + pose.teethBare * 12 + pose.teethLong * 18);
     if (height < root + 2) continue;
     const width = span * 0.052 * (0.72 + 0.4 * size) * (1 - align * 0.1);
     const quiver = reduced ? 0 : Math.sin(time * 24 + index * 1.9) * pose.teethQuiver * 2.2;
@@ -119,7 +130,10 @@ function drawTeeth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
 
 /** The fleshy rim around the aperture, which is what makes it read as a mouth. */
 function drawLips(context: CanvasRenderingContext2D, pose: CreaturePose, shape: Aperture) {
-  const thickness = 10 + (1 - pose.jawOpen) * 6 + pose.lipPress * 4;
+  // A thin mouth gets a thin lip: a fat roll around a nearly shut mouth draws
+  // a second arc below it that reads as a seam.
+  const gapNow = shape.lowerApex - shape.upperApex;
+  const thickness = (7 + pose.lipPress * 3) * Math.min(1, 0.45 + gapNow / 70);
   context.save();
   context.lineJoin = "round";
 
@@ -287,7 +301,10 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     const inward = -outward;
     const local = localTransform(field, eye.x, eye.y);
     const lid = clamp01(Math.max(side === "left" ? pose.lidLeft : pose.lidRight, pose.blink));
-    const brow = (pose.browAngry * 17 - pose.browSad * 14) * (side === "left" ? 1 : -1);
+    // One brow lifting on its own is the whole of "unimpressed", so it gets a
+    // channel of its own rather than being an average of the other two.
+    const brow = (pose.browAngry * 17 - pose.browSad * 14) * (side === "left" ? 1 : -1)
+      - (side === "left" ? pose.browAsym * 15 : 0);
 
     context.save();
     context.translate(eye.x + local.dx, eye.y + local.dy);
@@ -297,8 +314,8 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
 
     // Pupil, wherever it is looking.
     const spot = eye.pupil;
-    const pupilX = spot.x + pose.pupilX * 10;
-    const pupilY = spot.y + pose.pupilY * 7;
+    const pupilX = spot.x + pose.pupilX * 14;
+    const pupilY = spot.y + pose.pupilY * 9;
     context.save();
     context.beginPath();
     context.ellipse(eye.x, eye.y, eye.rx - 1, eye.ry - 1, 0, 0, Math.PI * 2);
@@ -440,6 +457,34 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     }, "overlay");
   }
 
+  // Irritation is a darker, blood-under-the-skin flush. Sharing pepper's orange
+  // made four states look like one lighting change.
+  if (pose.rageFlush > 0.03) {
+    gradeBody(context, rig, (inner) => {
+      const anger = inner.createRadialGradient(846, 250, 24, 846, 270, 250);
+      anger.addColorStop(0, `rgba(196,26,34,${0.95 * pose.rageFlush})`);
+      anger.addColorStop(0.5, `rgba(150,14,34,${0.6 * pose.rageFlush})`);
+      anger.addColorStop(1, `rgba(112,10,30,${0.12 * pose.rageFlush})`);
+      inner.fillStyle = anger;
+      inner.fillRect(500, 40, 700, 500);
+    }, "overlay");
+    context.save();
+    context.globalAlpha = pose.rageFlush * 0.4;
+    context.strokeStyle = "rgba(120,8,24,0.9)";
+    context.lineWidth = 1.8;
+    context.lineCap = "round";
+    for (const [cx, cy, direction] of [[742, 214, -1], [944, 220, 1]] as const) {
+      for (let index = 0; index < 3; index++) {
+        const y = cy + index * 13;
+        context.beginPath();
+        context.moveTo(cx, y);
+        context.quadraticCurveTo(cx + direction * 13, y + 9, cx + direction * 21, y + 4);
+        context.stroke();
+      }
+    }
+    context.restore();
+  }
+
   // Hunger pallor: colour drains and the light goes cold.
   if (pose.pallor > 0.03) {
     gradeBody(context, rig, (inner) => {
@@ -502,6 +547,34 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     context.restore();
   }
 
+  // Tears. A burn that makes the eyes water reads at any resolution.
+  if (pose.tears > 0.08) {
+    context.save();
+    context.globalAlpha = Math.min(0.9, pose.tears);
+    for (const side of EYE_SIDES) {
+      const eye = EYE[side];
+      const outward = side === "left" ? -1 : 1;
+      const x = eye.x + outward * (eye.rx - 2);
+      const top = eye.y + eye.ry - 4;
+      const run = 10 + pose.tears * 30;
+      const streak = context.createLinearGradient(x, top, x + outward * 5, top + run);
+      streak.addColorStop(0, "rgba(226,244,250,0.75)");
+      streak.addColorStop(1, "rgba(226,244,250,0.05)");
+      context.strokeStyle = streak;
+      context.lineWidth = 2.6;
+      context.lineCap = "round";
+      context.beginPath();
+      context.moveTo(x, top);
+      context.quadraticCurveTo(x + outward * 4, top + run * 0.6, x + outward * 6, top + run);
+      context.stroke();
+      context.fillStyle = "rgba(238,250,255,0.85)";
+      context.beginPath();
+      context.ellipse(x + outward * 6, top + run, 2.6, 3.4, 0, 0, Math.PI * 2);
+      context.fill();
+    }
+    context.restore();
+  }
+
 }
 
 /** The swallowed lump, as a shaded bulge travelling down the throat. */
@@ -512,9 +585,13 @@ function drawThroat(context: CanvasRenderingContext2D, pose: CreaturePose) {
   const height = 30 * pose.throat;
   context.save();
   context.globalCompositeOperation = "multiply";
-  context.fillStyle = `rgba(84,60,22,${0.5 * pose.throat})`;
+  const under = context.createRadialGradient(842, y + height * 0.6, 2, 842, y + height * 0.6, width);
+  under.addColorStop(0, `rgba(96,72,30,${0.42 * pose.throat})`);
+  under.addColorStop(0.6, `rgba(120,96,44,${0.2 * pose.throat})`);
+  under.addColorStop(1, "rgba(140,116,60,0)");
+  context.fillStyle = under;
   context.beginPath();
-  context.ellipse(842, y + height * 0.55, width * 1.05, height * 0.55, 0, 0, Math.PI * 2);
+  context.ellipse(842, y + height * 0.6, width * 1.1, height * 0.7, 0, 0, Math.PI * 2);
   context.fill();
   context.globalCompositeOperation = "overlay";
   const lit = context.createRadialGradient(834, y - height * 0.4, 2, 842, y, width);

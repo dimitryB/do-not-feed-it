@@ -11,10 +11,13 @@ import type { CreaturePose } from "./pose";
 
 /** The rectangle of the picture the field is allowed to touch. */
 export const WARP_REGION = { x: 512, y: 52, width: 632, height: 462 };
-const CELLS_X = 26;
-const CELLS_Y = 19;
+// Denser than it needs to be for the displacement itself: each cell is drawn
+// under one affine transform, and a coarse grid makes that approximation
+// visible as tile edges wherever the field compresses hard.
+const CELLS_X = 30;
+const CELLS_Y = 23;
 /** How far the chin travels between a wide-open and a closed mouth. */
-export const JAW_TRAVEL = 46;
+export const JAW_TRAVEL = 40;
 
 const bump = (x: number, y: number, cx: number, cy: number, rx: number, ry: number) => {
   const nx = (x - cx) / rx;
@@ -59,13 +62,14 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
     const gate = floorGate(y);
     if (gate <= 0) { out.x = 0; out.y = 0; return; }
 
-    // Head: tilt and offset, strongest over the skull and face.
+    // Head: tilt, offset, and a lean that brings it toward the camera.
     const head = bump(x, y, HEAD.x, HEAD.y + 26, 250, 214);
     if (head > 0) {
       const rx = x - HEAD.x;
       const ry = y - (HEAD.y + 170);
-      dx += ((rx * cosT - ry * sinT) - rx + pose.headX + tremorX) * head;
-      dy += ((rx * sinT + ry * cosT) - ry + pose.headY + tremorY) * head;
+      const lean = 1 + pose.lean;
+      dx += ((rx * cosT - ry * sinT) * lean - rx + pose.headX + tremorX) * head;
+      dy += ((rx * sinT + ry * cosT) * lean - ry + pose.headY + tremorY + pose.lean * 26) * head;
     }
 
     // Body: squash and stretch about the belly, plus the whole rise.
@@ -85,10 +89,16 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
     // normalised direction: a normalised one flips sign through the centre,
     // which is a discontinuity, and a discontinuity folds a warp cell.
     if (pose.bellySwell !== 0) {
-      const belly = bump(x, y, BELLY.x, BELLY.y, 296, 244) * gate;
+      // Centred on the part of the body the camera can actually see. The belly
+      // proper sits behind the serving hatch, so inflating it there is a swell
+      // nobody watching the stream will ever notice.
+      // Its own falloff reaches zero at the counter, so it never meets the
+      // floor gate: two falloffs multiplied together make a gradient steep
+      // enough to pinch the arms where they rest on the sill.
+      const belly = bump(x, y, BELLY.x, 286, 300, 152);
       if (belly > 0) {
-        dx += (x - BELLY.x) / 296 * pose.bellySwell * 50 * belly;
-        dy += (y - BELLY.y) / 244 * pose.bellySwell * 36 * belly - pose.bellySwell * 20 * belly;
+        dx += (x - BELLY.x) / 300 * pose.bellySwell * 66 * belly;
+        dy += (y - 286) / 152 * pose.bellySwell * 30 * belly - pose.bellySwell * 30 * belly;
       }
     }
 
@@ -111,7 +121,7 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
     }
 
     // Antennae: droop outward and down when the belly is empty.
-    if (Math.abs(pose.antennaDroop) > 0.01 || pose.antennaShake > 0.01) {
+    if (Math.abs(pose.antennaDroop) > 0.01 || Math.abs(pose.antennaTwist) > 0.01 || pose.antennaShake > 0.01) {
       const stalk = bump(x, y, 848, 78, 142, 60);
       if (stalk > 0) {
         // A smooth fan outward, not Math.sign: a step across the centre line
@@ -119,6 +129,9 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
         const fan = Math.max(-1, Math.min(1, (x - 848) / 96));
         dy += pose.antennaDroop * 17 * stalk;
         dx += fan * pose.antennaDroop * 11 * stalk;
+        // Twist tips one antenna up and the other down, which is the cheapest
+        // silhouette cue there is for a shrug or a cocked head.
+        dy += fan * pose.antennaTwist * 13 * stalk;
         if (!reduced) dx += Math.sin(time * 21 + x * 0.05) * pose.antennaShake * 2.6 * stalk;
       }
     }
@@ -203,6 +216,15 @@ export function drawWarped(context: CanvasRenderingContext2D, source: HTMLCanvas
       const vy = gridY[below] - gridY[at];
       const det = ux * vy - uy * vx;
       if (det <= 0) continue;
+      // An undisplaced cell would redraw the base layer exactly as it already
+      // is. Most of the region is undisplaced most of the time.
+      const opposite0 = below + 1;
+      if (Math.abs(gridX[at] - (region.x + column * stepX)) < 0.06 &&
+          Math.abs(gridY[at] - (region.y + row * stepY)) < 0.06 &&
+          Math.abs(ux - stepX) < 0.06 && Math.abs(vy - stepY) < 0.06 &&
+          Math.abs(uy) < 0.06 && Math.abs(vx) < 0.06 &&
+          Math.abs(gridX[opposite0] - (region.x + (column + 1) * stepX)) < 0.06 &&
+          Math.abs(gridY[opposite0] - (region.y + (row + 1) * stepY)) < 0.06) continue;
       const m11 = stepX * vy / det;
       const m21 = -stepX * vx / det;
       const m12 = -stepY * uy / det;
@@ -222,7 +244,7 @@ export function drawWarped(context: CanvasRenderingContext2D, source: HTMLCanvas
       // A skewed cell's source rectangle is much larger than the cell itself,
       // and its image under the transform spills across the frame. Clip those
       // to their own cell; the common near-identity cells need no clip.
-      const skewed = (maxX - minX) * (maxY - minY) > Math.abs(det) * 2.2;
+      const skewed = (maxX - minX) * (maxY - minY) > Math.abs(det) * 3;
       if (skewed) {
         context.save();
         context.beginPath();

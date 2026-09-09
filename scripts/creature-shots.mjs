@@ -58,12 +58,18 @@ const STRIPS = [
  */
 const STATE_TIME = {
   "warn-metal": 1.05, "warn-balloon": 1.05, "warn-pepper": 1.05,
-  "gulp-metal": 0.3, "gulp-balloon": 0.34, "gulp-pepper": 0.42,
+  "gulp-metal": 0.12, "gulp-balloon": 0.32, "gulp-pepper": 0.58,
   "craving-satisfied": 0.95, "off-menu": 0.95,
   "miss-floor": 0.46, "miss-vent": 0.46,
   "recovery": 0.62,
 };
 const DEFAULT_TIME = 0.62;
+
+/**
+ * Reduced motion damps the springs hard, so a beat sampled at its contact frame
+ * has not arrived yet. These states are sampled at their held pose instead.
+ */
+const REDUCED_TIME = { "gulp-metal": 0.62 };
 
 const REDUCED_STATES = [
   "hungry-severe", "irritation-3", "gulp-metal",
@@ -432,7 +438,7 @@ async function main() {
     for (const state of REDUCED_STATES) {
       await page.evaluate(async ({ state, at }) => {
         await window.__dnfi.settle(state, at, 1.5);
-      }, { state, at: STATE_TIME[state] ?? DEFAULT_TIME });
+      }, { state, at: REDUCED_TIME[state] ?? STATE_TIME[state] ?? DEFAULT_TIME });
       const file = path.join(outDir, `reduced-${state}.png`);
       await capture(page, file);
       created.push(file);
