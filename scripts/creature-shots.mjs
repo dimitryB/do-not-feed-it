@@ -42,14 +42,14 @@ const HIDE_HUD = `
 
 /** Motion strips: the states where cause-and-effect has to be legible over time. */
 const STRIPS = [
-  { name: "gulp-metal", state: "gulp-metal" },
-  { name: "gulp-balloon", state: "gulp-balloon" },
-  { name: "gulp-pepper", state: "gulp-pepper" },
-  { name: "miss-floor", state: "miss-floor" },
+  { name: "gulp-metal", state: "gulp-metal", from: -0.2 },
+  { name: "gulp-balloon", state: "gulp-balloon", from: -0.2 },
+  { name: "gulp-pepper", state: "gulp-pepper", from: -0.2 },
+  { name: "miss-floor", state: "miss-floor", from: -0.2 },
   { name: "onset-metal", state: "warn-metal", from: 0.15, step: SLOW_STRIP_STEP },
   { name: "onset-balloon", state: "warn-balloon", from: 0.15, step: SLOW_STRIP_STEP },
   { name: "onset-pepper", state: "warn-pepper", from: 0.15, step: SLOW_STRIP_STEP },
-  { name: "pepper-exhale", state: "active-pepper" },
+  { name: "pepper-exhale", state: "active-pepper", from: -0.1 },
 ];
 
 /**
@@ -156,10 +156,10 @@ async function makeStreamCopies(page, files) {
 }
 
 /** Joins six frames left to right so motion reads as a filmstrip. */
-async function buildStrip(page, frames, outFile, stepMs = 100) {
+async function buildStrip(page, frames, outFile, stepMs = 100, fromMs = 0) {
   const sources = [];
   for (const frame of frames) sources.push(`data:image/png;base64,${(await readFile(frame)).toString("base64")}`);
-  const encoded = await page.evaluate(async ({ sources, cell, stepMs }) => {
+  const encoded = await page.evaluate(async ({ sources, cell, stepMs, fromMs }) => {
     const images = [];
     for (const source of sources) {
       const image = new Image();
@@ -178,12 +178,13 @@ async function buildStrip(page, frames, outFile, stepMs = 100) {
       context.drawImage(image, index * cell, 26, cell, height);
       context.fillStyle = "#c9d9a8";
       context.font = "600 15px ui-monospace, monospace";
-      context.fillText(`+${index * stepMs} ms`, index * cell + 10, 18);
+      const at = fromMs + index * stepMs;
+      context.fillText(`${at >= 0 ? "+" : ""}${at} ms`, index * cell + 10, 18);
       context.strokeStyle = "#00000088";
       context.strokeRect(index * cell + 0.5, 26.5, cell - 1, height - 1);
     });
     return canvas.toDataURL("image/png").split(",")[1];
-  }, { sources, cell: 520, stepMs });
+  }, { sources, cell: 520, stepMs, fromMs });
   await writeFile(outFile, Buffer.from(encoded, "base64"));
 }
 
@@ -392,7 +393,7 @@ async function main() {
     await page.waitForFunction(() => Boolean(window.__dnfi && window.__dnfi.pose), null, { timeout: 60_000 });
     await waitForScene(page);
     await page.addStyleTag({ content: HIDE_HUD });
-    await page.evaluate(() => window.__dnfi.hideAim(true));
+    await page.evaluate(() => { window.__dnfi.hideAim(true); window.__dnfi.holdBlink(true); });
     await settle(page, 5);
 
     const states = await page.evaluate(() => window.__dnfi.states());
@@ -421,7 +422,8 @@ async function main() {
         frames.push(file);
       }
       const stripFile = path.join(outDir, `strip-${strip.name}.png`);
-      await buildStrip(page, frames, stripFile, Math.round((strip.step ?? STRIP_STEP) * 1000));
+      await buildStrip(page, frames, stripFile,
+        Math.round((strip.step ?? STRIP_STEP) * 1000), Math.round((strip.from ?? 0) * 1000));
       created.push(stripFile);
     }
 
@@ -442,7 +444,7 @@ async function main() {
     await buildContactSheet(page, outDir, path.join(outDir, "sheet.png"));
 
     // 5. Real play: the scripted trace and the render cost.
-    await page.evaluate(() => { window.__dnfi.clearPose(); window.__dnfi.clock(null); window.__dnfi.hideAim(false); });
+    await page.evaluate(() => { window.__dnfi.clearPose(); window.__dnfi.clock(null); window.__dnfi.hideAim(false); window.__dnfi.holdBlink(false); });
     const trace = await runScriptedTrace(page);
     const timing = await measureRenderCost(page);
     console.log(`[harness] render ${timing.average?.toFixed(3)} ms avg / ${timing.max?.toFixed(3)} ms max over ${timing.samples} frames`);

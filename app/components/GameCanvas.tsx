@@ -52,7 +52,7 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,onAim}:{runRef
           const steps=Math.round(seconds*60);
           for(let step=steps;step>=0;step--){
             const at=t-step/60;
-            const frame=buildPose(id as never,Math.max(0,at));
+            const frame=buildPose(id as never,at);
             devRender.pose=frame;
             devRender.clock=clock+at;
             scene.warm(frame.state,frame.playing,devRender.reduced??false,clock+at,1/60);
@@ -64,6 +64,7 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,onAim}:{runRef
         bag.clock=(seconds:number|null)=>{devRender.clock=seconds;};
         bag.reduced=(value:boolean|null)=>{devRender.reduced=value;};
         bag.hideAim=(value:boolean)=>{devRender.hideAim=value;};
+        bag.holdBlink=(value:boolean)=>{devRender.holdBlink=value;};
         bag.timing=()=>({...devRender.timing,average:devRender.timing.samples?devRender.timing.total/devRender.timing.samples:0});
         bag.resetTiming=()=>{resetDrawCost();};
         bag.sceneReady=()=>scene.ready();
@@ -77,7 +78,7 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,onAim}:{runRef
           return parts[part]?.toDataURL('image/png')??null;
         };
         bag.canvasSize=()=>({width:canvas.width,height:canvas.height});
-        detachHooks=()=>{delete bag.sceneReady;delete bag.canvasSize;delete bag.rigDump;delete bag.settle;delete bag.hideAim;};
+        detachHooks=()=>{delete bag.sceneReady;delete bag.canvasSize;delete bag.rigDump;delete bag.settle;delete bag.hideAim;delete bag.holdBlink;};
       }
     }
     return()=>{disposed=true;cancelAnimationFrame(frame);observer.disconnect();detachHooks?.();};

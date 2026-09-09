@@ -79,9 +79,21 @@ function base(tick: number): ArcadeState {
   return state;
 }
 
-/** Builds one forced presentation frame. `t` is seconds since the defining moment. */
+/** The moment before a catch or a miss: the snack is still in the air. */
+function approach(state: ArcadeState, ingredient: Ingredient, seconds: number) {
+  // 13.6 px per tick along the flight, arriving at the mouth at t = 0.
+  const away = Math.min(0.9, seconds) * 60 * 11.4;
+  shot(state, ingredient, ARENA.mouth.x - away, ARENA.mouth.y - away * 0.16, 11.4, 1.8, 40);
+  add(state, "launch", 40, ingredient, { x: 264, y: 494, ingredient });
+}
+
+/**
+ * Builds one forced presentation frame. `t` is seconds since the defining
+ * moment, and may be negative: a strip needs the run-up as well as the beat.
+ */
 export function buildPose(id: CreatureStateId, t = 0): DevPose {
-  const ticks = Math.round(t * 60);
+  const ticks = Math.round(Math.max(0, t) * 60);
+  const before = t < 0 ? -t : 0;
   let playing = true;
   let selected: Ingredient = "metal";
   let angle: number = ARENA.defaultAngle;
@@ -123,7 +135,9 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
       selected = ingredient;
       state.tick = 720 + ticks;
       state.combo = 3;
-      add(state, "feed", ticks, "TASTY +220", { x: 838, y: 286, ingredient, craved: false });
+      const points = { metal: 260, balloon: 180, pepper: 305 }[ingredient];
+      if (before) approach(state, ingredient, before);
+      else add(state, "feed", ticks, `TASTY +${points}`, { x: 838, y: 286, ingredient, craved: false });
       break;
     }
     case "craving-satisfied": {
@@ -131,7 +145,8 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
       state.combo = 4;
       state.wanted = "balloon";
       selected = "balloon";
-      add(state, "feed", ticks, "CRAVING +410", { x: 838, y: 282, ingredient: "balloon", craved: true });
+      if (before) approach(state, "balloon", before);
+      else add(state, "feed", ticks, "CRAVING +410", { x: 838, y: 282, ingredient: "balloon", craved: true });
       break;
     }
     case "off-menu": {
@@ -139,14 +154,16 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
       state.combo = 1;
       state.wanted = "pepper";
       selected = "metal";
-      add(state, "feed", ticks, "TASTY +140", { x: 838, y: 282, ingredient: "metal", craved: false });
+      if (before) approach(state, "metal", before);
+      else add(state, "feed", ticks, "TASTY +140", { x: 838, y: 282, ingredient: "metal", craved: false });
       break;
     }
     case "miss-floor": {
       selected = "pepper";
       state.misses = 4;
       state.rage = 28;
-      add(state, "miss", ticks, "SNACK DOWN", { x: 690, y: 612, ingredient: "pepper" });
+      if (before) approach(state, "pepper", before);
+      else add(state, "miss", ticks, "SNACK DOWN", { x: 690, y: 612, ingredient: "pepper" });
       break;
     }
     case "miss-vent": {

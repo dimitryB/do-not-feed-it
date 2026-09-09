@@ -26,6 +26,8 @@ export interface DevRenderControl {
   pose: DevPose | null;
   /** Hides the aim guide and target ring, so a capture shows only the creature. */
   hideAim: boolean;
+  /** Holds the eyes open: a blink landing on a capture reads as a missing face. */
+  holdBlink: boolean;
   /** Rolling scene-draw cost in milliseconds. */
   timing: { samples: number; total: number; max: number; last: number };
 }
@@ -35,6 +37,7 @@ export const devRender: DevRenderControl = {
   reduced: null,
   pose: null,
   hideAim: false,
+  holdBlink: false,
   timing: { samples: 0, total: 0, max: 0, last: 0 },
 };
 

@@ -31,9 +31,11 @@ const bump = (x: number, y: number, cx: number, cy: number, rx: number, ry: numb
  * gradient folds a warp cell over itself.
  */
 const floorGate = (y: number) => {
-  if (y <= COUNTER_Y - 104) return 1;
-  if (y >= COUNTER_Y + 4) return 0;
-  const t = (COUNTER_Y + 4 - y) / 108;
+  // Zero well above the counter: the arms rest on the sill, and if they move
+  // with the body a cut edge opens along it.
+  if (y <= COUNTER_Y - 148) return 1;
+  if (y >= COUNTER_Y - 34) return 0;
+  const t = (COUNTER_Y - 34 - y) / 114;
   return t * t * (3 - 2 * t);
 };
 
@@ -58,7 +60,7 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
     if (gate <= 0) { out.x = 0; out.y = 0; return; }
 
     // Head: tilt and offset, strongest over the skull and face.
-    const head = bump(x, y, HEAD.x, HEAD.y + 30, 268, 226);
+    const head = bump(x, y, HEAD.x, HEAD.y + 26, 250, 214);
     if (head > 0) {
       const rx = x - HEAD.x;
       const ry = y - (HEAD.y + 170);
@@ -67,7 +69,7 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
     }
 
     // Body: squash and stretch about the belly, plus the whole rise.
-    const body = bump(x, y, BELLY.x, BELLY.y - 40, 352, 330) * gate;
+    const body = bump(x, y, BELLY.x, BELLY.y - 44, 292, 264) * gate;
     if (body > 0) {
       dx += (x - BELLY.x) * (pose.squashX - 1) * body;
       dy += (y - BELLY.y) * (pose.squashY - 1) * body - pose.bodyRise * body;
@@ -83,10 +85,10 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
     // normalised direction: a normalised one flips sign through the centre,
     // which is a discontinuity, and a discontinuity folds a warp cell.
     if (pose.bellySwell !== 0) {
-      const belly = bump(x, y, BELLY.x, BELLY.y, 340, 276) * gate;
+      const belly = bump(x, y, BELLY.x, BELLY.y, 296, 244) * gate;
       if (belly > 0) {
-        dx += (x - BELLY.x) / 340 * pose.bellySwell * 54 * belly;
-        dy += (y - BELLY.y) / 276 * pose.bellySwell * 40 * belly - pose.bellySwell * 20 * belly;
+        dx += (x - BELLY.x) / 296 * pose.bellySwell * 50 * belly;
+        dy += (y - BELLY.y) / 244 * pose.bellySwell * 36 * belly - pose.bellySwell * 20 * belly;
       }
     }
 
@@ -112,8 +114,11 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
     if (Math.abs(pose.antennaDroop) > 0.01 || pose.antennaShake > 0.01) {
       const stalk = bump(x, y, 848, 78, 142, 60);
       if (stalk > 0) {
-        dy += pose.antennaDroop * 19 * stalk;
-        dx += Math.sign(x - 848) * pose.antennaDroop * 12 * stalk;
+        // A smooth fan outward, not Math.sign: a step across the centre line
+        // folds the cells there and duplicates the antennae.
+        const fan = Math.max(-1, Math.min(1, (x - 848) / 96));
+        dy += pose.antennaDroop * 17 * stalk;
+        dx += fan * pose.antennaDroop * 11 * stalk;
         if (!reduced) dx += Math.sin(time * 21 + x * 0.05) * pose.antennaShake * 2.6 * stalk;
       }
     }

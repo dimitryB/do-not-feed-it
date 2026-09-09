@@ -35,7 +35,7 @@ export function createScene(){
       ctx.drawImage(kitchen,0,0,1200,700);
       if(!rig&&!rigFailed){try{rig=buildRig(kitchen);}catch{rigFailed=true;}}
       if(rig){
-        const pose=animator.step(state,playing,reduced,time,delta);
+        const pose=animator.step(state,playing,reduced,time,delta,!(DEV_HOOKS&&devRender.holdBlink));
         drawCreature(ctx,rig,pose,time,reduced);
       }
     }
@@ -48,22 +48,27 @@ export function createScene(){
       ctx.save();ctx.strokeStyle='#eff4bd44';ctx.lineWidth=1;ctx.setLineDash([5,12]);ctx.beginPath();ctx.ellipse(ARENA.mouth.x,ARENA.mouth.y,ARENA.mouth.rx,ARENA.mouth.ry,0,0,Math.PI*2);ctx.stroke();ctx.restore();
     }
     const hazard=playing?getHazard(tick):null;
-    if(hazard){ctx.save();const {x,y,width:w,height:h,warning}=hazard;ctx.strokeStyle='#86908066';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x+w/2,35);ctx.lineTo(x+w/2,y);ctx.stroke();ctx.globalAlpha=warning?.35:1;const metal=ctx.createLinearGradient(x,0,x+w,0);metal.addColorStop(0,'#182827');metal.addColorStop(.35,'#7b8d77');metal.addColorStop(.55,'#354b43');metal.addColorStop(1,'#122723');ctx.fillStyle=metal;ctx.shadowColor='#000';ctx.shadowBlur=9;ctx.fillRect(x,y,w,h);ctx.shadowBlur=0;ctx.strokeStyle='#c0b67e';ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);ctx.fillStyle='#d1b15e';for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(x,y+9+i*22);ctx.lineTo(x+w,y+i*22);ctx.lineTo(x+w,y+7+i*22);ctx.lineTo(x,y+16+i*22);ctx.fill();}ctx.fillStyle=warning?'#ffcf7a':'#deed93';ctx.beginPath();ctx.arc(x+w/2,y-9,3,0,Math.PI*2);ctx.fill();ctx.restore();}
+    if(hazard){ctx.save();const {x,y,width:w,height:h,warning}=hazard;ctx.strokeStyle='#86908066';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x+w/2,35);ctx.lineTo(x+w/2,y);ctx.stroke();ctx.globalAlpha=warning?.35:1;const metal=ctx.createLinearGradient(x,0,x+w,0);metal.addColorStop(0,'#182827');metal.addColorStop(.35,'#7b8d77');metal.addColorStop(.55,'#354b43');metal.addColorStop(1,'#122723');ctx.fillStyle=metal;ctx.shadowColor='#000';ctx.shadowBlur=14;ctx.shadowOffsetX=5;ctx.shadowOffsetY=4;ctx.fillRect(x,y,w,h);ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+      // Amber light from the kitchen catches the right edge of the flap.
+      const rim=ctx.createLinearGradient(x,0,x+w,0);rim.addColorStop(0,'#00000055');rim.addColorStop(.7,'#00000000');rim.addColorStop(1,'#f0b06a66');ctx.fillStyle=rim;ctx.fillRect(x,y,w,h);
+      ctx.strokeStyle='#c0b67e';ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);ctx.fillStyle='#d1b15e';for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(x,y+9+i*22);ctx.lineTo(x+w,y+i*22);ctx.lineTo(x+w,y+7+i*22);ctx.lineTo(x,y+16+i*22);ctx.fill();}ctx.fillStyle=warning?'#ffcf7a':'#deed93';ctx.beginPath();ctx.arc(x+w/2,y-9,3,0,Math.PI*2);ctx.fill();ctx.restore();}
     if(m){
       // Effects support the pose; the creature itself carries the mutation.
       const color=COLORS[m.ingredient];const pulse=reduced?.55:.5+.5*Math.sin(time*6);
       ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.globalAlpha=active?.6:.2+pulse*.3;
       if(m.ingredient==='metal'){
-        if(active&&!reduced){for(let i=0;i<4;i++){const r=85+((time*35+i*35)%145);ctx.globalAlpha=.32*(1-(r-85)/145);ctx.beginPath();ctx.ellipse(ARENA.mouth.x,ARENA.mouth.y,r,r*.65,0,Math.PI*.63,Math.PI*1.37);ctx.stroke();}}
-        else if(active){ctx.globalAlpha=.28;ctx.beginPath();ctx.ellipse(ARENA.mouth.x,ARENA.mouth.y,150,98,0,Math.PI*.63,Math.PI*1.37);ctx.stroke();}
+        if(active){ctx.save();ctx.beginPath();ctx.rect(0,0,ARENA.mouth.x-70,700);ctx.clip();
+          if(!reduced){for(let i=0;i<4;i++){const r=85+((time*35+i*35)%145);ctx.globalAlpha=.32*(1-(r-85)/145);ctx.beginPath();ctx.ellipse(ARENA.mouth.x,ARENA.mouth.y,r,r*.65,0,Math.PI*.63,Math.PI*1.37);ctx.stroke();}}
+          else{ctx.globalAlpha=.28;ctx.beginPath();ctx.ellipse(ARENA.mouth.x,ARENA.mouth.y,150,98,0,Math.PI*.63,Math.PI*1.37);ctx.stroke();}
+          ctx.restore();}
       }else if(m.ingredient==='balloon'){
         // Lift reads on the creature itself; the kitchen only gets a faint
         // shimmer of rising air rather than a row of pasted arrow glyphs.
         ctx.strokeStyle='#9cecdf';ctx.lineWidth=1.4;for(let i=0;i<7;i++){const y=470-((reduced?90:time*46)+i*44)%230;const x=560+i*26;ctx.globalAlpha=.1+(470-y)/1500;ctx.beginPath();ctx.moveTo(x,y+18);ctx.quadraticCurveTo(x+5,y+9,x,y);ctx.stroke();}
-      }else if(m.gustActive){
-        // Headwind streaks live in the flight corridor, not over the creature.
-        for(let i=0;i<4;i++){const x=700-((reduced?160:time*430+i*79)%330);ctx.globalAlpha=.3;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x,238+i*26);ctx.quadraticCurveTo(x-52,218+i*26,x-112,238+i*26);ctx.stroke();ctx.beginPath();ctx.moveTo(x-98,231+i*26);ctx.lineTo(x-112,238+i*26);ctx.lineTo(x-100,243+i*26);ctx.stroke();}
-      }ctx.restore();
+      }
+      // The headwind is drawn on the creature, as breath leaving its mouth;
+      // free-floating arrows in the room read as leftover interface.
+      ctx.restore();
     }
     if(playing){
       const {x,y}=ARENA.launcher;const recoil=state?Math.max(0,1-(tick-state.lastLaunchTick)/12)*9:0;
@@ -79,9 +84,9 @@ export function createScene(){
     // Score pops are UI, so they read as UI: a pill above the action rather
     // than loose text composited over the creature's body.
     for(const e of recent){const age=tick-e.tick;if(e.type==='feed'||e.type==='miss'||e.type==='bounce'){
-      const good=e.type==='feed';const x=Math.max(120,Math.min(1080,e.x));const y=good?68-(reduced?0:age*.4):Math.max(70,e.y-46-(reduced?0:age*.55));
+      const good=e.type==='feed';const x=Math.max(120,Math.min(1080,e.x));const y=good?86-(reduced?0:age*.4):Math.max(70,e.y-46-(reduced?0:age*.55));
       ctx.save();ctx.globalAlpha=Math.max(0,1-age/65);ctx.font=`bold ${good?18:14}px 'Helvetica Neue',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-      const w=ctx.measureText(e.label).width+22;ctx.fillStyle='#08131299';ctx.strokeStyle=good?'#cfe89066':'#e5a97a55';ctx.lineWidth=1;
+      const w=ctx.measureText(e.label).width+22;ctx.fillStyle='#050d0cf2';ctx.strokeStyle=good?'#cfe89066':'#e5a97a55';ctx.lineWidth=1;
       ctx.beginPath();ctx.roundRect(x-w/2,y-13,w,26,13);ctx.fill();ctx.stroke();
       ctx.fillStyle=good?'#efffc3':'#ffc698';ctx.fillText(e.label,x,y+1);ctx.textBaseline='alphabetic';
       if(!reduced){for(let i=0;i<10;i++){const a=i*2.4;const r=age*1.4;ctx.fillStyle=good?COLORS[selected]:'#cd9b73';ctx.beginPath();ctx.arc(e.x+Math.cos(a)*r,e.y+Math.sin(a)*r+age*.25,Math.max(0,3-age/24),0,Math.PI*2);ctx.fill();}}ctx.restore();
@@ -92,6 +97,6 @@ export function createScene(){
   const debugRig=()=>rig;
   /** Development only: advances the performance without drawing, so a capture
    *  harness can settle the springs at a frozen clock. */
-  const warm=(state:ArcadeState|null,playing:boolean,reduced:boolean,time:number,delta:number)=>{animator.step(state,playing,reduced,time,delta);};
+  const warm=(state:ArcadeState|null,playing:boolean,reduced:boolean,time:number,delta:number)=>{animator.step(state,playing,reduced,time,delta,!(DEV_HOOKS&&devRender.holdBlink));};
   return {draw,ready,debugRig,warm};
 }

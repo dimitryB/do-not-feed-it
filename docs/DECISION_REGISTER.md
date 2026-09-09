@@ -91,3 +91,67 @@ silently rewriting assumptions that earlier test results depended on.
   parallel agents/visual review. No production account/resource or publication
   was requested; chain config remains disabled. New scores are incompatible with
   V0 registry bounds and must never be sent to that registry.
+
+## September 9: D25 closed — creature presentation approach
+
+**D25 was open: "Full creature renderer / sprite vs small 3D asset — choose the
+smallest expressive approach after one mutation proves fun."**
+
+**Decision: a layered rig derived at runtime from the existing painting.**
+Branch `feat/creature-rig`. Not merged.
+
+- Previous choice: one AI-generated painting with a localised canvas mesh
+  wobble. The project's own critic had flagged "limited authored creature
+  expressions", and on a three-minute judged stream a single picture wobbling
+  reads as static.
+- New choice: `lib/render/creature/` — landmarks measured off `kitchen.png`
+  (`anatomy.ts`), parts cut and gaps rebuilt from the creature's own skin at
+  runtime (`rig.ts`), a smooth displacement field over the picture
+  (`warp.ts`), game state to performance with springs and authored beats
+  (`pose.ts`), and the authored mouth, eyes and skin colour (`draw.ts`).
+- Why not regenerate the creature: the painting is the art direction. Deriving
+  the rig from it keeps lighting, palette and style guaranteed-consistent, adds
+  no new asset to license or record, and is reversible.
+- Why not a 3D asset: it would replace the art direction rather than extend it,
+  and the render budget (4 ms average) does not need it — the rig measures
+  2.0 ms average at 1920x1080.
+- Why not cut the creature out of the background: a cut-out has a silhouette
+  edge, and a silhouette edge tears when the body deforms. Warping the whole
+  picture with a field that decays to nothing before the counter has no edge to
+  tear.
+- Evidence: five iterations, each captured by `scripts/creature-shots.mjs` and
+  scored by a critic that sees only stream-resolution images. Averages 4.2, 3.7,
+  4.4, 4.4, 4.5 out of 10 against the brief's rubric. Full tables, timings and
+  the final report are in `docs/qa/creature/ITERATION_LOG.md`.
+- Affected files: `lib/render/scene.ts`, `lib/render/creature/*`, `lib/dev/*`,
+  `app/components/GameCanvas.tsx`, `app/page.tsx`, `scripts/creature-shots.mjs`.
+- Replay compatibility: unaffected. `ArcadeEvent` gained two optional
+  presentation tags (`ingredient`, `craved`) that the rules, scoring, replay and
+  trace never read; existing recorded traces replay identically.
+
+**Status: adopted for local presentation, incomplete against the brief.** The
+creature is not yet at "a spectator across the room can name the state", and the
+final report says so with the specific states and the work left.
+
+### Proposals recorded rather than implemented (no gameplay was changed)
+
+These would help expressiveness but are gameplay changes, so they are written
+down instead of done:
+
+- **P1 — Give the balloon mutation a visible body part.** The belly is behind
+  the serving hatch, so "balloon belly" has nowhere on screen to happen. A
+  throat sac above the hatch line, inflating with the same rule, would make the
+  strongest mutation cue visible. This changes nothing mechanical, but it does
+  change what the mutation *is* in the fiction, so it belongs to design.
+- **P2 — Let a miss leave something on the counter.** The clearest failure read
+  would be a snack visibly landing and staying for a second or two. Debris is
+  presentation, but "the snack persists" is close enough to a rule that it
+  should be a design call.
+- **P3 — A short beat between catch and mutation trigger.** The third serving
+  currently starts a 90-tick warning immediately. Half a second of the creature
+  reacting to the serving before the warning begins would let the two beats read
+  separately rather than overlapping.
+- **P4 — Separate irritation thresholds from the meter.** The three authored
+  irritation steps sit at rage 25/55/85, which the meter crosses at whatever
+  pace misses happen. Explicit rule-level steps would let the presentation and
+  the mechanic agree.

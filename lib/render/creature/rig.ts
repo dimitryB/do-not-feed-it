@@ -361,7 +361,7 @@ function buildBodyMask(): HTMLCanvasElement {
   const context = contextOf(mask);
   context.save();
   context.scale(0.25, 0.25);
-  context.filter = "blur(28px)";
+  context.filter = "blur(15px)";
   context.fillStyle = "#fff";
   context.beginPath();
   BODY_OUTLINE.forEach(([x, y], index) => (index ? context.lineTo(x, y) : context.moveTo(x, y)));

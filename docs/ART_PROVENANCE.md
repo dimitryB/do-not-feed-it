@@ -21,3 +21,40 @@ Inspected: right-facing horizontal dark teal and brushed metal food cannon, copp
 
 ## Exact prompt
 Use case: stylized-concept. Asset type: original game cannon barrel sprite for Do Not Feed It. Create one square 1024x1024 image. Side-view rotatable food-launching cannon barrel pointing EXACTLY RIGHT horizontally. View perfectly side-on as a 2D sprite, no perspective foreshortening. Isolated on perfectly flat solid dark #101b1c background. Polished hand-painted 3D stylized industrial kitchen equipment matching a dark teal and amber subterranean feeding kitchen. Dark desaturated teal enamel body, brushed metal barrel and muzzle, pale lime short safety stripe, copper bolts, subtle amber reflected light, rough worn tactile materials. Compact stout barrel silhouette. Barrel centered and fills image width from 15% to 85%, and height from 35% to 65%; muzzle at the right and breech at left. No pedestal or base. No text, logo, UI, hands, character, wheels, platform, environmental shadow, watermark or extra objects. Keep backdrop uniform and clean for sprite integration.
+
+# Creature rig (branch `feat/creature-rig`, September 9 2026)
+
+**No new image was generated.** The creature rig is built at runtime from the
+existing `public/art/kitchen.png` by `lib/render/creature/rig.ts`, so there is
+no new asset to license, no new prompt, and no risk of the art direction
+drifting away from the painting.
+
+What the rig does to that one file, once, on the first frame after it decodes:
+
+- **Cuts** the two pupils, the tongue, and two bands of eyelid skin (one above
+  each eye, one below) out of the painting with soft-edged masks. These are
+  moved and scaled at draw time; the pixels are the painting's own.
+- **Removes and rebuilds** the painted open mouth. Its outline was traced by
+  hand off the picture (`MOUTH_OUTLINE` in `lib/render/creature/anatomy.ts`)
+  and everything inside it — lips, teeth, tongue, cavity — is cut away and
+  replaced with the creature's own chin skin (`CHIN_SOURCE`), tiled and flipped
+  so the wrinkles keep running the right way, then relit through a soft-edged
+  mask with the painting's own top-down falloff and a cast shadow under the
+  nose. This is what lets the mouth close.
+- **Removes and fills** each painted pupil the same way, so a new pupil can look
+  around inside the sclera.
+- **Paints one tooth** to the ivory sampled from the painting at (786, 200) in
+  arena coordinates, with a little of the real tooth rubbed over it for grain.
+  The painted fangs are small, low-contrast and half in shadow, so a cut of one
+  cannot be scaled up into a whole jaw; every tooth in both rows is this sprite.
+
+Everything else the creature does — head, jaw, belly, swallow, cheeks, antennae
+— is a smooth displacement field applied to that same picture
+(`lib/render/creature/warp.ts`). The creature is never cut out of the
+background, so there is no silhouette edge that can tear.
+
+The two colours that are authored rather than sampled are the mouth cavity
+(`rgb(46,16,14)` and `rgb(9,3,3)`) and the tooth gradient, both chosen against
+the painting's own palette.
+
+Generator: none. Source file: `public/art/kitchen.png`, already recorded above.

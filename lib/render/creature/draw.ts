@@ -28,10 +28,12 @@ function aperture(pose: CreaturePose): Aperture {
   const pull = (1 - pose.mouthWidth) * 18 + press * 10 + (1 - pose.jawOpen) * 15;
   const leftX = MOUTH.cornerLeft.x + pull;
   const rightX = MOUTH.cornerRight.x - pull;
-  const leftY = MOUTH.cornerLeft.y - lift * 21;
-  const rightY = MOUTH.cornerRight.y - lift * 21;
-  const upperApex = mix(MOUTH.upperClosed, MOUTH.upperOpen, pose.jawOpen) - lift * 3 + press * 2;
-  const lowerApex = mix(MOUTH.lowerClosed, MOUTH.lowerOpen, pose.jawOpen) - lift * 2 - press * 2;
+  // The painted mouth curves upward, so a frown has to do two things at once:
+  // drop the corners and raise the middle, until the curve inverts.
+  const leftY = MOUTH.cornerLeft.y - lift * 26;
+  const rightY = MOUTH.cornerRight.y - lift * 26;
+  const upperApex = mix(MOUTH.upperClosed, MOUTH.upperOpen, pose.jawOpen) + lift * 9 + press * 2;
+  const lowerApex = mix(MOUTH.lowerClosed, MOUTH.lowerOpen, pose.jawOpen) + lift * 30 - press * 2;
   return {
     leftX, leftY, rightX, rightY, centerX: MOUTH.center,
     upperApex, lowerApex,
@@ -101,6 +103,15 @@ function drawTeeth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
     context.scale(1, upper ? 1 : -1);
     context.translate(0, -root);
     context.drawImage(rig.tooth.canvas, -width / 2, 0, width, height);
+    // Metal teeth take a cold edge light the ivory ones never have.
+    if (align > 0.3) {
+      context.strokeStyle = `rgba(206,238,246,${0.55 * align})`;
+      context.lineWidth = 1.3;
+      context.beginPath();
+      context.moveTo(-width * 0.26, height * 0.1);
+      context.lineTo(0, height - 1);
+      context.stroke();
+    }
     context.restore();
   }
   context.restore();
@@ -130,15 +141,17 @@ function drawLips(context: CanvasRenderingContext2D, pose: CreaturePose, shape: 
   aperturePath(context, shape, 0.4);
   context.stroke();
 
-  // Wet highlight, only along the lower lip.
+  // Wet highlight, only on the middle of the lower lip. Following the whole
+  // aperture drew a second arc across the chin that read as a ghost mouth.
+  const span = shape.rightX - shape.leftX;
   context.save();
   context.beginPath();
-  context.rect(shape.leftX - 30, shape.lowerApex - 34, shape.rightX - shape.leftX + 60, 84);
+  context.rect(shape.leftX + span * 0.2, shape.lowerApex - 6, span * 0.6, 30);
   context.clip();
-  context.strokeStyle = "rgba(240,216,150,0.26)";
-  context.lineWidth = 2.2;
-  context.translate(0, thickness * 0.46);
-  aperturePath(context, shape, thickness * 0.5);
+  context.strokeStyle = "rgba(240,216,150,0.3)";
+  context.lineWidth = 2.4;
+  context.translate(0, thickness * 0.34);
+  aperturePath(context, shape, thickness * 0.3);
   context.stroke();
   context.restore();
   context.restore();
@@ -273,12 +286,13 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     const outward = side === "left" ? -1 : 1;
     const inward = -outward;
     const local = localTransform(field, eye.x, eye.y);
-    const lid = clamp01(side === "left" ? pose.lidLeft : pose.lidRight);
+    const lid = clamp01(Math.max(side === "left" ? pose.lidLeft : pose.lidRight, pose.blink));
     const brow = (pose.browAngry * 17 - pose.browSad * 14) * (side === "left" ? 1 : -1);
 
     context.save();
     context.translate(eye.x + local.dx, eye.y + local.dy);
     context.rotate(pose.headTilt * Math.PI / 180 * 0.6);
+    context.scale(local.scaleX, local.scaleY);
     context.translate(-eye.x, -eye.y);
 
     // Pupil, wherever it is looking.
@@ -441,21 +455,31 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     }, "multiply");
   }
 
-  // Pressure marks on the cheeks: the pepper build-up.
+  // Pressure on the cheeks: a blotch of blood under the skin with veining,
+  // which reads at stream size where thin scratches do not.
   if (pose.cheekMarks > 0.05) {
     context.save();
-    context.globalAlpha = pose.cheekMarks * 0.55;
-    context.strokeStyle = "rgba(196,58,26,0.9)";
-    context.lineWidth = 2.4;
-    context.lineCap = "round";
-    for (const [cx, cy, direction] of [[722, 262, -1], [968, 272, 1]] as const) {
+    for (const [cx, cy, direction] of [[726, 256, -1], [964, 266, 1]] as const) {
+      const blotch = context.createRadialGradient(cx, cy, 3, cx, cy, 54);
+      blotch.addColorStop(0, `rgba(214,44,18,${0.62 * pose.cheekMarks})`);
+      blotch.addColorStop(0.55, `rgba(190,38,16,${0.3 * pose.cheekMarks})`);
+      blotch.addColorStop(1, "rgba(190,38,16,0)");
+      context.fillStyle = blotch;
+      context.beginPath();
+      context.ellipse(cx, cy, 54, 46, 0, 0, Math.PI * 2);
+      context.fill();
+      context.globalAlpha = pose.cheekMarks * 0.5;
+      context.strokeStyle = "rgba(140,22,12,0.9)";
+      context.lineWidth = 2.2;
+      context.lineCap = "round";
       for (let index = 0; index < 3; index++) {
-        const y = cy - 16 + index * 17;
+        const y = cy - 16 + index * 16;
         context.beginPath();
-        context.moveTo(cx - direction * 4, y);
-        context.quadraticCurveTo(cx + direction * 14, y + 4, cx + direction * 26, y - 2);
+        context.moveTo(cx - direction * 6, y);
+        context.quadraticCurveTo(cx + direction * 12, y + 5, cx + direction * 27, y - 3);
         context.stroke();
       }
+      context.globalAlpha = 1;
     }
     context.restore();
   }
@@ -478,6 +502,30 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     context.restore();
   }
 
+}
+
+/** The swallowed lump, as a shaded bulge travelling down the throat. */
+function drawThroat(context: CanvasRenderingContext2D, pose: CreaturePose) {
+  if (pose.throat <= 0.03) return;
+  const y = 322 + pose.throatTravel * 132;
+  const width = 44 * pose.throat;
+  const height = 30 * pose.throat;
+  context.save();
+  context.globalCompositeOperation = "multiply";
+  context.fillStyle = `rgba(84,60,22,${0.5 * pose.throat})`;
+  context.beginPath();
+  context.ellipse(842, y + height * 0.55, width * 1.05, height * 0.55, 0, 0, Math.PI * 2);
+  context.fill();
+  context.globalCompositeOperation = "overlay";
+  const lit = context.createRadialGradient(834, y - height * 0.4, 2, 842, y, width);
+  lit.addColorStop(0, `rgba(255,240,190,${0.65 * pose.throat})`);
+  lit.addColorStop(0.6, `rgba(220,190,120,${0.2 * pose.throat})`);
+  lit.addColorStop(1, "rgba(220,190,120,0)");
+  context.fillStyle = lit;
+  context.beginPath();
+  context.ellipse(842, y, width, height, 0, 0, Math.PI * 2);
+  context.fill();
+  context.restore();
 }
 
 /** Hot air leaving the mouth, anchored to the mouth it comes out of. */
@@ -513,18 +561,25 @@ export function drawCreature(context: CanvasRenderingContext2D, rig: CreatureRig
   drawWarped(context, rig.art, field, WARP_REGION);
 
   const shape = aperture(pose);
-  const mouthLocal = localTransform(field, MOUTH.center, 250);
+  // The mouth and the eyes ride the field's local scale as well as its offset;
+  // with only the offset they sit on an inflated face like a decal.
+  const mouthLocal = localTransform(field, MOUTH.center, 262);
   context.save();
-  context.translate(mouthLocal.dx, mouthLocal.dy);
+  context.translate(MOUTH.center + mouthLocal.dx, 262 + mouthLocal.dy);
+  context.scale(mouthLocal.scaleX, mouthLocal.scaleY);
+  context.translate(-MOUTH.center, -262);
   drawMouth(context, rig, pose, shape, time, reduced);
   context.restore();
 
   // Skin colour goes on before the eyes: a hungry creature loses colour in the
   // face, but its eyes are wet and stay bright, which is what carries the read.
+  drawThroat(context, pose);
   drawSkin(context, rig, pose, time, reduced);
   drawEyes(context, rig, pose, field);
   context.save();
-  context.translate(mouthLocal.dx, mouthLocal.dy);
+  context.translate(MOUTH.center + mouthLocal.dx, 262 + mouthLocal.dy);
+  context.scale(mouthLocal.scaleX, mouthLocal.scaleY);
+  context.translate(-MOUTH.center, -262);
   drawExhale(context, pose, shape, time, reduced);
   context.restore();
 }

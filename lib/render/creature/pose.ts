@@ -14,7 +14,7 @@ export interface CreaturePose {
   squashX: number; squashY: number;
   bodyRise: number; bellySwell: number; breath: number;
   jawOpen: number; mouthWidth: number; cornerLift: number; lipPress: number;
-  lidLeft: number; lidRight: number; lowerLid: number;
+  lidLeft: number; lidRight: number; lowerLid: number; blink: number;
   browAngry: number; browSad: number; browRaise: number;
   pupilX: number; pupilY: number; pupilScale: number;
   tongueOut: number; drool: number;
@@ -30,7 +30,7 @@ export interface CreaturePose {
 const FIELDS: (keyof CreaturePose)[] = [
   "headX", "headY", "headTilt", "squashX", "squashY", "bodyRise", "bellySwell", "breath",
   "jawOpen", "mouthWidth", "cornerLift", "lipPress",
-  "lidLeft", "lidRight", "lowerLid", "browAngry", "browSad", "browRaise",
+  "lidLeft", "lidRight", "lowerLid", "blink", "browAngry", "browSad", "browRaise",
   "pupilX", "pupilY", "pupilScale", "tongueOut", "drool",
   "teethBare", "teethAlign", "teethLong", "teethQuiver", "throat", "throatTravel",
   "cheekPuff", "cheekMarks", "flush", "pallor", "sweat",
@@ -42,7 +42,7 @@ const RATES: Partial<Record<keyof CreaturePose, [number, number]>> = {
   headX: [110, 13], headY: [110, 13], headTilt: [90, 12],
   squashX: [220, 15], squashY: [220, 15],
   jawOpen: [260, 17], mouthWidth: [150, 16], cornerLift: [130, 15], lipPress: [180, 18],
-  lidLeft: [300, 24], lidRight: [300, 24], lowerLid: [200, 20],
+  lidLeft: [300, 24], lidRight: [300, 24], lowerLid: [200, 20], blink: [420, 30],
   browAngry: [150, 17], browSad: [150, 17], browRaise: [170, 18],
   pupilX: [230, 22], pupilY: [230, 22], pupilScale: [180, 20],
   bellySwell: [26, 8], bodyRise: [40, 10], throat: [340, 26],
@@ -99,12 +99,13 @@ export class CreatureAnimator {
   private started = -1;
 
   /** Advances the performance. `time` is the renderer clock in seconds. */
-  step(state: ArcadeState | null, playing: boolean, reduced: boolean, time: number, delta: number): CreaturePose {
+  step(state: ArcadeState | null, playing: boolean, reduced: boolean, time: number, delta: number,
+       allowBlink = true): CreaturePose {
     if (this.started < 0) {
       this.started = time;
       this.blinkAt = time + 1.4 + hashed(1) * 2.6;
     }
-    this.buildTargets(state, playing, reduced, time);
+    this.buildTargets(state, playing, reduced, time, allowBlink);
     const step = Math.min(0.05, Math.max(0.001, delta));
     for (const field of FIELDS) {
       const [stiffness, damping] = RATES[field] ?? DEFAULT_RATE;
@@ -121,7 +122,8 @@ export class CreatureAnimator {
     for (const field of FIELDS) { this.pose[field] = this.target[field]; this.velocity[field] = 0; }
   }
 
-  private buildTargets(state: ArcadeState | null, playing: boolean, reduced: boolean, time: number) {
+  private buildTargets(state: ArcadeState | null, playing: boolean, reduced: boolean, time: number,
+                       allowBlink = true) {
     const target = this.target;
     for (const field of FIELDS) target[field] = 0;
     target.squashX = 1;
@@ -146,13 +148,13 @@ export class CreatureAnimator {
     target.headY = -breath * 1.4;
 
     // Blink. Reduced motion holds the eyes open rather than flashing them.
-    if (!reduced) {
+    if (!reduced && allowBlink) {
       if (time > this.blinkAt) {
         this.blinkIndex++;
         this.blinkUntil = time + 0.13;
         this.blinkAt = time + 1.6 + hashed(this.blinkIndex) * 3.4 - hunger * 0.4;
       }
-      if (time < this.blinkUntil) { target.lidLeft = 1; target.lidRight = 1; }
+      if (time < this.blinkUntil) target.blink = 1;
     }
 
     // Idle attention: it is watching the launcher, so the eyes sit hard left
@@ -174,8 +176,13 @@ export class CreatureAnimator {
       target.cornerLift = Math.min(target.cornerLift, -peckish * 0.7);
       target.browSad = Math.max(target.browSad, peckish * 0.4);
       target.browRaise = Math.max(target.browRaise, peckish * 0.35);
-      target.antennaDroop = Math.max(target.antennaDroop, peckish * 0.45);
-      target.headY += peckish * 5;
+      target.antennaDroop = Math.max(target.antennaDroop, peckish * 0.7);
+      target.headY += peckish * 13;
+      target.headTilt += peckish * 2;
+      target.lidLeft = Math.max(target.lidLeft, peckish * 0.3);
+      target.lidRight = Math.max(target.lidRight, peckish * 0.34);
+      target.squashY -= peckish * 0.02;
+      target.bodyRise -= peckish * 6;
       // Impatient glances at the launcher, on a slow beat.
       const nag = reduced ? 0 : Math.max(0, Math.sin((time - this.started) * 1.6)) ** 5;
       target.pupilX -= nag * peckish * 0.3;
@@ -214,8 +221,11 @@ export class CreatureAnimator {
       target.lidRight = Math.max(target.lidRight, step1 * 0.14 + step2 * 0.18);
       target.lowerLid = Math.max(target.lowerLid, step1 * 0.3 + step2 * 0.35 + step3 * 0.35);
       target.flush = Math.max(target.flush, step2 * 0.6 + step3 * 0.4);
-      target.teethBare = Math.max(target.teethBare, step3);
-      target.jawOpen = Math.max(target.jawOpen, step3 * 0.46);
+      // A snarl, not a roar: teeth bared over a mouth that stays shut. The
+      // wide-open maw belongs to the enraged ending and to the pepper exhale.
+      target.teethBare = Math.max(target.teethBare, step2 * 0.4 + step3 * 0.6);
+      target.jawOpen = Math.min(target.jawOpen, mix(target.jawOpen, 0.06, step3));
+      target.lipPress = Math.max(target.lipPress, step3 * 0.7);
       target.cornerLift = Math.min(target.cornerLift, -step1 * 1.1);
       target.lipPress = Math.max(target.lipPress, step1 * (1 - step2));
       target.mouthWidth = Math.min(target.mouthWidth, 1 - step1 * 0.18 + step3 * 0.18);
@@ -242,8 +252,8 @@ export class CreatureAnimator {
       const dy = nearest.y - ARENA.mouth.y;
       const distance = Math.hypot(dx, dy);
       const closeness = 1 - clamp01((distance - 70) / 460);
-      target.pupilX = clamp01((nearest.x - 180) / 700) * 2 - 1;
-      target.pupilY = clamp01((nearest.y - 120) / 460) * 2 - 1;
+      target.pupilX = clamp(-1, 1, (nearest.x - 838) / 380);
+      target.pupilY = clamp(-1, 1, (nearest.y - 250) / 260);
       target.pupilScale = Math.max(target.pupilScale, 1 + closeness * 0.16);
       target.headTilt += clamp(-9, 9, (nearest.x - ARENA.mouth.x) * 0.022);
       target.headX += clamp(-16, 16, (nearest.x - ARENA.mouth.x) * 0.03);
@@ -278,7 +288,7 @@ export class CreatureAnimator {
         target.magnetism = Math.max(target.magnetism, strain * 0.45);
       } else if (mutation.ingredient === "balloon") {
         // The belly is filling: the silhouette is the whole message.
-        target.bellySwell = strain * 0.8;
+        target.bellySwell = strain * 0.6;
         target.cheekPuff = strain * 0.5;
         target.bodyRise = strain * 12;
         target.lipPress = Math.max(target.lipPress, strain);
@@ -390,8 +400,11 @@ export class CreatureAnimator {
       target.headY += sag * 14;
       target.lidLeft = Math.max(target.lidLeft, sag * 0.62);
       target.lidRight = Math.max(target.lidRight, sag * 0.62);
-      target.jawOpen = Math.max(target.jawOpen, 0.2 + sag * 0.4);
-      target.tongueOut = Math.max(target.tongueOut, sag * 0.5);
+      // A deflate is an exhale through a slack, barely open mouth, not a laugh.
+      target.jawOpen = Math.max(target.jawOpen, 0.12 + sag * 0.16);
+      target.lipPress = Math.max(target.lipPress, sag * 0.4);
+      target.cornerLift = Math.min(target.cornerLift, -sag * 0.6);
+      target.tongueOut = Math.max(target.tongueOut, sag * 0.3);
       target.exhale = Math.max(target.exhale, sag);
       target.browSad = Math.max(target.browSad, sag * 0.6);
       target.antennaDroop = Math.max(target.antennaDroop, sag * 0.8);
@@ -429,8 +442,10 @@ export class CreatureAnimator {
         target.pallor = 1;
         target.headY += 30;
         target.headTilt = 7;
-        target.squashY -= 0.08;
-        target.bodyRise = -18;
+        target.squashY -= 0.1;
+        target.squashX -= 0.03;
+        target.bodyRise = -22;
+        target.cheekPuff = -0.6;
         target.bellySwell = -0.5;
         target.pupilY = 0.6;
         target.pupilScale = 0.8;
@@ -466,9 +481,12 @@ export class CreatureAnimator {
     }
 
     target.jawOpen = clamp01(target.jawOpen);
-    target.lidLeft = clamp01(target.lidLeft);
-    target.lidRight = clamp01(target.lidRight);
-    target.cornerLift = clamp(-1.5, 1.2, target.cornerLift);
+    // Expression narrows the eyes; only a blink ever shuts them. An eyeless
+    // creature reads as a rendering fault, not as a mood.
+    target.lidLeft = clamp(0, 0.66, target.lidLeft);
+    target.lidRight = clamp(0, 0.66, target.lidRight);
+    target.lowerLid = clamp01(target.lowerLid);
+    target.cornerLift = clamp(-1.6, 1.3, target.cornerLift);
   }
 
   /** Snap shut, squash, a bulge down the throat, then a satisfied settle. */
@@ -481,8 +499,8 @@ export class CreatureAnimator {
     target.lipPress = Math.max(target.lipPress, bite);
     target.mouthWidth = Math.min(target.mouthWidth, 1 - bite * 0.12);
     // Contact squash, then the spring carries the overshoot on its own.
-    target.squashY *= 1 - recoil * (reduced ? 0.06 : 0.2);
-    target.squashX *= 1 + recoil * (reduced ? 0.05 : 0.17);
+    target.squashY *= 1 - recoil * (reduced ? 0.05 : 0.13);
+    target.squashX *= 1 + recoil * (reduced ? 0.04 : 0.11);
     target.headY += recoil * (reduced ? 4 : 17);
     target.teethBare = Math.max(target.teethBare, bite * 0.4);
     target.lidLeft = Math.max(target.lidLeft, bite * 0.9);
@@ -492,9 +510,9 @@ export class CreatureAnimator {
     target.antennaDroop = Math.min(target.antennaDroop, -recoil * 0.9);
 
     // The swallow travels: a bulge from the throat down into the belly.
-    const travel = clamp01((age - 0.12) / 0.6);
+    const travel = clamp01((age - 0.1) / 0.78);
     if (travel > 0 && travel < 1) {
-      target.throat = Math.sin(travel * Math.PI) ** 0.55;
+      target.throat = Math.sin(travel * Math.PI) ** 0.4;
       target.throatTravel = travel;
     }
     if (age > 0.45) {
@@ -552,9 +570,13 @@ export class CreatureAnimator {
       target.cheekMarks = Math.max(target.cheekMarks, burn);
       target.lidLeft = Math.max(target.lidLeft, burn);
       target.lidRight = Math.max(target.lidRight, burn);
-      target.browAngry = Math.max(target.browAngry, burn * 0.8);
+      target.browAngry = Math.max(target.browAngry, burn * 0.5);
+      target.browSad = Math.max(target.browSad, burn * 0.6);
       target.tongueOut = Math.max(target.tongueOut, burn);
-      target.jawOpen = Math.max(target.jawOpen, burn * 0.7);
+      // A burn screws the face up; it does not open into a roar.
+      target.jawOpen = Math.max(target.jawOpen, burn * 0.28);
+      target.mouthWidth = Math.min(target.mouthWidth, 1 - burn * 0.3);
+      target.cornerLift = Math.min(target.cornerLift, -burn * 1.1);
       target.sweat = Math.max(target.sweat, burn);
       target.headY -= burn * 8;
       target.squashY *= 1 - burn * 0.03;
@@ -582,8 +604,9 @@ export class CreatureAnimator {
     target.browRaise = Math.max(target.browRaise, jolt * 0.9);
     target.jawOpen = Math.min(target.jawOpen, mix(0.5, 0.14, clamp01(age / 0.3)));
     if (look > 0) {
-      target.pupilX = mix(target.pupilX, side * 0.9, look);
-      target.pupilY = mix(target.pupilY, 0.85, look);
+      // Look at the actual mess: the floor is down, the vent is up and left.
+      target.pupilX = mix(target.pupilX, clamp(-1, 1, (miss.x - 838) / 300), look);
+      target.pupilY = mix(target.pupilY, clamp(-1, 1, (miss.y - 250) / 240), look);
       target.lidLeft = Math.max(target.lidLeft, look * 0.42);
       target.lidRight = Math.max(target.lidRight, look * 0.2);
       target.lowerLid = Math.max(target.lowerLid, look * 0.55);

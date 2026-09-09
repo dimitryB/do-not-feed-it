@@ -2,9 +2,49 @@
 
 Last updated: September 9, 2026.
 Project: `/Users/dbur/dev/do-not-feed-it`.
-Branch: **`codex/creature-arcade`**.
+Branch: **`feat/creature-rig`** (cut from `codex/creature-arcade`, not merged).
 Status: **Playable local physical arcade game; M1/M2 implemented substantially,
 with human playtest and release gates still open.**
+
+## Creature rig work, September 9
+
+The user asked for the creature to become a living character whose state a
+spectator can name across the room, on a new branch, with a screenshot harness,
+a fresh-context visual critic and an iteration loop. Five iterations ran. The
+rig is built and every state exists; the read is not there yet. The honest
+status, the critic's scores and the recommended next steps are at the top of
+`docs/qa/creature/ITERATION_LOG.md` — read that before continuing this work.
+
+Short version: the creature is now a layered rig derived at runtime from
+`public/art/kitchen.png` (no new art), driven from `ArcadeState` through springs
+and authored beats. Twenty-five named states, all reachable through real play.
+Render cost 2.0 ms average at 1920x1080 against a 4 ms budget. Critic average
+4.5 / 10 against the brief's rubric; the exit criterion was 8 across the board
+in two consecutive iterations, and that was not met. Do not describe this as
+finished, polished or AAA.
+
+Where things are:
+
+- `lib/render/creature/anatomy.ts` — landmarks measured off the painting.
+- `lib/render/creature/rig.ts` — parts cut from the painting, the mouth and
+  pupils removed and rebuilt from the creature's own skin.
+- `lib/render/creature/warp.ts` — the displacement field and the grid draw.
+- `lib/render/creature/pose.ts` — game state to performance.
+- `lib/render/creature/draw.ts` — mouth, eyes, skin colour, exhale.
+- `lib/dev/hook.ts`, `lib/dev/poses.ts` — development-only pose hook, stripped
+  from production builds.
+- `scripts/creature-shots.mjs` — the review harness. `node
+  scripts/creature-shots.mjs --iter N` writes to `docs/qa/creature/iter-N/`.
+  The PNGs are gitignored; the log and the manifests are kept.
+
+Known-open defects, in the order worth fixing, are listed in the final report.
+
+**Environment note:** the harness, the dev server and the build were run in a
+Linux cloud workspace on a clean `npm install`, not through the desktop bridge —
+this repo's `node_modules` is a macOS build and its `workerd` binary will not run
+in the device shell. `npm run test:contract` was **not** run: Hardhat downloads
+the Solidity compiler from a host this session's egress policy blocks. No
+Solidity file is touched on this branch.
 
 ## Current user request
 

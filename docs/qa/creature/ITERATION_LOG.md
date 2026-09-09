@@ -1,5 +1,103 @@
 # Creature rig iteration log
 
+## FINAL REPORT — stopped after five iterations, exit criteria not met
+
+**Status: the rig is built, all 25 states exist and are reachable through real
+play, and the renderer is well inside budget — but the creature does not yet
+read the way the brief requires.** The critic's average over the 25 named states
+went 4.2 → 3.7 → 4.4 → 4.4 → 4.5. The exit criterion is two consecutive
+iterations with every state at 8 or better. Nothing here is close to that, and I
+am reporting it rather than rounding it up.
+
+### What passed
+
+- **All eleven required state groups exist, with the per-ingredient variants**,
+  25 named states in total, and the scripted trace reaches every one of them
+  through `launchFood`/`stepArcade` across three real shifts (survived at tick
+  7200, irritated out at 1739, starved out at 4615) — not only through the pose
+  hook. `docs/qa/creature/iter-5/manifest.json` records the reached list.
+- **Presentation only.** `lib/game/arcade.ts` rules, scoring, replay and trace
+  are unchanged in behaviour; the only addition is two optional presentation
+  tags on `ArcadeEvent` that nothing in the rules, replay or scoring reads. The
+  23 existing tests pass unmodified.
+- **Render budget.** 2.025 ms average, 7.900 ms max over 134 frames at
+  1920x1080 on this machine, against a 4 ms average budget. Every iteration is
+  measured with `performance.now()` around the scene draw and reported above.
+- **Reduced motion** is captured every iteration and was reviewed by the critic
+  each time. Nothing flashes; motion is suppressed and the states still carry
+  colour and pose. Three reduced-motion states score 6-7; three score 3.
+- **`npm run typecheck`, `npm run lint`, `npm test` and `npm run build` are
+  green.** See the caveat on `test:contract` below.
+- **Craft failures that were real bugs are fixed**: the geometry tearing, the
+  two sprite masks built in the wrong coordinate space (the "tongue" was a crop
+  of teeth), the eyelid veil, the inverted brow pivot, the duplicated antennae,
+  the eye dropout, and the whole-scene scale pop.
+
+### What did not pass
+
+- **No state set reaches 8, let alone twice.** The best states are
+  active-metal, active-pepper and tracking-near at 6-7; a cluster around
+  attract-idle, hungry-mild, tracking-far, warn-metal, warn-balloon, recovery and
+  off-menu still resolve to the same resting face and sit at 3-5.
+- **The three gulp strips are one animation with three tints.** Anticipation and
+  contact are there; squash, overshoot, settle and per-ingredient timing are not.
+- **The miss reads as a success.** The strip ends on a smile with nothing on the
+  floor. This is the single most misleading thing in the set.
+- **Balloon inflation has nowhere visible to happen.** The belly is behind the
+  hatch, so a swell that is physically correct is invisible on screen.
+- **Open craft defects:** the vent flap still reads as a floating placeholder;
+  two score-toast draw failures (ghosted behind the pipework in
+  craving-satisfied, clipped mid-word in off-menu); a ghost arc of the closed
+  mouth across the chin in active-metal; hard flush boundaries at the jaw.
+- **`npm run test:contract` cannot run in this environment.** Hardhat downloads
+  the Solidity compiler from `binaries.soliditylang.org`, which this session's
+  egress policy blocks. No Solidity file is touched anywhere on this branch
+  (`git diff codex/creature-arcade..feat/creature-rig --stat -- contracts test`
+  is empty), so the contract tests are unaffected, but I have not run them and
+  do not claim they pass.
+- **The captures were produced in a Linux container**, not on the Mac. The repo's
+  `node_modules` is a macOS build and its `workerd` binary cannot run under the
+  device shell, so the dev server, the build and the harness were run against a
+  clean install in the cloud workspace on the same commits. Re-running
+  `node scripts/creature-shots.mjs --iter N` on the Mac should reproduce the set.
+
+### Why the average moved the way it did
+
+Iteration 1's 4.2 was inflated: most states were the same neutral frame, and a
+critic cannot fault a state it cannot distinguish from another. Iteration 2
+scored 3.7 while the renderer objectively improved, because the states finally
+differed enough for the critic to name what was wrong with each. From there the
+numbers move honestly: 4.4, 4.4, 4.5. Two of the five iterations spent their
+budget on defects (folding, sprite masks, eyelids, blinks, kernel bounds) rather
+than on performance, which is the right order — a state cannot be judged while
+the creature has no eyes — but it left little room for the animation work.
+
+### Recommended next step, in order
+
+1. **Author one exclusive pose per state and stop falling back to the resting
+   smile.** Eight states share it. This is worth more than any other change: a
+   crude but distinct brow, jaw and antenna position for each would move the
+   cluster from 3-4 to 6-7 on its own. The pose vocabulary in
+   `lib/render/creature/pose.ts` supports it; the values are simply not
+   authored far enough apart yet.
+2. **Rebuild the gulp as three animations, not one.** Metal: a hard jolt with a
+   sharp throat lump. Balloon: a soft close, cheek puff and floaty rebound.
+   Pepper: settle, then a delayed wince. The contact frame is already right; the
+   settle is missing.
+3. **Make the miss look like a failure** — flinch, a visible splat on the
+   counter, and a side-eye held through the tail of the beat.
+4. **Move the balloon mutation above the hatch line.** A throat sac and cheeks
+   inflating where the camera can see them, plus a visible lift off the sill.
+5. **Clear the remaining craft caps**: the vent prop, the two toast draws, the
+   active-metal ghost arc, and the flush falloff.
+
+A realistic estimate for reaching "every state at 8" from here is a further
+four to six iterations of the same loop, most of it pose authoring rather than
+engineering. The harness, the rig and the review loop are in place and cost
+about five minutes per capture pass, so that work is now cheap to do.
+
+**The branch `feat/creature-rig` is not merged.**
+
 Branch `feat/creature-rig`. Presentation only: `lib/game/` rules, the trace
 format and `tests/` behaviour are unchanged in every entry below.
 
@@ -253,3 +351,234 @@ expressive lid values reach 1.0 and close the eyes completely, so only a blink
 should ever do that; (3) the mouth curve is always convex-up, so every state
 smiles — the corner and apex offsets have to be able to invert the curve; (4)
 the floor gate lets the arms move with the body, which opens a seam at the sill.
+
+## Iteration 3 — root causes behind the low scores
+
+**Changed:** the four causes iteration 2's critique pointed at.
+
+- `Math.sign(x - 848)` in the antenna deformer was a step discontinuity across
+  the head's centre line. A step folds the cells there, and a folded cell that
+  the monotone clamp then repairs samples source pixels its neighbour already
+  used — which is why the antennae appeared four to six times. It is a smooth
+  fan now.
+- Expressive lid values reached 1.0 and shut the eyes completely. Blink is a
+  separate channel; expression is capped at 0.66, so only a blink ever closes
+  an eye. An eyeless creature reads as a rendering fault, not as a mood.
+- The painted mouth curves upward, so every state smiled. The corner and apex
+  offsets now move in opposite directions, which inverts the curve into a real
+  frown.
+- The floor gate let the arms move with the body and opened a cut edge along
+  the sill; it now reaches zero well above the counter.
+- The swallow is drawn as well as warped: a shaded lump travelling down the
+  throat. Pepper pressure is a blotch with veining rather than hairline
+  scratches. Metal teeth take a cold edge light.
+- Strips can now sample *before* the event: a gulp strip starts with the snack
+  still in the air, so anticipation and contact are both in frame.
+
+**Render timing:** 2.011 ms average, 6.700 ms max at 1920x1080.
+
+**Critique average: 4.4 / 10** (was 3.7).
+
+| State | Score | Reason |
+|---|---|---|
+| attract-idle | 5 | Handsome, but eyes at camera and the same picture as hungry-mild |
+| hungry-mild | 4 | Only a slightly smaller smile separates it from idle |
+| hungry-severe | 6 | Slack jaw, drooping lids, drool all read; drool is a 1px scratch |
+| tracking-far | 4 | Nothing in the creature says "watching food" |
+| tracking-near | 5 | Wide mouth reads; the food sprite sits flat on the cheek |
+| gulp-metal | 4 | Flat mouth line, faint bulge, identical to gulp-balloon |
+| gulp-balloon | 4 | Same picture as gulp-metal |
+| gulp-pepper | 5 | Wide mouth reads as a laugh, not a burn |
+| miss-floor | 3 | Identical to miss-vent and irritation-1 |
+| miss-vent | 3 | Same face; vent is an unlit striped rectangle |
+| irritation-1 | 3 | Indistinguishable from neutral |
+| irritation-2 | 4 | A global warm wash that reads as a lighting shift |
+| irritation-3 | 5 | Reads hostile but is the same shot as end-enraged |
+| warn-metal | 4 | A cheerful grin; nothing says "building" |
+| warn-balloon | 4 | The belly wash is invisible at 960px |
+| warn-pepper | 5 | Pink cheeks read as blushing on a smiling face |
+| active-metal | 6 | Unmistakable fangs; tooth/lip overlap and a ghost arc |
+| active-balloon | 5 | Mouth is a hard-edged decal running past the cheeks |
+| active-pepper | 4 | Heat arrows float in the background at the wrong depth |
+| recovery | 4 | A smug grin; nothing deflates |
+| craving-satisfied | 5 | Delight legible but the same picture as end-survived |
+| off-menu | 4 | Reads pleased rather than indifferent |
+| end-survived | 5 | Duplicates craving-satisfied and recovery |
+| end-starved | 4 | Still plump and grinning |
+| end-enraged | 5 | The same open red maw as three other states |
+| strip-gulp-metal | 3 | Snaps in one frame, then three identical holds |
+| strip-gulp-balloon | 3 | Frame-for-frame the metal strip |
+| strip-gulp-pepper | 3 | Identical timing again |
+| strip-miss-floor | 3 | No flinch; the caption carries the event |
+| strip-onset-metal | 5 | Real progressive growth, but a linear ramp |
+| strip-onset-balloon | 3 | Effectively six copies of one still |
+| strip-onset-pepper | 3 | A tint fade is not animation |
+| strip-pepper-exhale | 4 | Opens in one frame then holds |
+| reduced-hungry-severe | 7 | Works from pose and colour alone |
+| reduced-irritation-3 | 6 | Carries statically |
+| reduced-gulp-metal | 2 | A plain neutral smile plus a caption |
+| reduced-active-metal | 7 | Fangs carry the state with no motion |
+| reduced-active-balloon | 4 | Decal mouth dominates; belly barely bigger |
+| reduced-active-pepper | 4 | Static arrows float at the wrong depth |
+| reduced-end-survived | 4 | Identical to craving-satisfied |
+
+**Blocking defects:** pepper heat arrows drawn in the background at the wrong
+depth; the mid-play HUD banner contradicting the creature's pose; the score
+toast reading the same number for every ingredient; the toast clipped behind
+the overhead pipe; the balloon mutation's decal mouth; the unlit vent prop.
+
+**Decision for iteration 4:** the mouth and eyes must ride the warp's local
+*scale*, not just its offset — that is why the mouth sits on an inflated face
+like a sticker. Break the five-way "open red maw" collision (gulp-pepper,
+irritation-3, active-pepper, end-enraged, exhale) by giving each a different
+mouth shape. Aim the eyes at the thing being reacted to. Drop the free-floating
+gust arrows; light the vent.
+
+## Iteration 4 — one pose per state
+
+**Changed:**
+
+- The mouth, the exhale and the eyes are drawn through the field's local scale
+  as well as its offset, so they inflate with the face instead of sitting on it.
+- Irritation 3 snarls with a shut mouth and bared teeth; the wide-open maw is
+  reserved for the enraged ending and the pepper exhale. A pepper burn screws
+  the face up — eyes shut, mouth small, corners down — instead of opening into
+  a roar.
+- Eyes aim at what is being reacted to: at the projectile while tracking, at the
+  floor for a floor miss, up at the vent for a deflection.
+- Peckish reads as a droop in its own right rather than a faded copy of
+  starving. Starvation deflates the silhouette.
+- The free-floating headwind arrows are gone — the exhale is drawn on the
+  creature, anchored to its mouth. The vent flap has a cast shadow and an amber
+  rim so it sits in the room.
+
+**Render timing:** 2.018 ms average, 7.400 ms max at 1920x1080.
+
+**Critique average: 4.4 / 10.**
+
+| State | Score | Reason |
+|---|---|---|
+| attract-idle | 6 | On-model, but nothing reads as hungry and the eyes point away |
+| hungry-mild | 3 | The attract pose with a slightly smaller mouth |
+| hungry-severe | 3 | Only marginally different from mild |
+| tracking-far | 5 | Mouth open but the gaze is locked forward |
+| tracking-near | 7 | Big open maw with visible throat; best gameplay read |
+| gulp-metal | 4 | Closed smile plus a sparkle; identifiable from the HUD only |
+| gulp-balloon | 4 | Identical face to gulp-metal |
+| gulp-pepper | 5 | Cheek redness, but no wince or heat |
+| miss-floor | 4 | Flat mouth and one half-lid; no flinch |
+| miss-vent | 4 | Pose identical to miss-floor |
+| irritation-1 | 3 | A flat mouth line and nothing else |
+| irritation-2 | 5 | The flush is a hard-edged patch that reads as a spotlight |
+| irritation-3 | 5 | Still smiling under an orange decal |
+| warn-metal | 5 | Sharp teeth, but no sense of quiver or alignment building |
+| warn-balloon | 4 | The pale belly patch reads as a texture tear |
+| warn-pepper | 5 | Cheek blush is a hard-edged decal |
+| active-metal | 5 | Striking, but bone-white teeth and a stray elliptical arc |
+| active-balloon | 3 | Marginally rounder belly; no lift, no strain |
+| active-pepper | 5 | A huge red maw that reads as a roar, not heat |
+| recovery | 3 | Indistinguishable from attract-idle |
+| craving-satisfied | 4 | Callout clipped; the pose is the idle grin |
+| off-menu | 4 | Reads pleased; callout clipped |
+| end-survived | 5 | The same face as craving-satisfied |
+| end-starved | 3 | Still smiling; only desaturation says starved |
+| end-enraged | 7 | Bared teeth plus flush: clearest read in the set |
+| strip-gulp-metal | 3 | Two-pose change and a whole-scene zoom pop |
+| strip-gulp-balloon | 3 | Same timing and poses as metal |
+| strip-gulp-pepper | 3 | Identical apart from a red chilli |
+| strip-miss-floor | 2 | No flinch anywhere |
+| strip-onset-metal | 4 | Progressive growth, but the eyes go dark early |
+| strip-onset-balloon | 1 | No eyes in five of six frames |
+| strip-onset-pepper | 2 | Eyes missing; a linear tint ramp |
+| strip-pepper-exhale | 2 | Eyes missing at the start; opens and holds |
+| reduced-hungry-severe | 3 | Static pose still reads content |
+| reduced-irritation-3 | 5 | Colour names "angry"; the decal edge is obvious |
+| reduced-gulp-metal | 3 | The idle grin plus a label |
+| reduced-active-metal | 6 | Long teeth read instantly |
+| reduced-active-balloon | 2 | Indistinguishable from idle |
+| reduced-active-pepper | 6 | The open red maw is nameable |
+| reduced-end-survived | 6 | Smug closed-eye grin reads well |
+
+**Blocking defects:** the eyes absent across most frames of three strips; a
+whole-scene zoom pop in every gulp strip; clipped score callouts; the stray
+elliptical arc on active-metal; the warn-balloon belly texture; the result
+screen's pose contradicting its headline.
+
+**Decision for iteration 5:** the eye dropout is a blink landing on the capture
+— a held pose must hold the eyes open. The zoom pop is the body and belly
+kernels reaching past the edge of the warped region, so the displacement jumps
+to zero at the region boundary; shrink them until they die inside it. Clip the
+magnetic arcs to the approach side so they stop crossing the cheek.
+
+## Iteration 5 — holding the eyes, bounding the kernels
+
+**Changed:**
+
+- A held pose holds the eyes open (`__dnfi.holdBlink`). A blink is 130 ms, and a
+  capture that lands inside one shows a creature with no face.
+- The body, belly and head kernels now reach zero inside the warped region.
+  A kernel that is still non-zero at the region edge steps to zero there, which
+  is what produced the whole-scene scale pop between strip frames.
+- Magnetic arcs are clipped to the approach side of the mouth, so they read as a
+  field in front of it rather than an ellipse across the cheek.
+- The score pill is opaque enough to read over the pipework; the body grading
+  mask is tighter, so the room keeps its own colour.
+
+**Render timing:** 2.025 ms average, 7.900 ms max over 134 frames at 1920x1080.
+Budget is 4 ms average.
+
+**Critique average: 4.5 / 10** — the best of the five, and still well short.
+
+| State | Score | Reason |
+|---|---|---|
+| attract-idle | 5 | Charming, but the same resting smile four other states use |
+| hungry-mild | 3 | Identical to attract-idle |
+| hungry-severe | 6 | Desaturation and slack jaw read, though as sick rather than starving |
+| tracking-far | 4 | The unmodified idle smile; only the projectile tells you |
+| tracking-near | 6 | Genuinely gapes and escalates from tracking-far |
+| gulp-metal | 4 | Nothing metal; identifiable only by the toast |
+| gulp-balloon | 4 | Same frame with a different number |
+| gulp-pepper | 6 | The only gulp that reads on its own |
+| miss-floor | 3 | Calmly smiling; no flinch, no mess |
+| miss-vent | 2 | A flat striped rectangle floating unattached |
+| irritation-1 | 3 | A flat mouth line; indistinguishable from neutral |
+| irritation-2 | 5 | The flush reads as a stage light, ending in a hard jaw line |
+| irritation-3 | 5 | Strong colour, but the mouth is still a mild closed smile |
+| warn-metal | 4 | A happy toothy grin, not a mutation building |
+| warn-balloon | 2 | The belly is behind the hatch, so the swell has nowhere to happen |
+| warn-pepper | 5 | Pink cheeks read as bashful, not pressurised |
+| active-metal | 6 | Best silhouette change; a ghost arc of the closed mouth on the chin |
+| active-balloon | 4 | A small uniform scale-up that reads as a blur, not inflation |
+| active-pepper | 7 | Wide red-glowing maw and squint carry it instantly |
+| recovery | 3 | Indistinguishable from attract-idle |
+| craving-satisfied | 4 | Toast draws at ~20% alpha behind the pipes |
+| off-menu | 4 | Reads content rather than tolerant; toast clipped mid-word |
+| end-survived | 5 | The same frame as craving-satisfied |
+| end-starved | 6 | Sunken eyes, grey pallor and a slump communicate emptiness |
+| end-enraged | 6 | Bared teeth plus a red-hot face finally deliver anger |
+| strip-gulp-metal | 4 | Real anticipation and a clean contact snap; no squash or settle |
+| strip-gulp-balloon | 3 | The metal clip retinted |
+| strip-gulp-pepper | 3 | The same clip; the burn arrives too late |
+| strip-miss-floor | 2 | Reads as a successful catch |
+| strip-onset-metal | 5 | Linear growth with no quiver or settle |
+| strip-onset-balloon | 2 | A barely perceptible uniform scale |
+| strip-onset-pepper | 4 | A linear tint ramp over an unchanging pose |
+| strip-pepper-exhale | 6 | Best strip: real anticipation and a genuine snap open |
+| reduced-hungry-severe | 6 | Desaturation and slack jaw survive suppression |
+| reduced-irritation-3 | 5 | Colour alone is not enough while the mouth smiles |
+| reduced-gulp-metal | 3 | Nothing left but the toast |
+| reduced-active-metal | 7 | The clearest reduced-motion state |
+| reduced-active-balloon | 3 | The resting monster with softer skin |
+| reduced-active-pepper | 7 | Red maw plus squint reads instantly from a still |
+| reduced-end-survived | 5 | Content but not smug; same frame as craving-satisfied |
+
+**Blocking defects still open:** the floating vent sprite; two score-toast draw
+failures (ghosted behind the pipework, and clipped mid-word); a ghost arc of the
+closed mouth across the chin in active-metal; the miss strip ending on a smile
+with no mess; and hard-edged flush boundaries at the jaw and chest.
+
+**HUD screens:** title stream-ready; mid-play legible and well organised but
+framed at a different scale from the review stills and carrying three competing
+toasts; result strong typographically, undercut by a comfortable-looking
+creature under "YOU'RE THE SNACK" and by a "TIME LEFT AT CLOCK OUT" header on a
+screen announcing the shift is over.
