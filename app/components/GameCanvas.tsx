@@ -45,13 +45,39 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,onAim}:{runRef
           return [...CREATURE_STATE_IDS];
         };
         bag.clearPose=()=>{devRender.pose=null;};
+        // Settle the springs at a frozen clock: replay the run-up to `t` so a
+        // still capture shows the pose the performance actually arrives at.
+        bag.settle=async(id:string,t:number,seconds=1.1,clock=12)=>{
+          const {buildPose}=await import("../../lib/dev/poses");
+          const steps=Math.round(seconds*60);
+          for(let step=steps;step>=0;step--){
+            const at=t-step/60;
+            const frame=buildPose(id as never,Math.max(0,at));
+            devRender.pose=frame;
+            devRender.clock=clock+at;
+            scene.warm(frame.state,frame.playing,devRender.reduced??false,clock+at,1/60);
+          }
+          devRender.clock=clock+t;
+          devRender.pose=buildPose(id as never,t);
+          return id;
+        };
         bag.clock=(seconds:number|null)=>{devRender.clock=seconds;};
         bag.reduced=(value:boolean|null)=>{devRender.reduced=value;};
+        bag.hideAim=(value:boolean)=>{devRender.hideAim=value;};
         bag.timing=()=>({...devRender.timing,average:devRender.timing.samples?devRender.timing.total/devRender.timing.samples:0});
         bag.resetTiming=()=>{resetDrawCost();};
         bag.sceneReady=()=>scene.ready();
+        bag.rigDump=(part:string)=>{
+          const built=scene.debugRig();
+          if(!built)return null;
+          const parts:Record<string,HTMLCanvasElement|undefined>={
+            art:built.art,tooth:built.tooth.canvas,tongue:built.tongue.canvas,
+            pupilLeft:built.pupil.left.canvas,lidLeft:built.lidUpper.left.canvas,
+          };
+          return parts[part]?.toDataURL('image/png')??null;
+        };
         bag.canvasSize=()=>({width:canvas.width,height:canvas.height});
-        detachHooks=()=>{delete bag.sceneReady;delete bag.canvasSize;};
+        detachHooks=()=>{delete bag.sceneReady;delete bag.canvasSize;delete bag.rigDump;delete bag.settle;delete bag.hideAim;};
       }
     }
     return()=>{disposed=true;cancelAnimationFrame(frame);observer.disconnect();detachHooks?.();};

@@ -70,11 +70,19 @@ function parseArgs(argv) {
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function stopServer(child) {
+  try { process.kill(-child.pid, "SIGTERM"); } catch { /* already gone */ }
+  try { child.kill("SIGTERM"); } catch { /* already gone */ }
+}
+
 async function startDevServer(port) {
+  // Detached, so the whole process group can be torn down: the dev server
+  // spawns a workerd child that survives a plain kill on the npm wrapper.
   const child = spawn("npm", ["run", "dev", "--", "--port", String(port), "--strictPort"], {
     cwd: ROOT,
     env: { ...process.env, BROWSER: "none", FORCE_COLOR: "0" },
     stdio: ["ignore", "pipe", "pipe"],
+    detached: true,
   });
   let log = "";
   child.stdout.on("data", (chunk) => { log += chunk; });
@@ -89,7 +97,7 @@ async function startDevServer(port) {
     } catch { /* not listening yet */ }
     await wait(500);
   }
-  child.kill("SIGTERM");
+  stopServer(child);
   throw new Error(`Dev server did not start in time:\n${log}`);
 }
 
@@ -370,6 +378,7 @@ async function main() {
     await page.waitForFunction(() => Boolean(window.__dnfi && window.__dnfi.pose), null, { timeout: 60_000 });
     await waitForScene(page);
     await page.addStyleTag({ content: HIDE_HUD });
+    await page.evaluate(() => window.__dnfi.hideAim(true));
     await settle(page, 5);
 
     const states = await page.evaluate(() => window.__dnfi.states());
@@ -378,8 +387,7 @@ async function main() {
     // 1. Stills.
     for (const state of states) {
       await page.evaluate(async ({ state }) => {
-        window.__dnfi.clock(12);
-        await window.__dnfi.pose(state, { t: 0.42 });
+        await window.__dnfi.settle(state, 0.42, 1.4);
       }, { state });
       const file = path.join(outDir, `${state}.png`);
       await capture(page, file);
@@ -392,8 +400,7 @@ async function main() {
       for (let index = 0; index < STRIP_FRAMES; index++) {
         const t = index * STRIP_STEP;
         await page.evaluate(async ({ state, t }) => {
-          window.__dnfi.clock(12 + t);
-          await window.__dnfi.pose(state, { t });
+          await window.__dnfi.settle(state, t, 1.4);
         }, { state: strip.state, t });
         const file = path.join(frameDir, `${strip.name}-${index}.png`);
         await capture(page, file);
@@ -408,8 +415,7 @@ async function main() {
     await page.evaluate(() => window.__dnfi.reduced(true));
     for (const state of REDUCED_STATES) {
       await page.evaluate(async ({ state }) => {
-        window.__dnfi.clock(12);
-        await window.__dnfi.pose(state, { t: 0.42 });
+        await window.__dnfi.settle(state, 0.42, 1.4);
       }, { state });
       const file = path.join(outDir, `reduced-${state}.png`);
       await capture(page, file);
@@ -422,7 +428,7 @@ async function main() {
     await buildContactSheet(page, outDir, path.join(outDir, "sheet.png"));
 
     // 5. Real play: the scripted trace and the render cost.
-    await page.evaluate(() => { window.__dnfi.clearPose(); window.__dnfi.clock(null); });
+    await page.evaluate(() => { window.__dnfi.clearPose(); window.__dnfi.clock(null); window.__dnfi.hideAim(false); });
     const trace = await runScriptedTrace(page);
     const timing = await measureRenderCost(page);
     console.log(`[harness] render ${timing.average?.toFixed(3)} ms avg / ${timing.max?.toFixed(3)} ms max over ${timing.samples} frames`);
@@ -486,7 +492,7 @@ async function main() {
     if (missing.length) console.log(`[harness] states not reached by the scripted trace: ${missing.join(", ")}`);
   } finally {
     await browser.close();
-    server.child.kill("SIGTERM");
+    stopServer(server.child);
   }
 }
 
