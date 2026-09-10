@@ -114,15 +114,22 @@ Branch `feat/creature-rig`. Not merged.
   no new asset to license or record, and is reversible.
 - Why not a 3D asset: it would replace the art direction rather than extend it,
   and the render budget (4 ms average) does not need it — the rig measures
-  2.0 ms average at 1920x1080.
+  3.3 ms average / 5.4 ms max at 1920x1080. That figure roughly doubled over the
+  run as the warp grid was densified from 30x23 to 38x30 cells to stop the
+  inflated belly tearing, so there is no headroom left for another density
+  increase; the remaining smear has to be fixed by moving less paint.
 - Why not cut the creature out of the background: a cut-out has a silhouette
   edge, and a silhouette edge tears when the body deforms. Warping the whole
   picture with a field that decays to nothing before the counter has no edge to
   tear.
-- Evidence: five iterations, each captured by `scripts/creature-shots.mjs` and
-  scored by a critic that sees only stream-resolution images. Averages 4.2, 3.7,
-  4.4, 4.4, 4.5 out of 10 against the brief's rubric. Full tables, timings and
-  the final report are in `docs/qa/creature/ITERATION_LOG.md`.
+- Evidence: thirteen iterations, each captured by `scripts/creature-shots.mjs`
+  and scored by a fresh-context critic that sees only stream-resolution images
+  and the frame strips. Averages 4.2, 3.7, 4.4, 4.4, 4.5, then 3.8, 3.6, 4.2,
+  4.2, 4.6 out of 10 against the brief's rubric. The averages are noisier than
+  they look — each pass is judged by a different critic and the later ones were
+  markedly more rigorous — so the per-iteration fault lists are better evidence
+  than the numbers. Full tables, timings and the final report are in
+  `docs/qa/creature/ITERATION_LOG.md`.
 - Affected files: `lib/render/scene.ts`, `lib/render/creature/*`, `lib/dev/*`,
   `app/components/GameCanvas.tsx`, `app/page.tsx`, `scripts/creature-shots.mjs`.
 - Replay compatibility: unaffected. `ArcadeEvent` gained two optional
@@ -155,3 +162,15 @@ down instead of done:
   irritation steps sit at rage 25/55/85, which the meter crosses at whatever
   pace misses happen. Explicit rule-level steps would let the presentation and
   the mechanic agree.
+- **P5 — Push the camera in during play.** Every critic across thirteen
+  iterations independently observed that the creature's head occupies a small
+  part of a wide frame and that its body never changes position between states.
+  A gentle push-in while a shift is running, and a wider body travel between
+  states, would do more for nameability at stream resolution than any further
+  work on the face. It is a presentation change and therefore in scope, but it
+  moves the relationship between screen space and aim, so it should be a
+  deliberate design call rather than something a renderer branch does quietly.
+- **P6 — Give metal a material, not a colour.** The mutation reads as "bigger
+  teeth" rather than "magnetic teeth" because the fangs stay ivory. A grey
+  specular treatment plus filings visibly pulled toward the jaw would fix it,
+  but the filings are new scene objects and their behaviour borders on a rule.

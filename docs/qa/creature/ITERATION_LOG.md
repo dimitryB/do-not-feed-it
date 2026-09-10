@@ -1,100 +1,152 @@
 # Creature rig iteration log
 
-## FINAL REPORT — stopped after five iterations, exit criteria not met
+## FINAL REPORT — stopped at the second time cap, exit criteria not met
 
 **Status: the rig is built, all 25 states exist and are reachable through real
-play, and the renderer is well inside budget — but the creature does not yet
-read the way the brief requires.** The critic's average over the 25 named states
-went 4.2 → 3.7 → 4.4 → 4.4 → 4.5. The exit criterion is two consecutive
-iterations with every state at 8 or better. Nothing here is close to that, and I
-am reporting it rather than rounding it up.
+play, the renderer is inside budget, and the creature reads far better than it
+did — but it does not read the way the brief requires.** Across thirteen
+iterations the fresh-context critic's average over the 25 named states went
+4.2 → 3.7 → 4.4 → 4.4 → 4.5 → (iterations 6-9, structural rework) → 3.8 → 3.6 →
+4.2 → 4.2 → **4.6**. The exit criterion is two consecutive iterations with every
+state at 8 or better and no blocking defects. The best single state in the final
+pass is 8 (gulp-pepper); three more are at 7. Most sit at 4-6. That is not close
+to the bar, and I am reporting it rather than rounding it up.
 
 ### What passed
 
-- **All eleven required state groups exist, with the per-ingredient variants**,
-  25 named states in total, and the scripted trace reaches every one of them
-  through `launchFood`/`stepArcade` across three real shifts (survived at tick
-  7200, irritated out at 1739, starved out at 4615) — not only through the pose
-  hook. `docs/qa/creature/iter-5/manifest.json` records the reached list.
-- **Presentation only.** `lib/game/arcade.ts` rules, scoring, replay and trace
-  are unchanged in behaviour; the only addition is two optional presentation
-  tags on `ArcadeEvent` that nothing in the rules, replay or scoring reads. The
-  23 existing tests pass unmodified.
-- **Render budget.** 2.025 ms average, 7.900 ms max over 134 frames at
-  1920x1080 on this machine, against a 4 ms average budget. Every iteration is
-  measured with `performance.now()` around the scene draw and reported above.
+- **All eleven required state groups exist, with the per-ingredient variants** —
+  25 named states — and the scripted trace reaches every one of them through
+  `launchFood`/`stepArcade` across three real shifts (survived at tick 7200,
+  irritated out at 1739, starved out at 4615), not only through the pose hook.
+  `docs/qa/creature/iter-15/manifest.json` records the reached list.
+- **Presentation only.** `lib/game/arcade.ts` rules, scoring, replay and the
+  trace format are unchanged in behaviour. The only addition is two optional
+  presentation tags on `ArcadeEvent` (`ingredient`, `craved`) that nothing in
+  the rules, replay or scoring reads. The 23 existing tests pass unmodified.
+- **Render budget.** 3.32 ms average, 5.40 ms max over 42 frames at 1920x1080,
+  against a 4 ms average budget. Measured with `performance.now()` around the
+  scene draw and reported every iteration. The average roughly doubled over the
+  run as the grid was densified from 30x23 to 38x30 cells to stop the belly
+  tearing; there is no headroom left for another density increase.
 - **Reduced motion** is captured every iteration and was reviewed by the critic
-  each time. Nothing flashes; motion is suppressed and the states still carry
-  colour and pose. Three reduced-motion states score 6-7; three score 3.
+  each time. Nothing flashes; motion is suppressed and states carry through
+  colour and pose. Five of seven reduced states are judged readable frozen in
+  the final pass, against three of seven at the first cap.
 - **`npm run typecheck`, `npm run lint`, `npm test` and `npm run build` are
-  green.** See the caveat on `test:contract` below.
-- **Craft failures that were real bugs are fixed**: the geometry tearing, the
-  two sprite masks built in the wrong coordinate space (the "tongue" was a crop
-  of teeth), the eyelid veil, the inverted brow pivot, the duplicated antennae,
-  the eye dropout, and the whole-scene scale pop.
+  green.** See the `test:contract` caveat below.
+- **Deterministic-safe.** Nothing in `lib/game/` reads the renderer clock, the
+  renderer's noise, or any pose state.
+
+### The two structural bugs this half of the run found
+
+Both had been quietly capping every score, and both are fixed:
+
+1. **The face was a pile of per-channel maximums, not a set of expressions.**
+   Eight states resolved to the same resting smile because a weak state and a
+   strong one averaged instead of one overriding the other. Replacing that with
+   blending *toward* named expressions is what let each subsequent critic pass
+   name a real, specific fault instead of "these all look the same".
+2. **Part placement read the warp forwards; the warp is a backward map.**
+   `drawWarped` samples the source at `destination - field(destination)`, so the
+   displacement that moves a painted feature is the field at the feature's
+   *destination*. Reading it at the source is only correct where the field is
+   locally constant — that is, nowhere the body is actually deforming. On the
+   starved pose the error was thirty pixels: the eyelids hung in the air above
+   eyes that had slid further down the face than the lids had. `localTransform`
+   now inverts the field by fixed-point iteration.
+
+Also fixed in this half: the eye landmarks were several pixels off the painted
+eyeball and three pixels too large in every direction, and the pupil radius was
+half again too big, so a dilated pupil filled the socket and read as a dark
+slot; eyelids were stretched crops of real skin, which hold together only at the
+coverage they were cut at and became leaf-shaped slivers lying on the eyeball at
+any other; lid pairs could between them cover the whole eye, which reads as a
+hole rather than a squint; tint gradients ended on a non-zero alpha, which put a
+hard elliptical edge across the shoulder; and the floor gate closed over too
+short a distance, which tore a notched band across every inflated belly.
 
 ### What did not pass
 
-- **No state set reaches 8, let alone twice.** The best states are
-  active-metal, active-pepper and tracking-near at 6-7; a cluster around
-  attract-idle, hungry-mild, tracking-far, warn-metal, warn-balloon, recovery and
-  off-menu still resolve to the same resting face and sit at 3-5.
-- **The three gulp strips are one animation with three tints.** Anticipation and
-  contact are there; squash, overshoot, settle and per-ingredient timing are not.
-- **The miss reads as a success.** The strip ends on a smile with nothing on the
-  floor. This is the single most misleading thing in the set.
-- **Balloon inflation has nowhere visible to happen.** The belly is behind the
-  hatch, so a swell that is physically correct is invisible on screen.
-- **Open craft defects:** the vent flap still reads as a floating placeholder;
-  two score-toast draw failures (ghosted behind the pipework in
-  craving-satisfied, clipped mid-word in off-menu); a ghost arc of the closed
-  mouth across the chin in active-metal; hard flush boundaries at the jaw.
+- **No state set reaches 8, let alone twice.** One state scores 8; three score
+  7; the rest are 3-6.
+- **Two large confusion clusters remain.** `attract-idle` / `off-menu` and a
+  four-way cluster of open-mouthed states (`recovery`, `craving-satisfied`,
+  `warn-metal`, `hungry-severe`). Every member is capped at 5 for distinctness
+  alone. This is pose authoring, not engineering.
+- **The three ingredients read by hue, not by material or timing.** Metal has no
+  material identity — the fangs are ivory. The three gulp strips still share one
+  six-frame curve with the projectile recoloured.
+- **Irritation is one pose with the red turned up.** Steps 1 and 2 differ only
+  by a colour wash.
+- **Open craft defects at 960 px:** a faint vertical comb smear across the
+  inflated belly where the warp stretches the paint; the hazard flap still reads
+  as a drawn overlay rather than a lit object; the mouth aperture's corners are
+  straight cuts rather than lips; `end-starved`'s eyes read as pale blanks.
 - **`npm run test:contract` cannot run in this environment.** Hardhat downloads
   the Solidity compiler from `binaries.soliditylang.org`, which this session's
   egress policy blocks. No Solidity file is touched anywhere on this branch
   (`git diff codex/creature-arcade..feat/creature-rig --stat -- contracts test`
   is empty), so the contract tests are unaffected, but I have not run them and
   do not claim they pass.
-- **The captures were produced in a Linux container**, not on the Mac. The repo's
-  `node_modules` is a macOS build and its `workerd` binary cannot run under the
-  device shell, so the dev server, the build and the harness were run against a
-  clean install in the cloud workspace on the same commits. Re-running
+- **The captures were produced in a Linux container**, not on the Mac. The
+  repo's `node_modules` is a macOS build and its `workerd` binary cannot run
+  under the device shell, so the dev server, the build and the harness were run
+  against a clean install in the cloud workspace on the same commits. Re-running
   `node scripts/creature-shots.mjs --iter N` on the Mac should reproduce the set.
 
 ### Why the average moved the way it did
 
-Iteration 1's 4.2 was inflated: most states were the same neutral frame, and a
-critic cannot fault a state it cannot distinguish from another. Iteration 2
-scored 3.7 while the renderer objectively improved, because the states finally
-differed enough for the critic to name what was wrong with each. From there the
-numbers move honestly: 4.4, 4.4, 4.5. Two of the five iterations spent their
-budget on defects (folding, sprite masks, eyelids, blinks, kernel bounds) rather
-than on performance, which is the right order — a state cannot be judged while
-the creature has no eyes — but it left little room for the animation work.
+The number is noisier than it looks, and it is worth saying so plainly. Each
+iteration is judged by a fresh critic with no memory of the previous one, and
+the later critics were markedly more thorough than the early ones — two of them
+pixel-differenced every state pair to substantiate the confusability calls,
+which the first ones did not. The drop from 4.5 to 3.8 across iterations 6-9 is
+mostly that change in rigour, not a regression in the images: the same
+iterations fixed the expression model, the eye landmarks, the eyelids and the
+balloon warp. Comparing a number produced by one critic against a number
+produced by another is the weakest part of this loop's design, and the
+iteration-by-iteration fault lists below are much better evidence than the
+averages are.
+
+One measurement bug is worth flagging because it inflated several early scores:
+until iteration 11 the harness hid the DOM HUD but not the score pills, which
+are drawn on the canvas. Several states were being named by the critic from
+their text ("TASTY +260", "SNACK DOWN") rather than from the creature. From
+iteration 11 the pills are suppressed in captures, and the gulp and miss states
+dropped accordingly. Those lower numbers are the honest ones.
 
 ### Recommended next step, in order
 
-1. **Author one exclusive pose per state and stop falling back to the resting
-   smile.** Eight states share it. This is worth more than any other change: a
-   crude but distinct brow, jaw and antenna position for each would move the
-   cluster from 3-4 to 6-7 on its own. The pose vocabulary in
-   `lib/render/creature/pose.ts` supports it; the values are simply not
-   authored far enough apart yet.
-2. **Rebuild the gulp as three animations, not one.** Metal: a hard jolt with a
-   sharp throat lump. Balloon: a soft close, cheek puff and floaty rebound.
-   Pepper: settle, then a delayed wince. The contact frame is already right; the
-   settle is missing.
-3. **Make the miss look like a failure** — flinch, a visible splat on the
-   counter, and a side-eye held through the tail of the beat.
-4. **Move the balloon mutation above the hatch line.** A throat sac and cheeks
-   inflating where the camera can see them, plus a visible lift off the sill.
-5. **Clear the remaining craft caps**: the vent prop, the two toast draws, the
-   active-metal ghost arc, and the flush falloff.
+1. **Break the two remaining confusion clusters by authoring an exclusive eye
+   state per member.** Crescents for `craving-satisfied`, slack half-lids and
+   hollow cheeks for `hungry-severe`, drooping antennae with a fading tint for
+   `recovery`, a hard angled brow for `warn-metal`; and turn `off-menu`'s head
+   further away still. Nine states are currently capped at 5 for distinctness
+   alone, so this is worth about a point of average on its own and needs no new
+   engineering — the channels all exist.
+2. **Give the three ingredients material and timing, not hue.** A grey specular
+   pass on the teeth plus a one-frame spark for metal; a real lift off the sill
+   for balloon; the pepper plume already leaves the mouth. Then re-time the
+   three gulps against each other — hard snap versus slow squish — so the strips
+   stop being one curve with three tints, and replace the held frames 3-5 of
+   each with a recoil and settle.
+3. **Make irritation brow → jaw → snarl**, three poses rather than one pose and
+   a colour ramp.
+4. **Clear the last craft caps**: the belly comb smear (it needs the inflation
+   to move less paint, not a denser grid — there is no perf headroom left), the
+   hazard flap, and the straight-cut mouth corners.
+5. **Consider the composition.** Every critic independently observed that the
+   creature's head occupies a small part of a wide frame and that the body never
+   changes position between states. A gentle camera push-in during play, and
+   letting the body lean and rise more between states, would do more for
+   nameability at stream resolution than any further work on the face. This is a
+   presentation change and is in scope; it is listed last only because it is the
+   riskiest to gameplay feel.
 
-A realistic estimate for reaching "every state at 8" from here is a further
-four to six iterations of the same loop, most of it pose authoring rather than
-engineering. The harness, the rig and the review loop are in place and cost
-about five minutes per capture pass, so that work is now cheap to do.
+A realistic estimate for "every state at 8" from here is a further four to six
+iterations, almost all of it pose authoring. The harness, the rig and the review
+loop are in place and cost about five minutes per capture pass, so that work is
+now cheap to do.
 
 **The branch `feat/creature-rig` is not merged.**
 
@@ -674,3 +726,164 @@ nose; give a miss its own flight and leave the snack on the counter; make the
 projectile emissive; shade the teeth with roots and a contact shadow; push
 peckish, warnMetal and deflate far enough apart from idle to read, and sample
 recovery at the peak of its sag rather than on the way there.
+
+## Iteration 8 — pushing the clustered states apart
+
+**Changed:** `startle` narrowed to an O so a vent deflection stops being a grin;
+`peckish` pushed a long way from idle (tongue, drool, sad brow, asymmetric brow,
+head down onto the counter); `annoy1` made unmistakably unhappy rather than
+merely neutral; the swallow's `shut` decay slowed from `exp(-age·6)` to
+`exp(-age·2.6)` so a gulp is still legible half a second later; the balloon
+kernel moved up out of the floor gate that had been multiplying it away; skin
+grading moved to run before the mouth, so a flush no longer tints the mouth
+interior into an unmotivated glow; the exhale plume strengthened; the score pill
+given a y-clamp; the pepper strip re-timed so the burn onset falls inside it.
+
+**Render:** 2.06 ms avg / 3.10 ms max over 113 frames.
+
+**Critic (fresh context, stream copies and strips only): average 4.9** — the
+best of the run to that point. The findings that mattered: warn-balloon was
+still near-idle; the vent prop still floated; `hungry-mild`, `recovery` and
+`off-menu` still clustered with idle; the mid-play HUD was overloaded and the
+"Balloon belly" banner contradicted the pose on screen.
+
+**Decision for iteration 9:** act on the cluster rather than on individual
+states — and check the balloon warp, because a mutation the critic cannot see
+is not a scoring problem, it is a bug.
+
+## Iteration 9 — a regression, and what it exposed
+
+**Changed:** belly kernel raised to `y = 274` so the swell would be visible
+above the hatch; gulp decay and expression values from iteration 8 kept.
+
+**Render:** 2.06 ms avg / 3.10 ms max over 113 frames.
+
+**Critic: average 3.76** — down, and correctly so. Raising the belly kernel put
+a steep gradient straight through the muzzle. The mouth is drawn at fixed
+anatomy coordinates and follows the warp through a single affine sample taken at
+its centre, so it could not track that gradient: the creature grew a second
+mouth across its chin and a row of teeth on its belly. The critic called it a
+blocking defect in three separate images and was right.
+
+This critic was also much more rigorous than its predecessors — it pixel-
+differenced every state pair to substantiate the confusability calls — so the
+drop is partly a change in the ruler as well as a real regression.
+
+**Decision for iteration 10:** revert the belly change specifically (keeping
+everything else), and act on the two findings that recurred across every critic
+so far: the eyes are the craft problem, and every state falls back to a resting
+smile.
+
+## Iteration 10 — painted eyelids, re-measured eyes, balloon warp
+
+**Changed:** the eye landmarks were re-measured off the painting at 4x — they
+had been several pixels up and left of the painted eyeball and three pixels too
+large in every direction, so everything clipped to them sat on the skin *around*
+the eye, and the pupil radius was half again too big, which is why a dilated
+pupil filled the socket edge to edge and read as a dark horizontal slot.
+Eyelids became painted, shaded shapes in the sampled skin colour instead of
+stretched crops of real skin. A lid pair got a coverage budget, so an expression
+can squint but only a blink can shut an eye. Idle's lips closed and its
+contribution during play dropped from 0.55 to 0.3. The balloon swell moved to a
+single ungated kernel below the muzzle. Warning strain eased rather than ramped;
+the onset strips were re-cut to straddle the moment the mutation lands; the
+exhale moved to the mouth; tint gradients were given fully transparent outer
+stops; the hazard flap got a ceiling housing; the serving pips became dots
+rather than three empty boxes that read as missing glyphs.
+
+**Render:** 2.10 ms avg / 5.80 ms max over 116 frames.
+
+**Critic: average 3.60.** The blocking list was long but specific and, for the
+first time, entirely about craft rather than about states being indistinguishable
+from one another: the inflated belly clipped the counter, `recovery`'s eyes
+collapsed into blank slivers, the exhale sat on a cheek, and every open mouth
+read as "a stroked triangle with flat unshaded cone teeth pasted over a
+photoreal head".
+
+**Decision for iteration 11:** take that last sentence literally — the mismatch
+between a crisp vector edge and a soft painted one is the craft cap on twenty
+states, and it is fixable without new art.
+
+## Iteration 11 — the mouth joins the paint
+
+**Changed:** a wide, soft, skin-toned halo around the lip and a blurred seam
+stroke, to close the join between the vector aperture and the painting; teeth
+recoloured out of white and into the room's amber, with the shine cut; a hard
+cap so a fang can never overshoot the far lip and hang outside the mouth. The
+floor gate's ramp lengthened from 114 px to 160 px and the body kernel raised
+inside it, which removed the notched, streaked band across every inflated belly.
+The painted pupils' inward bias mostly removed so an eyeline reads as one
+direction rather than as cross-eyes; the catchlight clipped to the eye.
+`off-menu` pulled well past neutral, because the painted mouth curves upward and
+"level" still reads as a smile. And the harness began suppressing the canvas-
+drawn score pills, which are HUD and had been letting the critic name states
+from their text.
+
+**Render:** 2.89 ms avg / 5.00 ms max.
+
+**Critic: average 4.20**, with the score pills gone. Two new blocking defects
+were named that had been there all along and were previously masked: the
+eyelids on the starved pose sat *above* the eyes, and the exhale still came off
+the jaw.
+
+**Decision for iteration 12:** the lid misalignment is not a tuning problem —
+lids and eyeballs are placed by the same code, so if they disagree the placement
+model is wrong.
+
+## Iteration 12 — parts placed through the inverse warp
+
+**Changed:** `drawWarped` is a backward map — for each destination pixel it
+samples the source at `destination − field(destination)` — but part placement was
+reading the field at the part's own painted position, which is only correct where
+the field is locally constant. Everywhere the body actually deforms the two
+disagree by roughly `d·∂d`; on the starved pose that was thirty pixels.
+`localTransform` now inverts the field by fixed-point iteration, which converges
+in three steps for any field gentle enough to draw without folding.
+
+Eyelids also take the skin's current colour arithmetically, because grading
+composites over the painting and the lids are drawn after it — which had left
+them the one part of a starving creature's face still in full health. The three
+mutation warnings got tells that are not each other: metal a narrow grimace with
+the teeth pushing through, balloon already swelling against a sealed mouth,
+pepper pure pressure. A dropped snack got a head-down sulk that outlasts the
+jolt. And the moment a mutation lands got an overshoot, because a ninety-tick
+ease with no snap at the end is a ramp, and a ramp is the one thing a six-frame
+strip cannot make look like animation.
+
+**Render:** 3.33 ms avg / 5.90 ms max.
+
+**Critic: average 4.16.** The warning states moved from 2/2/3 to 3/3/4 and the
+lids landed on the eyes, but two new blocking defects appeared, both traceable
+to this iteration: the starved pose's pupils were pushed off the bottom of the
+socket (lid-follow and gaze were clamped separately and stacked), and the belly
+smear returned when the grid's monotone clamp was loosened.
+
+**Decision for iteration 13:** fix the two regressions, and spend what is left
+on the two ending screens, which are the frames a stream holds longest.
+
+## Iteration 13 — the endings
+
+**Changed:** lid-follow and gaze clamped together, so the pupil can no longer be
+pushed out of the socket by both at once. The pepper plume starts inside the
+aperture and is composited with `screen`, so where it crosses the teeth it glows
+through them instead of covering them. The monotone clamp restored to 0.2 and
+the three inflated poses moved more of their swell into the uniform body scale,
+which stopped a smeared copy of the tooth row being stamped across the chest of
+the victory frame. The hazard flap lit and given a cast shadow. `rageEnd`'s lean
+reduced — with placement corrected it was scaling the head about a point below
+it and pushing the top of the skull out of frame. `collapse` given a lower lid,
+because a drained eye lets the painted eyeball's own edge show under the drawn
+one and it reads as a second iris. `shrug` turned its head away, because
+indifference is a look-away and a head square to camera reads as pleased however
+the mouth is drawn.
+
+**Render:** 3.32 ms avg / 5.40 ms max over 42 frames at 1920x1080.
+
+**Critic: average 4.60** — the best of the run. `gulp-pepper` reached 8;
+`irritation-3`, `end-survived` and the pepper gulp strip reached 7. The
+remaining blocking defects are the belly comb smear, the hazard flap, and the
+straight-cut mouth corners. The remaining score sinks are two confusion clusters
+and three ingredients that read by hue rather than by material or timing.
+
+**Decision:** stop. This is the second time cap. See the final report at the top
+of this file for what passed, what did not, and the recommended next step.

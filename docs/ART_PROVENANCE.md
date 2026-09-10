@@ -31,9 +31,15 @@ drifting away from the painting.
 
 What the rig does to that one file, once, on the first frame after it decodes:
 
-- **Cuts** the two pupils, the tongue, and two bands of eyelid skin (one above
-  each eye, one below) out of the painting with soft-edged masks. These are
-  moved and scaled at draw time; the pixels are the painting's own.
+- **Cuts** the two pupils and the tongue out of the painting with soft-edged
+  masks. These are moved and scaled at draw time; the pixels are the painting's
+  own. (Eyelids were originally cut the same way, from two bands of skin above
+  and below each eye. A crop of real skin holds together only at the coverage it
+  was cut at: at any other it stretches into a leaf-shaped sliver lying across
+  the eyeball. The lids are now painted shapes in the skin colour sampled from
+  the painting at (700, 300) and (640, 330), shaded with a rolled margin and a
+  crease, and tinted arithmetically to follow whatever the skin is currently
+  doing. No pixels are cut for them.)
 - **Removes and rebuilds** the painted open mouth. Its outline was traced by
   hand off the picture (`MOUTH_OUTLINE` in `lib/render/creature/anatomy.ts`)
   and everything inside it — lips, teeth, tongue, cavity — is cut away and
@@ -53,8 +59,10 @@ Everything else the creature does — head, jaw, belly, swallow, cheeks, antenna
 (`lib/render/creature/warp.ts`). The creature is never cut out of the
 background, so there is no silhouette edge that can tear.
 
-The two colours that are authored rather than sampled are the mouth cavity
-(`rgb(46,16,14)` and `rgb(9,3,3)`) and the tooth gradient, both chosen against
-the painting's own palette.
+The colours that are authored rather than sampled are the mouth cavity
+(`rgb(46,16,14)` and `rgb(9,3,3)`), the tooth gradient, and the flush, pallor
+and rage tints in `drawSkin` — all chosen against the painting's own palette,
+and all applied through a soft silhouette mask derived from the same file so
+they never end on a hard edge across the body.
 
 Generator: none. Source file: `public/art/kitchen.png`, already recorded above.

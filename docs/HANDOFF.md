@@ -10,18 +10,34 @@ with human playtest and release gates still open.**
 
 The user asked for the creature to become a living character whose state a
 spectator can name across the room, on a new branch, with a screenshot harness,
-a fresh-context visual critic and an iteration loop. Five iterations ran. The
-rig is built and every state exists; the read is not there yet. The honest
-status, the critic's scores and the recommended next steps are at the top of
+a fresh-context visual critic and an iteration loop, then asked for a second
+session of the same. Thirteen iterations ran across two time caps. The rig is
+built and every state exists; the read is not there yet. The honest status, the
+critic's scores and the recommended next steps are at the top of
 `docs/qa/creature/ITERATION_LOG.md` — read that before continuing this work.
 
 Short version: the creature is now a layered rig derived at runtime from
-`public/art/kitchen.png` (no new art), driven from `ArcadeState` through springs
-and authored beats. Twenty-five named states, all reachable through real play.
-Render cost 2.0 ms average at 1920x1080 against a 4 ms budget. Critic average
-4.5 / 10 against the brief's rubric; the exit criterion was 8 across the board
-in two consecutive iterations, and that was not met. Do not describe this as
+`public/art/kitchen.png` (no new art), driven from `ArcadeState` through
+expression blending, springs and authored beats. Twenty-five named states, all
+reachable through real play. Render cost 3.3 ms average / 5.4 ms max at
+1920x1080 against a 4 ms average budget — the grid was densified to stop the
+belly tearing and there is no headroom left. Critic average 4.6 / 10 against the
+brief's rubric, best single state 8; the exit criterion was 8 across the board in
+two consecutive iterations, and that was not met. Do not describe this as
 finished, polished or AAA.
+
+Two things are worth knowing before touching this code, because both were
+expensive to find:
+
+- **The warp is a backward map.** `drawWarped` samples the source at
+  `destination - field(destination)`. Anything drawn on top of the painting must
+  be placed through `localTransform`, which inverts the field; reading the field
+  at a part's own painted position puts it tens of pixels away from the feature
+  it belongs to wherever the body is actually deforming.
+- **The face is a set of expressions, not a pile of channels.** `pose.ts` blends
+  *toward* named records, which pulls the channels an expression does not name
+  back to rest. Adding a state by raising a few channels will produce something
+  that looks like every other state; author a whole expression instead.
 
 Where things are:
 
@@ -38,6 +54,16 @@ Where things are:
   The PNGs are gitignored; the log and the manifests are kept.
 
 Known-open defects, in the order worth fixing, are listed in the final report.
+The short version: two confusion clusters (`attract-idle`/`off-menu`, and a
+four-way cluster of open-mouthed states), three ingredients that read by hue
+rather than by material or timing, an irritation ramp that is one pose with the
+red turned up, a faint comb smear across the inflated belly, and a hazard flap
+that still reads as a drawn overlay.
+
+The harness suppresses the canvas-drawn score pills as well as the DOM HUD
+(`__dnfi.hideLabels`). That matters: before it did, the critic was naming states
+from their toast text rather than from the creature, and several scores were
+inflated as a result.
 
 **Environment note:** the harness, the dev server and the build were run in a
 Linux cloud workspace on a clean `npm install`, not through the desktop bridge —

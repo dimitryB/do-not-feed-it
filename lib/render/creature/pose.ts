@@ -185,9 +185,12 @@ const EXPRESSIONS = {
     // delight rather than a quieter version of it.
     // The painted mouth curves upward on its own, so "level" still reads as a
     // smile: the corners have to be pulled well past neutral to look unmoved.
-    jawOpen: 0, mouthWidth: 0.62, cornerLift: -0.75, lipPress: 1, jawShift: 1,
-    lidLeft: 0.52, lidRight: 0.1, lowerLid: 0.3, browAsym: 1, browRaise: 0.2,
-    headTilt: -7.5, headX: -13, headY: 9, antennaDroop: 0.85, antennaTwist: -1,
+    jawOpen: 0, mouthWidth: 0.5, cornerLift: -0.95, lipPress: 1, jawShift: 1.4,
+    lidLeft: 0.6, lidRight: 0.18, lowerLid: 0.45, browAsym: 1, browRaise: 0.25,
+    // Turned away. Indifference is a look-away, and a head square to camera
+    // reads as pleased however the mouth is drawn.
+    headTilt: -10, headX: -26, headY: 12, lean: -0.045,
+    antennaDroop: 0.95, antennaTwist: -1.15,
   },
   /** A snack off the vent: startled, and still following it. */
   startle: {
@@ -321,7 +324,10 @@ const EXPRESSIONS = {
   /** Shift lost to an empty belly. */
   collapse: {
     jawOpen: 0.14, mouthWidth: 0.8, cornerLift: -1.55, tongueOut: 1, drool: 0.35,
-    lidLeft: 0.66, lidRight: 0.66, lowerLid: 0, browSad: 1,
+    // The lower lid is not optional here: with the eye drained of colour, the
+    // painted eyeball's own lower edge shows under the drawn one and reads as a
+    // second iris sitting behind the first.
+    lidLeft: 0.62, lidRight: 0.62, lowerLid: 0.34, browSad: 1,
     headY: 34, headTilt: 9, bodyRise: -38, squashY: 0.86, squashX: 1.09,
     cheekPuff: -0.85, antennaDroop: 1.35, antennaTwist: 0.35, pupilScale: 0.85,
   },
@@ -329,7 +335,11 @@ const EXPRESSIONS = {
   rageEnd: {
     jawOpen: 0.82, mouthWidth: 1.1, cornerLift: -0.8, teethBare: 1, teethLong: 0.45,
     lidLeft: 0, lidRight: 0, lowerLid: 0.42, browAngry: 1,
-    headX: 33, headY: -23, lean: 0.12, squashX: 1.12, squashY: 0.94, bodyRise: 17,
+    // Restrained on purpose. With part placement corrected the lean scales the
+    // head about a point below it, and at 0.12 the top of the skull left the
+    // frame: the eyes ended up riding the rim of the mouth with no cranium
+    // above them, which reads as a broken composite rather than as fury.
+    headX: 28, headY: -14, lean: 0.055, squashX: 1.1, squashY: 0.95, bodyRise: 14,
     antennaDroop: -1.25, antennaTwist: 0.5, pupilScale: 0.55,
   },
 } as const satisfies Record<string, Expression>;
@@ -675,8 +685,8 @@ export class CreatureAnimator {
     // Delight looks straight out; indifference looks anywhere else. Without
     // this the two verdicts differ only in the corners of the mouth.
     return feed.craved
-      ? { x: -0.1, y: -0.4, weight: verdict }
-      : { x: 0.85, y: 0.5, weight: verdict };
+      ? { x: -0.1, y: -0.5, weight: verdict }
+      : { x: 1, y: 0.62, weight: verdict };
   }
 
   /** Skin changes belonging to a catch, layered after the mood's own. */
