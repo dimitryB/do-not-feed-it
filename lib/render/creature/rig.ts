@@ -139,7 +139,7 @@ function cutEllipse(source: HTMLCanvasElement, x: number, y: number, rx: number,
  * cannot be scaled up into a whole jaw. This paints a cone in the sampled
  * palette instead and rubs a little of the real tooth over it for grain.
  */
-function buildTooth(art: HTMLCanvasElement, ivory: string): Patch {
+function buildTooth(art: HTMLCanvasElement): Patch {
   const width = 30;
   const height = 56;
   const patch = canvasOf(width * HI, height * HI);
@@ -165,8 +165,9 @@ function buildTooth(art: HTMLCanvasElement, ivory: string): Patch {
 
   // Root end sits in shadow under the lip; the tip catches the amber light.
   const depth = context.createLinearGradient(0, 0, 0, height);
-  depth.addColorStop(0, "rgba(28,18,6,0.75)");
-  depth.addColorStop(0.24, "rgba(40,28,10,0.16)");
+  depth.addColorStop(0, "rgba(18,10,3,0.95)");
+  depth.addColorStop(0.14, "rgba(30,20,7,0.55)");
+  depth.addColorStop(0.3, "rgba(40,28,10,0.14)");
   depth.addColorStop(0.72, "rgba(255,222,150,0.1)");
   depth.addColorStop(1, "rgba(255,236,186,0.24)");
   context.fillStyle = depth;
@@ -186,8 +187,9 @@ function buildTooth(art: HTMLCanvasElement, ivory: string): Patch {
   context.fillRect(0, 0, width * 0.55, height);
   context.restore();
 
-  context.strokeStyle = `${ivory.replace("rgb", "rgba").replace(")", ",0.5)")}`;
-  context.lineWidth = 0.7;
+  // A cold edge down one side reads as a hard surface at any size.
+  context.strokeStyle = "rgba(226,240,236,0.55)";
+  context.lineWidth = 1.1;
   context.beginPath();
   context.moveTo(width - 2, height * 0.06);
   context.bezierCurveTo(width - 3, height * 0.42, width * 0.76, height * 0.86, width / 2, height - 0.5);
@@ -406,7 +408,7 @@ export function buildRig(image: HTMLImageElement): CreatureRig {
       { x: eye.x - eye.rx - 11, y: eye.y + eye.ry - 6, width: (eye.rx + 11) * 2, height: 24 }, "top");
   }
   const tongue = cutEllipse(art, TONGUE.x, TONGUE.y, TONGUE.rx, TONGUE.ry, 0.32);
-  const tooth = buildTooth(art, sample(artContext, 786 * HI, 200 * HI, 2));
+  const tooth = buildTooth(art);
 
   // Then bake the removals into the working copy the warp draws from.
   const mouthSkin = buildMouthSkin(art, artContext);

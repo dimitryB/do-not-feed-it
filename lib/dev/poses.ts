@@ -162,8 +162,13 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
       selected = "pepper";
       state.misses = 4;
       state.rage = 28;
-      if (before) approach(state, "pepper", before);
-      else add(state, "miss", ticks, "SNACK DOWN", { x: 690, y: 612, ingredient: "pepper" });
+      if (before) {
+        // A miss is on a losing line the whole way, not a catch that failed at
+        // the last moment.
+        const away = Math.min(0.9, before) * 60 * 11.4;
+        shot(state, "pepper", ARENA.mouth.x - away, ARENA.mouth.y + 110 - away * 0.02, 11.4, 5.4, 46);
+        add(state, "launch", 46, "pepper", { x: 264, y: 494, ingredient: "pepper" });
+      } else add(state, "miss", ticks, "SNACK DOWN", { x: 690, y: 612, ingredient: "pepper" });
       break;
     }
     case "miss-vent": {
@@ -196,14 +201,20 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
       const ingredient = id.slice(5) as Ingredient;
       selected = ingredient;
       state.servings[ingredient] = 3;
+      // The warning is a 90-tick build. Past that the mutation actually lands:
+      // a strip that stops at the end of the build can only ever show a ramp,
+      // never the snap the ramp is anticipating, which is what made all three
+      // onset strips read as linear.
+      const startsAt = state.tick + 90 - ticks;
       state.mutation = {
-        ingredient, phase: "warning",
-        startsAt: state.tick + Math.max(6, 90 - ticks),
+        ingredient, phase: ticks >= 90 ? "active" : "warning",
+        startsAt,
         endsAt: state.tick + 570 - ticks,
         gustWarning: false, gustActive: false,
       };
       state.announcement = MUTATION_LABELS[ingredient];
-      add(state, "warning", ticks, MUTATION_LABELS[ingredient], { ingredient });
+      add(state, ticks >= 90 ? "mutation" : "warning", Math.max(0, ticks - 90),
+          MUTATION_LABELS[ingredient], { ingredient });
       break;
     }
     case "active-metal":

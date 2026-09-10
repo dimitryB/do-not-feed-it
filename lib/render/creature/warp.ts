@@ -89,16 +89,22 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
     // normalised direction: a normalised one flips sign through the centre,
     // which is a discontinuity, and a discontinuity folds a warp cell.
     if (pose.bellySwell !== 0) {
-      // Centred on the part of the body the camera can actually see. The belly
-      // proper sits behind the serving hatch, so inflating it there is a swell
-      // nobody watching the stream will ever notice.
-      // Its own falloff reaches zero at the counter, so it never meets the
-      // floor gate: two falloffs multiplied together make a gradient steep
-      // enough to pinch the arms where they rest on the sill.
-      const belly = bump(x, y, BELLY.x, 286, 300, 152);
+      // Two constraints fix where this kernel can sit.
+      //
+      // It has to clear the mouth: the mouth is drawn at fixed anatomy
+      // coordinates and follows the warp through one affine sample taken at its
+      // centre, so a steep gradient running through the muzzle cannot be
+      // tracked, and the drawn mouth tears away from the painted one. That is
+      // how iteration 9 grew a second mouth across the chin.
+      //
+      // And it has to fall off on its own rather than being multiplied by the
+      // floor gate: a second ramp inside the first makes a gradient the affine
+      // cells cannot follow either, which is the stepped horizontal seam that
+      // appeared across the inflated belly.
+      const belly = bump(x, y, BELLY.x, 340, 300, 76);
       if (belly > 0) {
         dx += (x - BELLY.x) / 300 * pose.bellySwell * 66 * belly;
-        dy += (y - 286) / 152 * pose.bellySwell * 30 * belly - pose.bellySwell * 30 * belly;
+        dy += (y - 340) / 76 * pose.bellySwell * 12 * belly - pose.bellySwell * 20 * belly;
       }
     }
 

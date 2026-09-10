@@ -50,10 +50,10 @@ export function createScene(){
       ctx.save();ctx.strokeStyle='#eff4bd44';ctx.lineWidth=1;ctx.setLineDash([5,12]);ctx.beginPath();ctx.ellipse(ARENA.mouth.x,ARENA.mouth.y,ARENA.mouth.rx,ARENA.mouth.ry,0,0,Math.PI*2);ctx.stroke();ctx.restore();
     }
     const hazard=playing?getHazard(tick):null;
-    if(hazard){ctx.save();const {x,y,width:w,height:h,warning}=hazard;ctx.strokeStyle='#86908066';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x+w/2,35);ctx.lineTo(x+w/2,y);ctx.stroke();ctx.globalAlpha=warning?.35:1;const metal=ctx.createLinearGradient(x,0,x+w,0);metal.addColorStop(0,'#182827');metal.addColorStop(.35,'#7b8d77');metal.addColorStop(.55,'#354b43');metal.addColorStop(1,'#122723');ctx.fillStyle=metal;ctx.shadowColor='#000';ctx.shadowBlur=14;ctx.shadowOffsetX=5;ctx.shadowOffsetY=4;ctx.fillRect(x,y,w,h);ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+    if(hazard){ctx.save();const {x,y,width:w,height:h,warning}=hazard;ctx.fillStyle='#101d1c';ctx.fillRect(x-16,18,w+32,15);ctx.fillStyle='#22322f';ctx.fillRect(x-16,18,w+32,4);ctx.strokeStyle='#2c3a36';ctx.lineWidth=1;ctx.strokeRect(x-16,18,w+32,15);ctx.strokeStyle='#4a5a54';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+3,33);ctx.lineTo(x+3,y);ctx.moveTo(x+w-3,33);ctx.lineTo(x+w-3,y);ctx.stroke();ctx.fillStyle=warning?'#ffcf7a':'#7f9a6a';ctx.beginPath();ctx.arc(x+w/2,25,3.2,0,Math.PI*2);ctx.fill();ctx.globalAlpha=warning?.35:1;const metal=ctx.createLinearGradient(x,0,x+w,0);metal.addColorStop(0,'#182827');metal.addColorStop(.35,'#7b8d77');metal.addColorStop(.55,'#354b43');metal.addColorStop(1,'#122723');ctx.fillStyle=metal;ctx.shadowColor='#000';ctx.shadowBlur=14;ctx.shadowOffsetX=5;ctx.shadowOffsetY=4;ctx.fillRect(x,y,w,h);ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
       // Amber light from the kitchen catches the right edge of the flap.
       const rim=ctx.createLinearGradient(x,0,x+w,0);rim.addColorStop(0,'#00000055');rim.addColorStop(.7,'#00000000');rim.addColorStop(1,'#f0b06a66');ctx.fillStyle=rim;ctx.fillRect(x,y,w,h);
-      ctx.strokeStyle='#c0b67e';ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);ctx.fillStyle='#d1b15e';for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(x,y+9+i*22);ctx.lineTo(x+w,y+i*22);ctx.lineTo(x+w,y+7+i*22);ctx.lineTo(x,y+16+i*22);ctx.fill();}ctx.fillStyle=warning?'#ffcf7a':'#deed93';ctx.beginPath();ctx.arc(x+w/2,y-9,3,0,Math.PI*2);ctx.fill();ctx.restore();}
+      ctx.strokeStyle='#c0b67e';ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);ctx.fillStyle='#d1b15e';for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(x,y+9+i*22);ctx.lineTo(x+w,y+i*22);ctx.lineTo(x+w,y+7+i*22);ctx.lineTo(x,y+16+i*22);ctx.fill();}ctx.restore();}
     if(m){
       // Effects support the pose; the creature itself carries the mutation.
       const color=COLORS[m.ingredient];const pulse=reduced?.55:.5+.5*Math.sin(time*6);
@@ -82,14 +82,31 @@ export function createScene(){
       if(cannon.complete&&cannon.naturalWidth){ctx.drawImage(masked(cannon)??cannon,90,360,1100,480,-64,-40,140,70);}ctx.restore();
       if(!state||tick-state.lastLaunchTick>=ARENA.cooldownTicks)item(ctx,selected,x,y,47,angle*Math.PI/180);
     }
-    if(playing)state?.projectiles.forEach(p=>{if(active&&m.ingredient==='metal'&&p.assisted){ctx.save();ctx.strokeStyle='#d4f7b54a';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.quadraticCurveTo((p.x+ARENA.mouth.x)/2,p.y-45,ARENA.mouth.x,ARENA.mouth.y);ctx.stroke();ctx.restore();}ctx.save();ctx.strokeStyle=COLORS[p.ingredient];ctx.globalAlpha=.3;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(p.x-p.vx*2,p.y-p.vy*2);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();item(ctx,p.ingredient,p.x,p.y,48,reduced?0:p.age*.065);});
+    if(playing)state?.projectiles.forEach(p=>{
+      // A dark snack crossing the dark half of the room disappears at stream
+      // bitrate, so it carries its own light.
+      ctx.save();const glow=ctx.createRadialGradient(p.x,p.y,2,p.x,p.y,42);const tint=COLORS[p.ingredient];
+      glow.addColorStop(0,`${tint}66`);glow.addColorStop(.45,`${tint}22`);glow.addColorStop(1,`${tint}00`);
+      ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,42,0,Math.PI*2);ctx.fill();ctx.restore();if(active&&m.ingredient==='metal'&&p.assisted){ctx.save();ctx.strokeStyle='#d4f7b54a';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.quadraticCurveTo((p.x+ARENA.mouth.x)/2,p.y-45,ARENA.mouth.x,ARENA.mouth.y);ctx.stroke();ctx.restore();}ctx.save();ctx.strokeStyle=COLORS[p.ingredient];ctx.globalAlpha=.55;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(p.x-p.vx*3.2,p.y-p.vy*3.2);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.globalAlpha=.9;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(p.x-p.vx*1.6,p.y-p.vy*1.6);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();item(ctx,p.ingredient,p.x,p.y,48,reduced?0:p.age*.065);});
+    // A missed snack stays on the floor for a moment. Without it, a miss and a
+    // catch look the same on a stream: the creature reacts and nothing else
+    // changes.
+    for(const e of recent){if(e.type!=='miss')continue;const age=tick-e.tick;const rest=Math.min(ARENA.floor-4,e.y+age*1.6);
+      ctx.save();ctx.globalAlpha=Math.max(0,Math.min(1,(70-age)/26));
+      ctx.fillStyle='#040908a0';ctx.beginPath();ctx.ellipse(e.x,rest+12,34,8,0,0,Math.PI*2);ctx.fill();
+      ctx.translate(e.x,rest);ctx.rotate(.42);ctx.scale(1,.72);
+      item(ctx,e.ingredient??selected,0,0,54);ctx.restore();
+      if(!reduced&&age<22){ctx.save();ctx.globalAlpha=Math.max(0,(22-age)/44);ctx.fillStyle='#cbbfa855';
+        for(let i=0;i<5;i++){const a=Math.PI+i*.6;const r=8+age*2.4;ctx.beginPath();ctx.arc(e.x+Math.cos(a)*r,rest-Math.abs(Math.sin(a))*r*.5,Math.max(0,5-age/5),0,Math.PI*2);ctx.fill();}ctx.restore();}
+    }
+
     // Score pops are UI, so they read as UI: a pill above the action rather
     // than loose text composited over the creature's body.
     for(const e of recent){const age=tick-e.tick;if(e.type==='feed'||e.type==='miss'||e.type==='bounce'){
-      const good=e.type==='feed';const y=good?86-(reduced?0:age*.4):Math.max(70,e.y-46-(reduced?0:age*.55));
+      const good=e.type==='feed';const y=good?Math.max(74,86-(reduced?0:age*.4)):Math.max(70,e.y-46-(reduced?0:age*.55));
       // Hold the pop at full strength for most of its life and fade only at the
       // end: a pill that spends its time half-transparent reads as a draw bug.
-      ctx.save();ctx.globalAlpha=Math.max(0,Math.min(1,(65-age)/22));ctx.font=`bold ${good?18:14}px 'Helvetica Neue',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.save();ctx.globalAlpha=Math.max(0,Math.min(1,(65-age)/9));ctx.font=`bold ${good?18:14}px 'Helvetica Neue',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
       const w=ctx.measureText(e.label).width+22;const x=Math.max(w/2+16,Math.min(1184-w/2,e.x));
       ctx.fillStyle='#050d0cf2';ctx.strokeStyle=good?'#cfe89066':'#e5a97a55';ctx.lineWidth=1;
       ctx.beginPath();ctx.roundRect(x-w/2,y-13,w,26,13);ctx.fill();ctx.stroke();

@@ -43,13 +43,16 @@ const HIDE_HUD = `
 /** Motion strips: the states where cause-and-effect has to be legible over time. */
 const STRIPS = [
   { name: "gulp-metal", state: "gulp-metal", from: -0.2 },
-  { name: "gulp-balloon", state: "gulp-balloon", from: -0.2 },
-  { name: "gulp-pepper", state: "gulp-pepper", from: -0.2 },
-  { name: "miss-floor", state: "miss-floor", from: -0.2 },
-  { name: "onset-metal", state: "warn-metal", from: 0.15, step: SLOW_STRIP_STEP },
-  { name: "onset-balloon", state: "warn-balloon", from: 0.15, step: SLOW_STRIP_STEP },
-  { name: "onset-pepper", state: "warn-pepper", from: 0.15, step: SLOW_STRIP_STEP },
-  { name: "pepper-exhale", state: "active-pepper", from: -0.1 },
+  { name: "gulp-balloon", state: "gulp-balloon", from: -0.2, step: 0.15 },
+  { name: "gulp-pepper", state: "gulp-pepper", from: -0.2, step: 0.2 },
+  { name: "miss-floor", state: "miss-floor", from: -0.05, step: 0.16 },
+  // Each onset strip straddles the moment the mutation lands (the warning build
+  // ends at t = 1.5), so the strip shows anticipation, the snap, and the settle
+  // rather than six samples of one ramp.
+  { name: "onset-metal", state: "warn-metal", from: 0.7, step: SLOW_STRIP_STEP },
+  { name: "onset-balloon", state: "warn-balloon", from: 0.7, step: SLOW_STRIP_STEP },
+  { name: "onset-pepper", state: "warn-pepper", from: 0.7, step: SLOW_STRIP_STEP },
+  { name: "pepper-exhale", state: "active-pepper", from: -0.15, step: 0.2 },
 ];
 
 /**
@@ -57,11 +60,11 @@ const STRIPS = [
  * sampling it at 0.4 s catches almost nothing; a gulp is over in half a second.
  */
 const STATE_TIME = {
-  "warn-metal": 1.05, "warn-balloon": 1.05, "warn-pepper": 1.05,
-  "gulp-metal": 0.12, "gulp-balloon": 0.32, "gulp-pepper": 0.58,
-  "craving-satisfied": 0.95, "off-menu": 0.95,
+  "warn-metal": 1.38, "warn-balloon": 1.38, "warn-pepper": 1.38,
+  "gulp-metal": 0.07, "gulp-balloon": 0.32, "gulp-pepper": 0.58,
+  "craving-satisfied": 0.88, "off-menu": 0.88,
   "miss-floor": 0.46, "miss-vent": 0.46,
-  "recovery": 0.62,
+  "recovery": 0.95,
 };
 const DEFAULT_TIME = 0.62;
 
@@ -69,7 +72,7 @@ const DEFAULT_TIME = 0.62;
  * Reduced motion damps the springs hard, so a beat sampled at its contact frame
  * has not arrived yet. These states are sampled at their held pose instead.
  */
-const REDUCED_TIME = { "gulp-metal": 0.62 };
+const REDUCED_TIME = { "gulp-metal": 0.26 };
 
 const REDUCED_STATES = [
   "hungry-severe", "irritation-3", "gulp-metal",

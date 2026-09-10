@@ -22,8 +22,14 @@ export const JAW_PIVOT = { x: 840, y: 250 };
 export const COUNTER_Y = 470;
 
 export const EYE = {
-  left: { x: 764, y: 150, rx: 26, ry: 22, pupil: { x: 769, y: 149, r: 16 } },
-  right: { x: 916, y: 151, rx: 28, ry: 23, pupil: { x: 901, y: 150, r: 16 } },
+  // Re-measured off the painting at 4x. The previous figures put the socket a
+  // few pixels up and left of the painted eyeball and made it three pixels too
+  // wide in every direction, so everything clipped to it — lids above all — sat
+  // on the skin around the eye instead of on the eye. The pupil radius was out
+  // by half again, which is why a dilated pupil filled the socket edge to edge
+  // and read as a dark slot.
+  left: { x: 769, y: 154, rx: 23, ry: 19, pupil: { x: 777, y: 156, r: 11 } },
+  right: { x: 920, y: 158, rx: 25, ry: 19.5, pupil: { x: 909, y: 159, r: 11 } },
 } as const;
 
 export type EyeSide = keyof typeof EYE;
