@@ -206,6 +206,13 @@ const EXPRESSIONS = {
     headY: 22, headTilt: 4, squashX: 1.05, squashY: 0.95,
     antennaDroop: 0.4, antennaTwist: 0.55,
   },
+  /** A snack on the floor: head down, looking at it. */
+  mope: {
+    jawOpen: 0.02, mouthWidth: 0.6, cornerLift: -1.5, lipPress: 1, jawShift: -0.3,
+    lidLeft: 0.4, lidRight: 0.44, lowerLid: 0.1, browSad: 1, browRaise: 0.1,
+    headY: 34, headTilt: 3, lean: 0.02, squashY: 0.94, squashX: 1.05, bodyRise: -14,
+    antennaDroop: 1.15, antennaTwist: -0.2,
+  },
   /** And the flat look at the mess afterwards. */
   sideEye: {
     jawOpen: 0.03, mouthWidth: 0.72, cornerLift: -1.2, lipPress: 0.95, jawShift: -0.85,
@@ -237,10 +244,14 @@ const EXPRESSIONS = {
   },
   /** Metal building: teeth pushing through, eyes wide. */
   warnMetal: {
-    jawOpen: 0.44, mouthWidth: 0.88, cornerLift: -0.7, teethBare: 1, teethLong: 0.6,
-    lidLeft: 0, lidRight: 0, lowerLid: 0.05, browRaise: 1, browAngry: 0.35,
-    headY: 10, headTilt: -2, lean: -0.03, squashX: 1.03, squashY: 0.98,
-    antennaDroop: -1, antennaTwist: 0.7, pupilScale: 0.52,
+    // A grimace, not a grin. Teeth showing through a narrow, pulled-back mouth
+    // with the corners down: an open toothy smile here was indistinguishable
+    // from every other state that happens to show teeth.
+    jawOpen: 0.3, mouthWidth: 0.62, cornerLift: -1.35, lipPress: 0.5,
+    teethBare: 1, teethLong: 0.75,
+    lidLeft: 0, lidRight: 0, lowerLid: 0.5, browRaise: 0.5, browAngry: 0.9,
+    headY: 14, headTilt: -3, lean: -0.05, squashX: 1.05, squashY: 0.96,
+    antennaDroop: -1, antennaTwist: 0.8, pupilScale: 0.5,
   },
   /** Metal live: the jaw is a trap. */
   activeMetal: {
@@ -250,10 +261,12 @@ const EXPRESSIONS = {
   },
   /** Balloon building: filling up, lips sealed. */
   warnBalloon: {
-    jawOpen: 0, mouthWidth: 0.62, cornerLift: -0.3, lipPress: 1, cheekPuff: 1.5,
-    lidLeft: 0, lidRight: 0, lowerLid: 0.05, browRaise: 1, browSad: 0.4,
-    headY: -8, bellySwell: 0.55, bodyRise: 18, squashY: 1.08, squashX: 1.07,
-    antennaDroop: -1.1, antennaTwist: 0.25, pupilScale: 1.34,
+    // Filling up against a sealed mouth. The whole point of the warning is that
+    // the belly is already going, so it has to be more than a face.
+    jawOpen: 0, mouthWidth: 0.56, cornerLift: -0.45, lipPress: 1, cheekPuff: 1.6,
+    lidLeft: 0, lidRight: 0, lowerLid: 0.1, browRaise: 1, browSad: 0.55,
+    headY: -14, bellySwell: 0.95, bodyRise: 26, squashY: 1.11, squashX: 1.08,
+    antennaDroop: -1.2, antennaTwist: 0.3, pupilScale: 1.34,
   },
   /** Balloon live: round, light, pleased with itself. */
   activeBalloon: {
@@ -267,10 +280,13 @@ const EXPRESSIONS = {
   },
   /** Pepper building: holding it in. */
   warnPepper: {
-    jawOpen: 0, mouthWidth: 0.7, cornerLift: -0.65, lipPress: 1, cheekPuff: 1.35,
-    lidLeft: 0.64, lidRight: 0.64, lowerLid: 0.45, browAngry: 0.75, browSad: 0.25,
-    headY: 6, squashX: 1.05, squashY: 0.975,
-    antennaDroop: 0.25, antennaTwist: 0.35,
+    // Holding it in, and losing. Two soft blush ellipses on an otherwise calm
+    // face read as bashful; the tell is the pressure — cheeks out, lips clamped,
+    // eyes screwed up, head pulled back off the counter.
+    jawOpen: 0, mouthWidth: 0.5, cornerLift: -1.1, lipPress: 1, cheekPuff: 1.7,
+    lidLeft: 0.62, lidRight: 0.66, lowerLid: 0.7, browAngry: 0.9, browSad: 0.45,
+    headY: 12, headTilt: -4, lean: -0.05, squashX: 1.08, squashY: 0.95,
+    antennaDroop: 0.4, antennaTwist: 0.5,
   },
   /** Pepper live, between gusts: still under pressure. */
   holdPepper: {
@@ -306,7 +322,7 @@ const EXPRESSIONS = {
   collapse: {
     jawOpen: 0.14, mouthWidth: 0.8, cornerLift: -1.55, tongueOut: 1, drool: 0.35,
     lidLeft: 0.66, lidRight: 0.66, lowerLid: 0, browSad: 1,
-    headY: 46, headTilt: 9, bodyRise: -34, squashY: 0.87, squashX: 1.08,
+    headY: 34, headTilt: 9, bodyRise: -38, squashY: 0.86, squashX: 1.09,
     cheekPuff: -0.85, antennaDroop: 1.35, antennaTwist: 0.35, pupilScale: 0.85,
   },
   /** Shift lost to irritation. */
@@ -456,12 +472,25 @@ export class CreatureAnimator {
       else if (mutation.ingredient === "balloon") this.wear("warnBalloon", strain * beat);
       else this.wear("warnPepper", strain * beat);
     }
+    const landed = latest(state, ["mutation"], 0.7);
     if (active && mutation) {
       if (mutation.ingredient === "metal") this.wear("activeMetal", 1);
       else if (mutation.ingredient === "balloon") this.wear("activeBalloon", 1);
       else if (mutation.gustActive) this.wear("blowPepper", 1);
       else if (mutation.gustWarning) this.wear("warnPepper", 1);
       else this.wear("holdPepper", 1);
+      // The moment it lands gets an overshoot. A mutation that eases in over
+      // ninety ticks and then simply arrives is a ramp, and a ramp is the one
+      // thing a six-frame strip cannot make look like animation.
+      if (landed) {
+        const pop = Math.exp(-landed.age * 6.5);
+        target.squashX += pop * 0.09;
+        target.squashY -= pop * 0.07;
+        target.bodyRise += pop * 16;
+        target.teethLong += pop * 0.45;
+        target.bellySwell += pop * 0.35;
+        if (!reduced) target.antennaShake = Math.max(target.antennaShake, pop);
+      }
     }
 
     // 5. Tracking. A snack in the air owns the face until it lands.
@@ -670,7 +699,15 @@ export class CreatureAnimator {
     this.wear("flinch", jolt);
     // A deflection is not a loss — the snack is still in play — so it startles
     // rather than disappoints, which also stops the two misses looking alike.
-    this.wear(miss.type === "bounce" ? "startle" : "sideEye", look);
+    if (miss.type === "bounce") this.wear("startle", look);
+    else {
+      // A dropped snack is a head-down sulk that outlasts the jolt, then a flat
+      // look at the mess. Without the sulk the whole reaction was over in a
+      // fifth of a second and what remained was indistinguishable from mild
+      // irritation.
+      this.wear("mope", look);
+      this.wear("sideEye", clamp01((age - 0.62) / 0.3) * 0.75);
+    }
     target.headX -= side * jolt * (reduced ? 5 : 24);
     target.headTilt -= side * jolt * (reduced ? 2 : 7);
     target.headX += side * look * 7;

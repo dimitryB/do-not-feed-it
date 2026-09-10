@@ -160,17 +160,47 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
 }
 
 const probe = { x: 0, y: 0 };
+const found = { x: 0, y: 0 };
+
+/**
+ * Where the painted point `(x, y)` ends up on screen.
+ *
+ * `drawWarped` is a backward map: for each destination pixel it samples the
+ * source at `destination - field(destination)`. So the displacement that moves
+ * a painted feature is the field evaluated at the feature's *destination*, not
+ * at the feature itself. Reading the field at the source is only correct where
+ * it is locally constant; wherever it has a gradient — which is everywhere the
+ * body is actually deforming — the two disagree by roughly `d · ∂d`, and that
+ * error is what left the eyelids hanging above eyes that had moved further down
+ * the face than the lids did.
+ *
+ * So invert it. `q - field(q) = p` converges in a couple of steps for any field
+ * gentle enough to draw without folding, which is the same condition the grid
+ * already has to satisfy.
+ */
+function inverseAt(field: WarpField, x: number, y: number, out: { x: number; y: number }) {
+  let qx = x;
+  let qy = y;
+  for (let step = 0; step < 3; step++) {
+    field(qx, qy, probe);
+    qx = x + probe.x;
+    qy = y + probe.y;
+  }
+  out.x = qx;
+  out.y = qy;
+}
 
 /** Local translation and scale of the field at a point, for placing a part. */
 export function localTransform(field: WarpField, x: number, y: number) {
-  field(x, y, probe);
-  const dx = probe.x;
-  const dy = probe.y;
-  field(x + 12, y, probe);
-  const scaleX = 1 + (probe.x - dx) / 12;
-  field(x, y + 12, probe);
-  const scaleY = 1 + (probe.y - dy) / 12;
-  return { dx, dy, scaleX, scaleY };
+  inverseAt(field, x, y, found);
+  const dx = found.x - x;
+  const dy = found.y - y;
+  inverseAt(field, x + 12, y, found);
+  const scaleX = (found.x - (x + dx)) / 12;
+  inverseAt(field, x, y + 12, found);
+  const scaleY = (found.y - (y + dy)) / 12;
+  // A degenerate or inverted local frame would mirror the part it places.
+  return { dx, dy, scaleX: Math.max(0.35, scaleX), scaleY: Math.max(0.35, scaleY) };
 }
 
 /**

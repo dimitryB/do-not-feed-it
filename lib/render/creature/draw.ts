@@ -13,6 +13,43 @@ import { buildField, drawWarped, localTransform, WARP_REGION, type WarpField } f
 const clamp01 = (value: number) => (value < 0 ? 0 : value > 1 ? 1 : value);
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 
+const RGB = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/;
+
+/**
+ * A sampled skin colour, moved to wherever the creature's skin currently is.
+ *
+ * Skin grading is a composite over the painting, and the eyelids are painted
+ * after it so that the wet eye underneath keeps its colour. That left the lids
+ * the one part of a starving creature's face still in full health — two olive
+ * discs on a drained grey head. They are the same skin, so they take the same
+ * colour, arithmetically rather than by compositing.
+ */
+function skinTone(base: string, pose: CreaturePose) {
+  const parts = RGB.exec(base);
+  if (!parts) return base;
+  let r = Number(parts[1]);
+  let g = Number(parts[2]);
+  let b = Number(parts[3]);
+  if (pose.pallor > 0.02) {
+    const grey = r * 0.36 + g * 0.52 + b * 0.12;
+    const t = pose.pallor * 0.85;
+    r = mix(r, grey * 0.9 + 16, t);
+    g = mix(g, grey * 0.98 + 24, t);
+    b = mix(b, grey * 0.86 + 40, t);
+  }
+  if (pose.flush > 0.02) {
+    r = mix(r, 234, pose.flush * 0.62);
+    g = mix(g, 98, pose.flush * 0.5);
+    b = mix(b, 44, pose.flush * 0.5);
+  }
+  if (pose.rageFlush > 0.02) {
+    r = mix(r, 182, pose.rageFlush * 0.62);
+    g = mix(g, 44, pose.rageFlush * 0.55);
+    b = mix(b, 48, pose.rageFlush * 0.55);
+  }
+  return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+}
+
 interface Aperture {
   leftX: number; leftY: number; rightX: number; rightY: number;
   upperControl: number; lowerControl: number;
@@ -322,6 +359,8 @@ function drawMouth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
  * makes the eye look alive.
  */
 function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: CreaturePose, field: WarpField) {
+  const lidLit = skinTone(rig.palette.skinMid, pose);
+  const lidShade = skinTone(rig.palette.skinShadow, pose);
   for (const side of EYE_SIDES) {
     const eye = EYE[side];
     // Positive x is outward for the right eye and inward for the left one.
@@ -361,8 +400,8 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     // way a real eye does at the end of its travel: keeping it wholly inside
     // left only ten pixels of movement, which is not an eyeline anyone can read
     // at stream resolution.
-    const reachX = Math.max(6, eye.rx - spot.r * 0.5);
-    const reachY = Math.max(4, eye.ry - spot.r * 0.7);
+    const reachX = Math.max(6, eye.rx - spot.r * 0.9);
+    const reachY = Math.max(4, eye.ry - spot.r * 0.95);
     // The painted pupils sit well inside their sockets, which is charming on a
     // still and cross-eyed the moment both eyes look the same way. Most of that
     // inward bias is taken out so an eyeline reads as one direction.
@@ -396,7 +435,11 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     // Lids, clipped to the eye so their edges follow its outline.
     context.save();
     context.beginPath();
-    context.ellipse(eye.x, eye.y, eye.rx + 0.6, eye.ry + 0.6, 0, 0, Math.PI * 2);
+    // Slightly inside the socket. The painted brow ridge overlaps the top of
+    // the eyeball, so a lid that fills the clip to its edge paints a flat cap
+    // over the brow — which is what turned a heavy lid into a khaki half-disc
+    // sitting on the creature's face.
+    context.ellipse(eye.x, eye.y, eye.rx - 0.8, eye.ry - 1.4, 0, 0, Math.PI * 2);
     context.clip();
     // Brows pivot at the outer corner, so anger drops the inner end and worry
     // lifts it — the same way a real brow moves.
@@ -423,23 +466,36 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
       context.closePath();
       const skin = context.createLinearGradient(0, from, 0, edge + bulge);
       skin.addColorStop(0, shade);
-      skin.addColorStop(0.62, lit);
+      skin.addColorStop(0.55, lit);
+      skin.addColorStop(0.86, lit);
       skin.addColorStop(1, shade);
       context.fillStyle = skin;
       context.fill();
-      // Lash line, and the shadow the lid casts on the wet eye under it.
-      context.strokeStyle = "rgba(24,18,4,0.5)";
-      context.lineWidth = 2;
+      // The rolled margin of the lid catches the lamp, and the lash line under
+      // it is a crease rather than an outline. Without these the lid is a flat
+      // shape laid on the eye instead of a piece of the same head.
+      context.save();
+      context.filter = "blur(1.4px)";
+      context.strokeStyle = "rgba(214,196,132,0.3)";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(left, edge - Math.sign(bulge) * 3.2);
+      context.quadraticCurveTo(eye.x, edge + bulge - Math.sign(bulge) * 3.2, right, edge - Math.sign(bulge) * 3.2);
+      context.stroke();
+      context.filter = "blur(0.8px)";
+      context.strokeStyle = "rgba(24,18,4,0.55)";
+      context.lineWidth = 2.2;
       context.beginPath();
       context.moveTo(left, edge);
       context.quadraticCurveTo(eye.x, edge + bulge, right, edge);
       context.stroke();
+      context.restore();
     };
 
     // `from` reaches well clear of the eye: a lid whose far edge sits just
     // outside it swings into view as soon as the brow rotates, and a straight
     // horizontal line across the top of an eyeball reads as a torn sprite.
-    paintLid(lidEdge, eye.y - eye.ry - 70, 9, rig.palette.skinMid, rig.palette.skinShadow);
+    paintLid(lidEdge, eye.y - eye.ry - 70, 9, lidLit, lidShade);
     if (lid > 0.06) {
       context.save();
       context.globalAlpha = Math.min(0.5, lid * 0.7);
@@ -453,8 +509,7 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
 
     if (lowerLid > 0.03) {
       const rise = lowerLid * eye.ry * 0.62;
-      paintLid(eye.y + eye.ry - rise, eye.y + eye.ry + 70, -7,
-               rig.palette.skinMid, rig.palette.skinShadow);
+      paintLid(eye.y + eye.ry - rise, eye.y + eye.ry + 70, -7, lidLit, lidShade);
     }
     context.restore();
 
@@ -464,7 +519,10 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
       context.translate(pivotX, pivotY);
       context.rotate(brow * Math.PI / 180);
       context.translate(-pivotX, -pivotY);
-      context.globalAlpha = Math.min(0.55, pose.browAngry * 0.55 + pose.browSad * 0.3);
+      // Blurred hard: a crisp lens of solid colour above the eye reads as a
+      // leaf stuck to the face. As a soft shadow it reads as a lowered brow.
+      context.filter = "blur(5px)";
+      context.globalAlpha = Math.min(0.5, pose.browAngry * 0.5 + pose.browSad * 0.28);
       context.fillStyle = "rgba(28,22,6,0.85)";
       context.beginPath();
       context.moveTo(eye.x - eye.rx - 7, eye.y - eye.ry - 3);
@@ -704,14 +762,14 @@ function drawExhale(context: CanvasRenderingContext2D, pose: CreaturePose, shape
   // Started at the near lip and travelling away from the face. Emitting from
   // the middle of the aperture drew the plume across the tooth row, where it
   // read as a smear over the teeth rather than as breath leaving the mouth.
-  const originX = shape.leftX + 4;
-  const originY = (shape.upperApex + shape.lowerApex) / 2 + 6;
+  const originX = shape.leftX + 34;
+  const originY = shape.lowerApex - 10;
   context.save();
   context.globalCompositeOperation = "screen";
   for (let index = 0; index < 5; index++) {
     const phase = reduced ? 0.3 + index * 0.14 : ((time * 1.35 + index * 0.2) % 1);
-    const x = originX - 12 - phase * 108;
-    const y = originY + (index - 2) * 9 - phase * 14;
+    const x = originX - phase * 126;
+    const y = originY + (index - 2) * 7 + phase * 16;
     const spread = 20 + phase * 62;
     context.globalAlpha = pose.exhale * 0.72 * (1 - phase * 0.7);
     const plume = context.createRadialGradient(x, y, 2, x, y, spread);
