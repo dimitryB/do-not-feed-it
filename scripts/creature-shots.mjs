@@ -17,6 +17,7 @@
  * Usage: node scripts/creature-shots.mjs --iter 3 [--port 4319] [--headed]
  */
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -24,7 +25,12 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const CHROMIUM = process.env.DNFI_CHROMIUM ?? "/opt/pw-browsers/chromium";
+// Prefer an explicitly configured browser, then the preinstalled one used by
+// the cloud workspace, and otherwise let Playwright resolve whatever
+// `npx playwright install chromium` put in its own cache — which is what
+// happens on a developer machine.
+const CHROMIUM = process.env.DNFI_CHROMIUM
+  ?? (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined);
 const WIDTH = 1920;
 const HEIGHT = 1080;
 const STREAM_WIDTH = 960;
@@ -388,7 +394,7 @@ async function main() {
   console.log(`[harness] starting dev server on port ${args.port}`);
   const server = await startDevServer(args.port);
   const browser = await chromium.launch({
-    executablePath: CHROMIUM,
+    ...(CHROMIUM ? { executablePath: CHROMIUM } : {}),
     headless: !args.headed,
     args: ["--no-sandbox", "--disable-dev-shm-usage", "--force-device-scale-factor=1", "--hide-scrollbars"],
   });
