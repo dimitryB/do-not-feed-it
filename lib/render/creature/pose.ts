@@ -265,7 +265,7 @@ const EXPRESSIONS = {
     // the belly is already going, so it has to be more than a face.
     jawOpen: 0, mouthWidth: 0.56, cornerLift: -0.45, lipPress: 1, cheekPuff: 1.6,
     lidLeft: 0, lidRight: 0, lowerLid: 0.1, browRaise: 1, browSad: 0.55,
-    headY: -14, bellySwell: 0.95, bodyRise: 26, squashY: 1.11, squashX: 1.08,
+    headY: -14, bellySwell: 0.7, bodyRise: 28, squashY: 1.1, squashX: 1.08,
     antennaDroop: -1.2, antennaTwist: 0.3, pupilScale: 1.34,
   },
   /** Balloon live: round, light, pleased with itself. */
@@ -275,7 +275,7 @@ const EXPRESSIONS = {
     // Most of "inflated" now comes from the uniform body scale rather than the
     // local belly kernel: a smooth global scale is something the mouth's affine
     // can follow, a steep local one is not.
-    headY: -20, bellySwell: 1.15, bodyRise: 40, squashY: 1.1, squashX: 1.09,
+    headY: -20, bellySwell: 0.82, bodyRise: 44, squashY: 1.12, squashX: 1.11,
     antennaDroop: -1.15, antennaTwist: 0.15, pupilScale: 1.3,
   },
   /** Pepper building: holding it in. */
@@ -315,7 +315,7 @@ const EXPRESSIONS = {
     jawOpen: 0.03, mouthWidth: 1.02, cornerLift: 1.3, lipPress: 0.5,
     lidLeft: 0.62, lidRight: 0.5, lowerLid: 0.75, browRaise: 0.35, browAngry: 0.2,
     browAsym: 0.6, headTilt: 6.5, headY: -14, lean: -0.04,
-    bellySwell: 1.05, bodyRise: 16, squashY: 1.07, squashX: 1.05,
+    bellySwell: 0.7, bodyRise: 18, squashY: 1.08, squashX: 1.06,
     antennaDroop: -0.5, antennaTwist: 0.7,
   },
   /** Shift lost to an empty belly. */

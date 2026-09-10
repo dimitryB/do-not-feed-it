@@ -407,8 +407,16 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     // inward bias is taken out so an eyeline reads as one direction.
     const restX = eye.x + (spot.x - eye.x) * 0.35;
     const restY = eye.y + (spot.y - eye.y) * 0.5;
-    const pupilX = restX + pose.pupilX * reachX;
-    const pupilY = restY + pose.pupilY * reachY + slit * 0.6;
+    // Aim and lid-follow are clamped together, not separately. A heavy lid slides
+    // the pupil down and a downcast gaze slides it down again, and the two of
+    // them together pushed it clean off the bottom of the socket — which is why
+    // a starving creature's eyes went blank white at the moment they are held on
+    // screen the longest.
+    const holdX = Math.max(-1, Math.min(1, pose.pupilX)) * reachX;
+    const holdY = Math.max(-reachY, Math.min(reachY,
+      Math.max(-1, Math.min(1, pose.pupilY)) * reachY + slit * 0.6));
+    const pupilX = restX + holdX;
+    const pupilY = restY + holdY;
     context.save();
     context.beginPath();
     context.ellipse(eye.x, eye.y, eye.rx - 1, eye.ry - 1, 0, 0, Math.PI * 2);
@@ -762,13 +770,17 @@ function drawExhale(context: CanvasRenderingContext2D, pose: CreaturePose, shape
   // Started at the near lip and travelling away from the face. Emitting from
   // the middle of the aperture drew the plume across the tooth row, where it
   // read as a smear over the teeth rather than as breath leaving the mouth.
-  const originX = shape.leftX + 34;
-  const originY = shape.lowerApex - 10;
+  // Starting inside the aperture. A plume that begins outside the lip is not
+  // breath leaving a mouth, it is a smudge on the lens next to one — and this is
+  // composited with `screen`, so where it crosses the teeth it glows through
+  // them rather than covering them.
+  const originX = shape.leftX + 66;
+  const originY = (shape.upperApex + shape.lowerApex * 2) / 3;
   context.save();
   context.globalCompositeOperation = "screen";
   for (let index = 0; index < 5; index++) {
     const phase = reduced ? 0.3 + index * 0.14 : ((time * 1.35 + index * 0.2) % 1);
-    const x = originX - phase * 126;
+    const x = originX - phase * 118;
     const y = originY + (index - 2) * 7 + phase * 16;
     const spread = 20 + phase * 62;
     context.globalAlpha = pose.exhale * 0.72 * (1 - phase * 0.7);

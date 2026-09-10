@@ -235,8 +235,8 @@ export function drawWarped(context: CanvasRenderingContext2D, source: HTMLCanvas
   // Keep the sampled grid monotone. A displacement gradient steeper than the
   // grid spacing would invert a cell, and an inverted cell smears its source
   // across the frame; clamping here removes the failure at its source.
-  const minX = stepX * 0.12;
-  const minYStep = stepY * 0.12;
+  const minX = stepX * 0.2;
+  const minYStep = stepY * 0.2;
   for (let row = 0; row <= cellsY; row++) {
     const base0 = row * (cellsX + 1);
     for (let column = 1; column <= cellsX; column++) {
