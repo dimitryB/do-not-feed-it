@@ -156,10 +156,13 @@ function buildTooth(art: HTMLCanvasElement): Patch {
   context.clip();
 
   const body = context.createLinearGradient(2, 0, width - 2, height * 0.8);
-  body.addColorStop(0, "#efe3bd");
-  body.addColorStop(0.34, "#d8c79a");
-  body.addColorStop(0.72, "#9c8358");
-  body.addColorStop(1, "#6d5934");
+  // Deliberately not white. Ivory this bright in a kitchen lit by two amber
+  // lamps reads as a flat graphic laid over the painting; the row has to sit in
+  // the same light as the face around it.
+  body.addColorStop(0, "#d9cca6");
+  body.addColorStop(0.34, "#bfae84");
+  body.addColorStop(0.72, "#8b7449");
+  body.addColorStop(1, "#5e4c2c");
   context.fillStyle = body;
   context.fillRect(0, 0, width, height);
 
@@ -180,8 +183,8 @@ function buildTooth(art: HTMLCanvasElement): Patch {
   context.globalAlpha = 1;
 
   const shine = context.createLinearGradient(width * 0.28, 0, width * 0.46, height);
-  shine.addColorStop(0, "rgba(255,250,228,0.6)");
-  shine.addColorStop(0.55, "rgba(255,250,228,0.12)");
+  shine.addColorStop(0, "rgba(252,240,206,0.36)");
+  shine.addColorStop(0.55, "rgba(252,240,206,0.07)");
   shine.addColorStop(1, "rgba(255,250,228,0)");
   context.fillStyle = shine;
   context.fillRect(0, 0, width * 0.55, height);

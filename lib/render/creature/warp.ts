@@ -14,8 +14,8 @@ export const WARP_REGION = { x: 512, y: 52, width: 632, height: 462 };
 // Denser than it needs to be for the displacement itself: each cell is drawn
 // under one affine transform, and a coarse grid makes that approximation
 // visible as tile edges wherever the field compresses hard.
-const CELLS_X = 30;
-const CELLS_Y = 23;
+const CELLS_X = 38;
+const CELLS_Y = 30;
 /** How far the chin travels between a wide-open and a closed mouth. */
 export const JAW_TRAVEL = 40;
 
@@ -36,9 +36,16 @@ const bump = (x: number, y: number, cx: number, cy: number, rx: number, ry: numb
 const floorGate = (y: number) => {
   // Zero well above the counter: the arms rest on the sill, and if they move
   // with the body a cut edge opens along it.
-  if (y <= COUNTER_Y - 148) return 1;
-  if (y >= COUNTER_Y - 34) return 0;
-  const t = (COUNTER_Y - 34 - y) / 114;
+  //
+  // The ramp is 160 px rather than 114. A gate that closes over a short
+  // distance while the displacement above it is large puts a steep vertical
+  // gradient right where the belly meets the sill, and the grid clamp that
+  // stops cells inverting then cascades down the column — which is the torn,
+  // notched band with vertically streaked skin above it that showed up across
+  // the belly of every inflated pose.
+  if (y <= COUNTER_Y - 190) return 1;
+  if (y >= COUNTER_Y - 30) return 0;
+  const t = (COUNTER_Y - 30 - y) / 160;
   return t * t * (3 - 2 * t);
 };
 
@@ -73,7 +80,8 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
     }
 
     // Body: squash and stretch about the belly, plus the whole rise.
-    const body = bump(x, y, BELLY.x, BELLY.y - 44, 292, 264) * gate;
+    // Raised, so most of the kernel sits where the floor gate is still open.
+    const body = bump(x, y, BELLY.x, BELLY.y - 96, 292, 262) * gate;
     if (body > 0) {
       dx += (x - BELLY.x) * (pose.squashX - 1) * body;
       dy += (y - BELLY.y) * (pose.squashY - 1) * body - pose.bodyRise * body;
@@ -101,10 +109,14 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
       // floor gate: a second ramp inside the first makes a gradient the affine
       // cells cannot follow either, which is the stepped horizontal seam that
       // appeared across the inflated belly.
-      const belly = bump(x, y, BELLY.x, 340, 300, 76);
+      // Wide and shallow. The steepest part of this kernel is a vertical
+      // compression, and vertical compression is what the per-cell affines
+      // approximate worst: too tight a kernel and the skin above the belly
+      // breaks into short horizontal dashes.
+      const belly = bump(x, y, BELLY.x, 336, 300, 116);
       if (belly > 0) {
-        dx += (x - BELLY.x) / 300 * pose.bellySwell * 66 * belly;
-        dy += (y - 340) / 76 * pose.bellySwell * 12 * belly - pose.bellySwell * 20 * belly;
+        dx += (x - BELLY.x) / 300 * pose.bellySwell * 64 * belly;
+        dy += (y - 336) / 116 * pose.bellySwell * 14 * belly - pose.bellySwell * 11 * belly;
       }
     }
 
@@ -193,8 +205,8 @@ export function drawWarped(context: CanvasRenderingContext2D, source: HTMLCanvas
   // Keep the sampled grid monotone. A displacement gradient steeper than the
   // grid spacing would invert a cell, and an inverted cell smears its source
   // across the frame; clamping here removes the failure at its source.
-  const minX = stepX * 0.22;
-  const minYStep = stepY * 0.22;
+  const minX = stepX * 0.12;
+  const minYStep = stepY * 0.12;
   for (let row = 0; row <= cellsY; row++) {
     const base0 = row * (cellsX + 1);
     for (let column = 1; column <= cellsX; column++) {

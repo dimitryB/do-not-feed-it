@@ -1,6 +1,6 @@
 {
   "iteration": 11,
-  "capturedAt": "2026-09-10T01:12:54.214Z",
+  "capturedAt": "2026-09-10T01:25:02.448Z",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -58,11 +58,11 @@
     "hud-result.png"
   ],
   "renderTiming": {
-    "samples": 117,
-    "total": 229.69999999552965,
-    "max": 2.599999999627471,
-    "last": 1.6000000014901161,
-    "average": 1.963247863209655,
+    "samples": 42,
+    "total": 97.89999999850988,
+    "max": 6.300000000745058,
+    "last": 2.099999999627471,
+    "average": 2.330952380916902,
     "canvas": {
       "width": 1920,
       "height": 1080

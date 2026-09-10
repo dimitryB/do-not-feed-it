@@ -26,6 +26,8 @@ export interface DevRenderControl {
   pose: DevPose | null;
   /** Hides the aim guide and target ring, so a capture shows only the creature. */
   hideAim: boolean;
+  /** Suppresses the canvas-drawn score and event labels, which are HUD. */
+  hideLabels: boolean;
   /** Holds the eyes open: a blink landing on a capture reads as a missing face. */
   holdBlink: boolean;
   /** Rolling scene-draw cost in milliseconds. */
@@ -37,6 +39,7 @@ export const devRender: DevRenderControl = {
   reduced: null,
   pose: null,
   hideAim: false,
+  hideLabels: false,
   holdBlink: false,
   timing: { samples: 0, total: 0, max: 0, last: 0 },
 };

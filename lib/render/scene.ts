@@ -102,7 +102,7 @@ export function createScene(){
 
     // Score pops are UI, so they read as UI: a pill above the action rather
     // than loose text composited over the creature's body.
-    for(const e of recent){const age=tick-e.tick;if(e.type==='feed'||e.type==='miss'||e.type==='bounce'){
+    for(const e of recent){const age=tick-e.tick;if(DEV_HOOKS&&devRender.hideLabels)break;if(e.type==='feed'||e.type==='miss'||e.type==='bounce'){
       const good=e.type==='feed';const y=good?Math.max(74,86-(reduced?0:age*.4)):Math.max(70,e.y-46-(reduced?0:age*.55));
       // Hold the pop at full strength for most of its life and fade only at the
       // end: a pill that spends its time half-transparent reads as a draw bug.

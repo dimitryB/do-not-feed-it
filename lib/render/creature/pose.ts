@@ -110,11 +110,14 @@ const EXPRESSIONS = {
   },
   /** Getting hungry: impatient rather than dying. */
   peckish: {
-    jawOpen: 0.3, mouthWidth: 0.78, cornerLift: -1.25, lipPress: 0,
-    lidLeft: 0.54, lidRight: 0.6, lowerLid: 0.02,
-    browSad: 1, browRaise: 0.15, tongueOut: 0.9, drool: 0.85, browAsym: 0.3,
-    headY: 21, headTilt: 4.2, antennaDroop: 0.9, antennaTwist: -0.3,
-    squashY: 0.97, squashX: 1.02, bodyRise: -12,
+    // Wanting, not laughing. An open mouth with the tongue out and the corners
+    // down is a grin at stream resolution; the read is a barely-parted mouth,
+    // a licked lip and a face that has slumped forward onto the counter.
+    jawOpen: 0.12, mouthWidth: 0.72, cornerLift: -1.3, lipPress: 0.35,
+    lidLeft: 0.5, lidRight: 0.58, lowerLid: 0.06,
+    browSad: 1, browRaise: 0.15, tongueOut: 0.8, drool: 0.95, browAsym: 0.35,
+    headY: 26, headTilt: 4.6, lean: 0.03, antennaDroop: 1, antennaTwist: -0.35,
+    squashY: 0.96, squashX: 1.035, bodyRise: -16,
   },
   /** Running on empty. */
   starving: {
@@ -180,9 +183,11 @@ const EXPRESSIONS = {
   shrug: {
     // Flat. No teeth, corners level, eyes somewhere else — the opposite of
     // delight rather than a quieter version of it.
-    jawOpen: 0, mouthWidth: 0.7, cornerLift: -0.05, lipPress: 1, jawShift: 0.8,
-    lidLeft: 0.5, lidRight: 0.14, lowerLid: 0.2, browAsym: 1, browRaise: 0.15,
-    headTilt: -6.5, headX: -10, headY: 7, antennaDroop: 0.75, antennaTwist: -0.9,
+    // The painted mouth curves upward on its own, so "level" still reads as a
+    // smile: the corners have to be pulled well past neutral to look unmoved.
+    jawOpen: 0, mouthWidth: 0.62, cornerLift: -0.75, lipPress: 1, jawShift: 1,
+    lidLeft: 0.52, lidRight: 0.1, lowerLid: 0.3, browAsym: 1, browRaise: 0.2,
+    headTilt: -7.5, headX: -13, headY: 9, antennaDroop: 0.85, antennaTwist: -1,
   },
   /** A snack off the vent: startled, and still following it. */
   startle: {
@@ -289,10 +294,13 @@ const EXPRESSIONS = {
   },
   /** Shift survived: full, smug, in no hurry. */
   smug: {
-    jawOpen: 0.04, mouthWidth: 0.96, cornerLift: 1.15, lipPress: 0.4,
-    lidLeft: 0.56, lidRight: 0.46, lowerLid: 0.66, browRaise: 0.3, browAngry: 0.2,
-    browAsym: 0.55, headTilt: 4.5, headY: -5, bellySwell: 0.7, squashY: 1.03,
-    antennaDroop: -0.45, antennaTwist: 0.6,
+    // Full. The belly is the point: a contented face alone was indistinguishable
+    // from idle, and the whole state is meant to say the shift is survived.
+    jawOpen: 0.03, mouthWidth: 1.02, cornerLift: 1.3, lipPress: 0.5,
+    lidLeft: 0.62, lidRight: 0.5, lowerLid: 0.75, browRaise: 0.35, browAngry: 0.2,
+    browAsym: 0.6, headTilt: 6.5, headY: -14, lean: -0.04,
+    bellySwell: 1.05, bodyRise: 16, squashY: 1.07, squashX: 1.05,
+    antennaDroop: -0.5, antennaTwist: 0.7,
   },
   /** Shift lost to an empty belly. */
   collapse: {

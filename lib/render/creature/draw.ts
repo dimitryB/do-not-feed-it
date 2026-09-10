@@ -106,7 +106,10 @@ function drawTeeth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
     const t = mix(stop, 0.055 + index * (0.89 / (row.length - 1)), align);
     const spot = onCurve(shape, t, upper);
     const size = mix(scale, 0.9, align);
-    const height = Math.min(reach * size + root, gap * 0.44 + root + pose.teethBare * 12 + pose.teethLong * 18);
+    // Hard cap at the far lip: a fang that overshoots is drawn hanging outside
+    // the mouth, over the lip, which is the single most obvious tell that the
+    // teeth are pasted on rather than in there.
+    const height = Math.min(reach * size + root, gap * 0.52 + root);
     if (height < root + 2) continue;
     const width = span * 0.052 * (0.72 + 0.4 * size) * (1 - align * 0.1);
     const quiver = reduced ? 0 : Math.sin(time * 24 + index * 1.9) * pose.teethQuiver * 2.2;
@@ -145,6 +148,19 @@ function drawLips(context: CanvasRenderingContext2D, pose: CreaturePose, shape: 
   context.save();
   context.lineJoin = "round";
 
+  // A wide, very soft skin-toned halo first. The aperture is a vector path with
+  // a crisp anti-aliased edge and the head it sits in is a painting with none,
+  // and that mismatch is what makes an open mouth read as clip art pasted onto
+  // a photograph however well the inside of it is drawn. Blurring the join is
+  // most of the fix.
+  context.save();
+  context.filter = "blur(6px)";
+  context.strokeStyle = "rgba(96,84,34,0.5)";
+  context.lineWidth = thickness * 2.1;
+  aperturePath(context, shape, thickness * 1.15);
+  context.stroke();
+  context.restore();
+
   // Outer roll of the lip: shaded from above, catching the amber lamp below.
   const roll = context.createLinearGradient(0, shape.upperApex - thickness, 0, shape.lowerApex + thickness);
   roll.addColorStop(0, "rgba(76,56,18,0.34)");
@@ -157,11 +173,15 @@ function drawLips(context: CanvasRenderingContext2D, pose: CreaturePose, shape: 
   aperturePath(context, shape, thickness * 0.52);
   context.stroke();
 
-  // The seam itself.
-  context.strokeStyle = "rgba(18,8,2,0.6)";
-  context.lineWidth = Math.max(2, thickness * 0.4);
+  // The seam itself, blurred by a pixel so it is a crease rather than an inked
+  // outline.
+  context.save();
+  context.filter = "blur(1.1px)";
+  context.strokeStyle = "rgba(18,8,2,0.62)";
+  context.lineWidth = Math.max(2, thickness * 0.45);
   aperturePath(context, shape, 0.4);
   context.stroke();
+  context.restore();
 
   // Wet highlight, only on the middle of the lower lip. Following the whole
   // aperture drew a second arc across the chin that read as a ghost mouth.
@@ -337,10 +357,19 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     const spot = eye.pupil;
     // Travel is bounded by the socket, so a hard look never clips the pupil in
     // half against the edge of the eye.
-    const reachX = Math.max(4, eye.rx - spot.r - 2);
-    const reachY = Math.max(3, eye.ry - spot.r - 2);
-    const pupilX = spot.x + pose.pupilX * reachX;
-    const pupilY = spot.y + pose.pupilY * reachY + slit * 0.6;
+    // The pupil is allowed to ride slightly under the edge of the socket, the
+    // way a real eye does at the end of its travel: keeping it wholly inside
+    // left only ten pixels of movement, which is not an eyeline anyone can read
+    // at stream resolution.
+    const reachX = Math.max(6, eye.rx - spot.r * 0.5);
+    const reachY = Math.max(4, eye.ry - spot.r * 0.7);
+    // The painted pupils sit well inside their sockets, which is charming on a
+    // still and cross-eyed the moment both eyes look the same way. Most of that
+    // inward bias is taken out so an eyeline reads as one direction.
+    const restX = eye.x + (spot.x - eye.x) * 0.35;
+    const restY = eye.y + (spot.y - eye.y) * 0.5;
+    const pupilX = restX + pose.pupilX * reachX;
+    const pupilY = restY + pose.pupilY * reachY + slit * 0.6;
     context.save();
     context.beginPath();
     context.ellipse(eye.x, eye.y, eye.rx - 1, eye.ry - 1, 0, 0, Math.PI * 2);
@@ -445,9 +474,14 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
       context.restore();
     }
 
-    // Catchlight.
+    // Catchlight, clipped to the eye. Unclipped it can land on the skin beside a
+    // pupil that has travelled to the edge of its socket, and a bright specular
+    // dot on the cheek reads as dirt on the lens.
     if (lid < 0.7) {
       context.save();
+      context.beginPath();
+      context.ellipse(eye.x, eye.y, eye.rx - 1, eye.ry - 1, 0, 0, Math.PI * 2);
+      context.clip();
       context.globalAlpha = 0.85 * (1 - lid / 0.7);
       context.fillStyle = "rgba(255,252,236,0.95)";
       context.beginPath();
@@ -667,13 +701,16 @@ function drawExhale(context: CanvasRenderingContext2D, pose: CreaturePose, shape
   // Out of the mouth. Emitting from the mouth's left corner and travelling far
   // enough to clear the head put the plume on the shoulder, where it read as a
   // smudge on the paint rather than as breath.
-  const originX = shape.centerX - 18;
+  // Started at the near lip and travelling away from the face. Emitting from
+  // the middle of the aperture drew the plume across the tooth row, where it
+  // read as a smear over the teeth rather than as breath leaving the mouth.
+  const originX = shape.leftX + 4;
   const originY = (shape.upperApex + shape.lowerApex) / 2 + 6;
   context.save();
   context.globalCompositeOperation = "screen";
   for (let index = 0; index < 5; index++) {
     const phase = reduced ? 0.3 + index * 0.14 : ((time * 1.35 + index * 0.2) % 1);
-    const x = originX - phase * 96;
+    const x = originX - 12 - phase * 108;
     const y = originY + (index - 2) * 9 - phase * 14;
     const spread = 20 + phase * 62;
     context.globalAlpha = pose.exhale * 0.72 * (1 - phase * 0.7);

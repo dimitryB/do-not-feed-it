@@ -402,7 +402,8 @@ async function main() {
     await page.waitForFunction(() => Boolean(window.__dnfi && window.__dnfi.pose), null, { timeout: 60_000 });
     await waitForScene(page);
     await page.addStyleTag({ content: HIDE_HUD });
-    await page.evaluate(() => { window.__dnfi.hideAim(true); window.__dnfi.holdBlink(true); });
+    await page.evaluate(() => { window.__dnfi.hideAim(true);
+      window.__dnfi.hideLabels(true); window.__dnfi.holdBlink(true); });
     await settle(page, 5);
 
     const states = await page.evaluate(() => window.__dnfi.states());
