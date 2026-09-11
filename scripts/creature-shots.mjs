@@ -58,7 +58,9 @@ const STRIPS = [
   { name: "onset-metal", state: "warn-metal", from: 0.7, step: SLOW_STRIP_STEP },
   { name: "onset-balloon", state: "warn-balloon", from: 0.7, step: SLOW_STRIP_STEP },
   { name: "onset-pepper", state: "warn-pepper", from: 0.7, step: SLOW_STRIP_STEP },
-  { name: "pepper-exhale", state: "active-pepper", from: -0.15, step: 0.2 },
+    // Inside the gust itself. Starting before it meant two opening frames in
+  // the warning window, which are the same image.
+  { name: "pepper-exhale", state: "active-pepper", from: 0.16, step: 0.14 },
 ];
 
 /**
@@ -67,7 +69,7 @@ const STRIPS = [
  */
 const STATE_TIME = {
   "warn-metal": 1.38, "warn-balloon": 1.38, "warn-pepper": 1.38,
-  "gulp-metal": 0.07, "gulp-balloon": 0.32, "gulp-pepper": 0.58,
+  "gulp-metal": 0.07, "gulp-balloon": 0.42, "gulp-pepper": 0.58,
   "craving-satisfied": 0.88, "off-menu": 0.88,
   "miss-floor": 0.46, "miss-vent": 0.46,
   "recovery": 0.95,
@@ -463,7 +465,8 @@ async function main() {
     await page.evaluate(() => { window.__dnfi.clearPose(); window.__dnfi.clock(null); window.__dnfi.hideAim(false); window.__dnfi.holdBlink(false); });
     const trace = await runScriptedTrace(page);
     const timing = await measureRenderCost(page);
-    console.log(`[harness] render ${timing.average?.toFixed(3)} ms avg / ${timing.max?.toFixed(3)} ms max over ${timing.samples} frames`);
+      console.log(`[harness] render ${timing.median.toFixed(2)} ms median / ${timing.p95.toFixed(2)} ms p95 / `
+    + `${timing.average.toFixed(2)} ms mean / ${timing.max.toFixed(2)} ms max over ${timing.samples} frames`);
 
     const missing = states.filter((state) => !trace.reached.includes(state));
     await page.close();

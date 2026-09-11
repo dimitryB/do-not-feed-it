@@ -124,7 +124,10 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
     case "tracking-near": {
       selected = "balloon";
       angle = -46;
-      shot(state, "balloon", 668, 305, 9.4, 0.4, 44);
+      // On the mouth's centreline and close enough to be about to arrive. At
+      // its old position the snack sat out on the cheek, which reads as a
+      // sprite stuck to the face rather than as food in flight.
+      shot(state, "balloon", 774, 291, 9.4, 0.4, 44);
       add(state, "launch", 44, "balloon", { x: 264, y: 494, ingredient: "balloon" });
       break;
     }

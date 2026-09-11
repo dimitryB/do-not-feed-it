@@ -8,7 +8,7 @@
 import { EYE, EYE_SIDES, MOUTH } from "./anatomy";
 import type { CreaturePose } from "./pose";
 import type { CreatureRig } from "./rig";
-import { buildField, drawWarped, localTransform, WARP_REGION, type WarpField } from "./warp";
+import { buildField, drawWarped, localTransform, placePoint, WARP_REGION, type WarpField } from "./warp";
 
 const clamp01 = (value: number) => (value < 0 ? 0 : value > 1 ? 1 : value);
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -72,8 +72,14 @@ function aperture(pose: CreaturePose): Aperture {
   const rightX = MOUTH.cornerRight.x - pull + shift;
   // The painted mouth curves upward, so a frown has to do two things at once:
   // drop the corners and raise the middle, until the curve inverts.
-  const leftY = MOUTH.cornerLeft.y - lift * 26 + pose.jawShift * 9;
-  const rightY = MOUTH.cornerRight.y - lift * 26 - pose.jawShift * 5;
+  // Hard ceiling on the corners, for the same reason the upper apex has one.
+  // The mouth rides the body's uniform scale, so on an inflated pose a lifted
+  // corner is scaled away from the mouth's centre as well as raised — far
+  // enough that the ends of the smile landed on the lower eyelids, with a strip
+  // of bare skin showing between the arc and the mouth under it.
+  const CORNER_CEILING = 196;
+  const leftY = Math.max(CORNER_CEILING, MOUTH.cornerLeft.y - lift * 26 + pose.jawShift * 9);
+  const rightY = Math.max(CORNER_CEILING, MOUTH.cornerRight.y - lift * 26 - pose.jawShift * 5);
   // How far the mouth is open and how far it curves are separate: folding the
   // frown into the apexes closed the gap, so a snarl lost its teeth.
   const centre = mix((MOUTH.upperClosed + MOUTH.lowerClosed) / 2,
@@ -90,6 +96,36 @@ function aperture(pose: CreaturePose): Aperture {
     upperApex, lowerApex,
     upperControl: controlFor(leftY, rightY, upperApex),
     lowerControl: controlFor(leftY, rightY, lowerApex),
+  };
+}
+
+/**
+ * Moves an aperture from the painting's coordinates onto the warped picture,
+ * corner by corner.
+ *
+ * The mouth used to be drawn under a single affine sampled at its centre. That
+ * is exact only where the field's scale is constant across the whole mouth, and
+ * it is not: the body kernel falls off across the muzzle, so on an inflated pose
+ * the centre of the mouth was scaled by 1.22 while its corners were scaled by
+ * 1.10. The painting's own smile crease — which runs out past the drawn mouth to
+ * the cheeks, and is skin rather than mouth, so the rig never paints it out —
+ * followed the field correctly and the drawn mouth did not, and the two of them
+ * separating is what read as the creature having two mouths.
+ *
+ * Sampling each defining point separately costs four extra field inversions a
+ * frame and removes the whole class of problem.
+ */
+function placed(shape: Aperture, field: WarpField): Aperture {
+  const left = placePoint(field, shape.leftX, shape.leftY);
+  const right = placePoint(field, shape.rightX, shape.rightY);
+  const upper = placePoint(field, shape.centerX, shape.upperApex);
+  const lower = placePoint(field, shape.centerX, shape.lowerApex);
+  const centerX = (upper.x + lower.x) / 2;
+  return {
+    leftX: left.x, leftY: left.y, rightX: right.x, rightY: right.y, centerX,
+    upperApex: upper.y, lowerApex: Math.max(upper.y + 4, lower.y),
+    upperControl: controlFor(left.y, right.y, upper.y),
+    lowerControl: controlFor(left.y, right.y, Math.max(upper.y + 4, lower.y)),
   };
 }
 
@@ -162,10 +198,26 @@ function drawTeeth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
     context.shadowOffsetY = 2.5;
     context.drawImage(rig.tooth.canvas, -width / 2, 0, width, height);
     context.restore();
-    // Metal teeth take a cold edge light the ivory ones never have.
-    if (align > 0.3) {
-      context.strokeStyle = `rgba(206,238,246,${0.55 * align})`;
-      context.lineWidth = 1.3;
+    // Metal teeth are metal. A cold edge light alone was not enough: the row
+    // still read as ivory, so the mutation read as "bigger teeth". The whole
+    // tooth is desaturated toward steel and given a hard specular streak.
+    if (align > 0.15) {
+      context.save();
+      context.globalCompositeOperation = "saturation";
+      context.globalAlpha = align * 0.85;
+      context.fillStyle = "rgb(150,176,192)";
+      context.fillRect(-width / 2, 0, width, height);
+      context.globalCompositeOperation = "overlay";
+      context.globalAlpha = align * 0.55;
+      const chrome = context.createLinearGradient(-width / 2, 0, width / 2, height);
+      chrome.addColorStop(0, "rgba(226,244,252,0.9)");
+      chrome.addColorStop(0.45, "rgba(96,124,144,0.5)");
+      chrome.addColorStop(1, "rgba(232,246,252,0.8)");
+      context.fillStyle = chrome;
+      context.fillRect(-width / 2, 0, width, height);
+      context.restore();
+      context.strokeStyle = `rgba(226,248,255,${0.7 * align})`;
+      context.lineWidth = 1.5;
       context.beginPath();
       context.moveTo(-width * 0.26, height * 0.1);
       context.lineTo(0, height - 1);
@@ -400,13 +452,18 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     // way a real eye does at the end of its travel: keeping it wholly inside
     // left only ten pixels of movement, which is not an eyeline anyone can read
     // at stream resolution.
-    const reachX = Math.max(6, eye.rx - spot.r * 0.9);
-    const reachY = Math.max(4, eye.ry - spot.r * 0.95);
-    // The painted pupils sit well inside their sockets, which is charming on a
-    // still and cross-eyed the moment both eyes look the same way. Most of that
-    // inward bias is taken out so an eyeline reads as one direction.
-    const restX = eye.x + (spot.x - eye.x) * 0.35;
-    const restY = eye.y + (spot.y - eye.y) * 0.5;
+    // Travel is a fraction of the socket rather than a fixed inset, so the two
+    // eyes sweep together even though the right socket is wider than the left.
+    const reachX = eye.rx * 0.62;
+    const reachY = eye.ry * 0.42;
+    // Both pupils rest at the centre of their own socket and travel the same
+    // fraction of it. Keeping a share of the painting's inward bias left the two
+    // eyes converged by about seven pixels and travelling different distances,
+    // so a hard look left came out as one eye left and the other barely moved —
+    // which at stream resolution reads as no eyeline at all rather than as a
+    // direction.
+    const restX = eye.x;
+    const restY = eye.y;
     // Aim and lid-follow are clamped together, not separately. A heavy lid slides
     // the pupil down and a downcast gaze slides it down again, and the two of
     // them together pushed it clean off the bottom of the socket — which is why
@@ -600,7 +657,11 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
       // a low but non-zero alpha keeps that alpha all the way out to the edge of
       // the fill, and the edge of the fill is a rectangle: that is where the
       // hard elliptical boundary across the shoulder came from.
-      const heat = inner.createRadialGradient(846, 236, 24, 846, 246, 330);
+      // Radius chosen so the falloff completes inside the body. When it ran all
+      // the way to the silhouette, the tint ended where the creature ended, and
+      // an abrupt orange-to-background transition along the jaw reads as a
+      // compositing seam rather than as a blush.
+      const heat = inner.createRadialGradient(846, 236, 24, 846, 244, 248);
       heat.addColorStop(0, `rgba(255,92,28,${1.05 * pose.flush})`);
       heat.addColorStop(0.4, `rgba(236,66,18,${0.6 * pose.flush})`);
       heat.addColorStop(0.72, `rgba(214,52,14,${0.2 * pose.flush})`);
@@ -637,6 +698,39 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
       }
     }
     context.restore();
+  }
+
+  // Metal: a cold wash creeping up the jaw, and only ever here. Before this the
+  // mutation had no colour identity at all — the fangs were ivory, so it read as
+  // "bigger teeth" rather than as metal — while warm tones meant pepper AND
+  // anger, so three of the four vocabulary units in the set were one colour.
+  if (pose.magnetism > 0.04) {
+    gradeBody(context, rig, (inner) => {
+      const steel = inner.createRadialGradient(846, 300, 20, 846, 258, 300);
+      steel.addColorStop(0, `rgba(176,206,222,${0.5 * pose.magnetism})`);
+      steel.addColorStop(0.45, `rgba(138,172,196,${0.3 * pose.magnetism})`);
+      steel.addColorStop(1, "rgba(120,156,184,0)");
+      inner.fillStyle = steel;
+      inner.fillRect(500, 40, 700, 500);
+    }, "overlay");
+    gradeBody(context, rig, (inner) => {
+      inner.fillStyle = `rgba(150,170,185,${0.5 * pose.magnetism})`;
+      inner.fillRect(500, 40, 700, 500);
+    }, "saturation");
+  }
+
+  // Balloon: a taut cool rim along the top of the swell, which is what a
+  // stretched, over-full surface does to the light above it.
+  if (pose.taut > 0.05) {
+    const taut = pose.taut;
+    gradeBody(context, rig, (inner) => {
+      const rim = inner.createRadialGradient(846, 268, 30, 846, 300, 320);
+      rim.addColorStop(0, `rgba(186,244,232,${0.4 * taut})`);
+      rim.addColorStop(0.5, `rgba(150,222,214,${0.16 * taut})`);
+      rim.addColorStop(1, "rgba(140,214,206,0)");
+      inner.fillStyle = rim;
+      inner.fillRect(500, 40, 700, 500);
+    }, "screen");
   }
 
   // Hunger pallor: colour drains and the light goes cold.
@@ -688,7 +782,10 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
   if (pose.sweat > 0.08) {
     context.save();
     context.globalAlpha = Math.min(0.85, pose.sweat);
-    for (const [x, y] of [[762, 118], [928, 116], [700, 190]] as const) {
+    // Moved inboard and onto the brow. The outermost bead used to sit past the
+    // edge of the head, where at stream resolution it reads as a dead pixel on
+    // the broadcast rather than as sweat.
+    for (const [x, y] of [[772, 120], [918, 118], [742, 150]] as const) {
       const drift = reduced ? 0 : (Math.sin(time * 1.3 + x) * 0.5 + 0.5) * 8;
       context.fillStyle = "rgba(226,238,208,0.75)";
       context.beginPath();
@@ -702,15 +799,19 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     context.restore();
   }
 
-  // Tears. A burn that makes the eyes water reads at any resolution.
+  // Tears. A burn that makes the eyes water reads at any resolution — as long
+  // as each one is on the cheek it is running down and not beside it.
   if (pose.tears > 0.08) {
     context.save();
     context.globalAlpha = Math.min(0.9, pose.tears);
     for (const side of EYE_SIDES) {
       const eye = EYE[side];
       const outward = side === "left" ? -1 : 1;
-      const x = eye.x + outward * (eye.rx - 2);
-      const top = eye.y + eye.ry - 4;
+      // Started under the lid rather than clear of it: a streak that begins in
+      // bare skin a few pixels below the eye reads as a detached white lozenge,
+      // not as something the eye is producing.
+      const x = eye.x + outward * (eye.rx - 7);
+      const top = eye.y + eye.ry - 11;
       const run = 10 + pose.tears * 30;
       const streak = context.createLinearGradient(x, top, x + outward * 5, top + run);
       streak.addColorStop(0, "rgba(226,244,250,0.75)");
@@ -761,38 +862,56 @@ function drawThroat(context: CanvasRenderingContext2D, pose: CreaturePose) {
 }
 
 /** Hot air leaving the mouth, anchored to the mouth it comes out of. */
+/**
+ * The pepper gust.
+ *
+ * This was a drifting plume for four iterations and every reviewer read it the
+ * same way: a grey smudge stuck to the cheek, "lens dirt", "a thumb smudge".
+ * The problem is structural rather than a matter of tuning — a soft light mass
+ * over a photoreal painting has no edge to tell the eye it is volume, and the
+ * moment it leaves the mouth it has nothing to belong to.
+ *
+ * So the gust is drawn as the mouth running hot instead: the cavity glows from
+ * the throat outward, the lips catch the light coming out of them, and a short
+ * hard-edged blast sits *in* the opening rather than beside it. It cannot
+ * detach, because it is bounded by the aperture.
+ */
 function drawExhale(context: CanvasRenderingContext2D, pose: CreaturePose, shape: Aperture,
                     time: number, reduced: boolean) {
   if (pose.exhale <= 0.05) return;
-  // Out of the mouth. Emitting from the mouth's left corner and travelling far
-  // enough to clear the head put the plume on the shoulder, where it read as a
-  // smudge on the paint rather than as breath.
-  // Started at the near lip and travelling away from the face. Emitting from
-  // the middle of the aperture drew the plume across the tooth row, where it
-  // read as a smear over the teeth rather than as breath leaving the mouth.
-  // Starting inside the aperture. A plume that begins outside the lip is not
-  // breath leaving a mouth, it is a smudge on the lens next to one — and this is
-  // composited with `screen`, so where it crosses the teeth it glows through
-  // them rather than covering them.
-  const originX = shape.leftX + 66;
-  const originY = (shape.upperApex + shape.lowerApex * 2) / 3;
+  const gap = Math.max(6, shape.lowerApex - shape.upperApex);
+  const midY = (shape.upperApex + shape.lowerApex) / 2;
+  const pulse = reduced ? 0.8 : 0.72 + 0.28 * Math.sin(time * 9);
+
+  context.save();
+  aperturePath(context, shape);
+  context.clip();
+  context.globalCompositeOperation = "screen";
+  context.globalAlpha = pose.exhale * 0.72;
+  const core = context.createRadialGradient(shape.centerX, midY, 2,
+                                            shape.centerX, midY, gap * 1.05 * pulse);
+  core.addColorStop(0, "rgba(255,232,180,0.85)");
+  core.addColorStop(0.3, "rgba(255,158,58,0.58)");
+  core.addColorStop(0.75, "rgba(226,88,26,0.3)");
+  core.addColorStop(1, "rgba(200,60,18,0)");
+  context.fillStyle = core;
+  context.fillRect(shape.leftX - 40, shape.upperApex - 40,
+                   shape.rightX - shape.leftX + 80, gap + 80);
+  context.restore();
+
+  // Light spilling out of the mouth onto the lip and the skin just beyond it.
   context.save();
   context.globalCompositeOperation = "screen";
-  for (let index = 0; index < 5; index++) {
-    const phase = reduced ? 0.3 + index * 0.14 : ((time * 1.35 + index * 0.2) % 1);
-    const x = originX - phase * 118;
-    const y = originY + (index - 2) * 7 + phase * 16;
-    const spread = 20 + phase * 62;
-    context.globalAlpha = pose.exhale * 0.72 * (1 - phase * 0.7);
-    const plume = context.createRadialGradient(x, y, 2, x, y, spread);
-    plume.addColorStop(0, "rgba(255,206,150,0.95)");
-    plume.addColorStop(0.5, "rgba(236,132,58,0.55)");
-    plume.addColorStop(1, "rgba(200,90,40,0)");
-    context.fillStyle = plume;
-    context.beginPath();
-    context.ellipse(x, y, spread, spread * 0.62, 0, 0, Math.PI * 2);
-    context.fill();
-  }
+  context.globalAlpha = pose.exhale * 0.55 * pulse;
+  context.filter = "blur(9px)";
+  const spill = context.createRadialGradient(shape.centerX, midY, gap * 0.3,
+                                             shape.centerX, midY, gap * 2.1);
+  spill.addColorStop(0, "rgba(255,176,88,0.55)");
+  spill.addColorStop(1, "rgba(255,140,50,0)");
+  context.fillStyle = spill;
+  context.beginPath();
+  context.ellipse(shape.centerX, midY, gap * 2.1, gap * 1.5, 0, 0, Math.PI * 2);
+  context.fill();
   context.restore();
 }
 
@@ -804,25 +923,14 @@ export function drawCreature(context: CanvasRenderingContext2D, rig: CreatureRig
 
   drawSkin(context, rig, pose, time, reduced);
 
-  const shape = aperture(pose);
-  // The mouth and the eyes ride the field's local scale as well as its offset;
-  // with only the offset they sit on an inflated face like a decal.
-  const mouthLocal = localTransform(field, MOUTH.center, 262);
-  context.save();
-  context.translate(MOUTH.center + mouthLocal.dx, 262 + mouthLocal.dy);
-  context.scale(mouthLocal.scaleX, mouthLocal.scaleY);
-  context.translate(-MOUTH.center, -262);
+  // Placed once and reused: the exhale has to sit in exactly the mouth that was
+  // drawn, not in the mouth's resting position.
+  const shape = placed(aperture(pose), field);
   drawMouth(context, rig, pose, shape, time, reduced);
-  context.restore();
 
   // Skin colour goes on before the eyes: a hungry creature loses colour in the
   // face, but its eyes are wet and stay bright, which is what carries the read.
   drawThroat(context, pose);
   drawEyes(context, rig, pose, field);
-  context.save();
-  context.translate(MOUTH.center + mouthLocal.dx, 262 + mouthLocal.dy);
-  context.scale(mouthLocal.scaleX, mouthLocal.scaleY);
-  context.translate(-MOUTH.center, -262);
   drawExhale(context, pose, shape, time, reduced);
-  context.restore();
 }

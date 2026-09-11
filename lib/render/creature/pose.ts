@@ -31,7 +31,7 @@ export interface CreaturePose {
   cheekPuff: number; cheekMarks: number;
   flush: number; rageFlush: number; pallor: number; sweat: number; tears: number;
   antennaDroop: number; antennaTwist: number; antennaShake: number;
-  exhale: number; magnetism: number;
+  exhale: number; magnetism: number; taut: number;
   shake: number;
 }
 
@@ -43,7 +43,7 @@ const FIELDS: (keyof CreaturePose)[] = [
   "pupilX", "pupilY", "pupilScale", "tongueOut", "drool",
   "teethBare", "teethAlign", "teethLong", "teethQuiver", "throat", "throatTravel",
   "cheekPuff", "cheekMarks", "flush", "rageFlush", "pallor", "sweat", "tears",
-  "antennaDroop", "antennaTwist", "antennaShake", "exhale", "magnetism", "shake",
+  "antennaDroop", "antennaTwist", "antennaShake", "exhale", "magnetism", "taut", "shake",
 ];
 
 /**
@@ -105,8 +105,12 @@ const EXPRESSIONS = {
   attract: {
     jawOpen: 0.02, mouthWidth: 0.9, cornerLift: 0.62, lipPress: 0.7,
     lidLeft: 0.02, lidRight: 0.02, lowerLid: 0.14,
-    browRaise: 0.4, headTilt: -3.5, headX: -7,
-    antennaDroop: -0.55, antennaTwist: 0.3, pupilScale: 1.06,
+    // One antenna up and the other down, on a head cocked the other way. Every
+    // expression that does not name `antennaTwist` pulls it back to zero, so a
+    // strong twist here belongs to idle alone — and at stream resolution a
+    // silhouette cue survives compression better than anything on the face.
+    browRaise: 0.45, browAsym: 0.35, headTilt: -6.5, headX: -9,
+    antennaDroop: -0.7, antennaTwist: 1, pupilScale: 1.06,
   },
   /** Getting hungry: impatient rather than dying. */
   peckish: {
@@ -121,11 +125,14 @@ const EXPRESSIONS = {
   },
   /** Running on empty. */
   starving: {
-    jawOpen: 0.3, mouthWidth: 0.88, cornerLift: -1.4, lipPress: 0,
-    lidLeft: 0.5, lidRight: 0.44, lowerLid: 0.04,
+    // Slack, not wide. A big open mouth with the tongue out is a laugh at
+    // stream resolution whatever the corners are doing; the read is a jaw that
+    // has given up holding itself shut, hollow cheeks and unfocused eyes.
+    jawOpen: 0.2, mouthWidth: 0.68, cornerLift: -1.5, lipPress: 0,
+    lidLeft: 0.58, lidRight: 0.5, lowerLid: 0,
     browSad: 1, browRaise: 0.1, tongueOut: 1, drool: 0.9,
-    headY: 26, headTilt: 5.5, antennaDroop: 1.05, antennaTwist: 0.15,
-    squashY: 0.94, squashX: 1.045, bodyRise: -17, cheekPuff: -0.5,
+    headY: 30, headTilt: 6.5, antennaDroop: 1.15, antennaTwist: 0.1,
+    squashY: 0.92, squashX: 1.05, bodyRise: -22, cheekPuff: -1,
   },
   /** Snack in the air, still a long way off. */
   trackFar: {
@@ -174,8 +181,12 @@ const EXPRESSIONS = {
   delight: {
     // The only state that grins with its whole face. Now that idle keeps its
     // lips together, an open toothy smile means exactly one thing.
+    // Crescents. The lid budget in `drawEyes` scales the pair, so what matters
+    // is the ratio: a dominant *lower* lid closes the eye from underneath and
+    // reads as a happy squint, where a dominant upper one reads as sleepy.
+    // Nothing else in the set is allowed this shape.
     jawOpen: 0.46, mouthWidth: 1.1, cornerLift: 1.4, lipPress: 0, teethBare: 0.55,
-    lidLeft: 0.6, lidRight: 0.6, lowerLid: 0.9, browRaise: 0.75,
+    lidLeft: 0.22, lidRight: 0.22, lowerLid: 1, browRaise: 0.85,
     headTilt: 7.5, headY: -16, bellySwell: 0.35, squashY: 1.05, bodyRise: 10,
     antennaDroop: -1.25, antennaTwist: 0.35, pupilScale: 1.1,
   },
@@ -213,7 +224,7 @@ const EXPRESSIONS = {
   mope: {
     jawOpen: 0.02, mouthWidth: 0.6, cornerLift: -1.5, lipPress: 1, jawShift: -0.3,
     lidLeft: 0.4, lidRight: 0.44, lowerLid: 0.1, browSad: 1, browRaise: 0.1,
-    headY: 34, headTilt: 3, lean: 0.02, squashY: 0.94, squashX: 1.05, bodyRise: -14,
+    headY: 48, headTilt: 5, lean: 0.02, squashY: 0.92, squashX: 1.06, bodyRise: -20,
     antennaDroop: 1.15, antennaTwist: -0.2,
   },
   /** And the flat look at the mess afterwards. */
@@ -226,16 +237,26 @@ const EXPRESSIONS = {
   },
   /** Irritation, step one: a scowl and a shut mouth. */
   annoy1: {
-    jawOpen: 0, mouthWidth: 0.66, cornerLift: -1.45, lipPress: 1,
-    lidLeft: 0.3, lidRight: 0.3, lowerLid: 0.5, browAngry: 1, browRaise: 0,
-    headTilt: 2.2, headY: 5, antennaDroop: -0.45, antennaTwist: -0.45,
+    // Asymmetric on purpose. A symmetrical scowl is what a flat mouth plus
+    // heavy lids looks like in three other states; one brow down, one lid
+    // higher than the other and one antenna kicked back is a tell that belongs
+    // to nothing else in the set.
+    jawOpen: 0, mouthWidth: 0.6, cornerLift: -1.5, lipPress: 1, jawShift: -0.5,
+    lidLeft: 0.12, lidRight: 0.48, lowerLid: 0.55,
+    browAngry: 1, browAsym: 0.85, browRaise: 0,
+    headTilt: 4.5, headY: 3, antennaDroop: -0.3, antennaTwist: -0.95,
     pupilScale: 0.86,
   },
   /** Step two: leaning in, hard stare. */
   annoy2: {
-    jawOpen: 0.04, mouthWidth: 0.84, cornerLift: -1.25, lipPress: 0.8,
-    lidLeft: 0.1, lidRight: 0.1, lowerLid: 0.65, browAngry: 0.95,
-    headX: 13, headY: -7, lean: 0.035, antennaDroop: -0.55, antennaTwist: -0.1,
+    // Step two is the jaw. Step one is the brow and step three is the snarl, so
+    // the middle beat has to be a shape of its own — chin up, lower lip pushed
+    // out, the bottom teeth just showing — and not step one with the red turned
+    // up, which is what it was.
+    jawOpen: 0.1, mouthWidth: 0.78, cornerLift: -1.1, lipPress: 1, teethBare: 0.4,
+    lidLeft: 0.08, lidRight: 0.08, lowerLid: 0.7, browAngry: 0.95,
+    headX: 16, headY: -13, headTilt: -3, lean: 0.05,
+    squashX: 1.08, squashY: 0.95, antennaDroop: -0.6, antennaTwist: -0.15,
     pupilScale: 0.78,
   },
   /** Step three: teeth out, whole body forward. */
@@ -268,7 +289,7 @@ const EXPRESSIONS = {
     // the belly is already going, so it has to be more than a face.
     jawOpen: 0, mouthWidth: 0.56, cornerLift: -0.45, lipPress: 1, cheekPuff: 1.6,
     lidLeft: 0, lidRight: 0, lowerLid: 0.1, browRaise: 1, browSad: 0.55,
-    headY: -14, bellySwell: 0.7, bodyRise: 28, squashY: 1.1, squashX: 1.08,
+    headY: -14, bellySwell: 1.05, bodyRise: 20, squashY: 1.03, squashX: 1.04,
     antennaDroop: -1.2, antennaTwist: 0.3, pupilScale: 1.34,
   },
   /** Balloon live: round, light, pleased with itself. */
@@ -278,7 +299,7 @@ const EXPRESSIONS = {
     // Most of "inflated" now comes from the uniform body scale rather than the
     // local belly kernel: a smooth global scale is something the mouth's affine
     // can follow, a steep local one is not.
-    headY: -20, bellySwell: 0.82, bodyRise: 44, squashY: 1.12, squashX: 1.11,
+    headY: -20, bellySwell: 1.9, bodyRise: 30, squashY: 1.04, squashX: 1.05,
     antennaDroop: -1.15, antennaTwist: 0.15, pupilScale: 1.3,
   },
   /** Pepper building: holding it in. */
@@ -306,19 +327,26 @@ const EXPRESSIONS = {
   },
   /** Deflating: everything sags past rest before it comes back. */
   deflate: {
-    jawOpen: 0.4, mouthWidth: 0.82, cornerLift: -0.9, lipPress: 0, tongueOut: 0.55,
-    lidLeft: 0.32, lidRight: 0.26, lowerLid: 0.15, browSad: 0.85,
-    headY: 24, headTilt: 3, bodyRise: -20, bellySwell: -0.7, cheekPuff: -0.75,
-    squashY: 0.9, squashX: 1.07, antennaDroop: 1.1, antennaTwist: -0.35,
+    // A pant: narrow and tall, which is a mouth shape no other state uses — the
+    // rest of the set is either shut or wide. Plus the body sagging past its own
+    // resting size, which is the actual information: it was bigger a moment ago.
+    jawOpen: 0.52, mouthWidth: 0.46, cornerLift: -0.7, lipPress: 0, tongueOut: 0.85,
+    lidLeft: 0.1, lidRight: 0.06, lowerLid: 0.1, browSad: 0.9, browRaise: 0.5,
+    headY: 26, headTilt: 2, bodyRise: -26, bellySwell: -0.9, cheekPuff: -0.95,
+    squashY: 0.88, squashX: 1.09, antennaDroop: 1.35, antennaTwist: -0.5,
+    pupilScale: 1.28,
   },
   /** Shift survived: full, smug, in no hurry. */
   smug: {
     // Full. The belly is the point: a contented face alone was indistinguishable
     // from idle, and the whole state is meant to say the shift is survived.
     jawOpen: 0.03, mouthWidth: 1.02, cornerLift: 1.3, lipPress: 0.5,
-    lidLeft: 0.62, lidRight: 0.5, lowerLid: 0.75, browRaise: 0.35, browAngry: 0.2,
-    browAsym: 0.6, headTilt: 6.5, headY: -14, lean: -0.04,
-    bellySwell: 0.7, bodyRise: 18, squashY: 1.08, squashX: 1.06,
+    // Eyes shut, leaning back, and visibly bigger than it started. Contentment
+    // on the face alone was indistinguishable from idle; the win screen has to
+    // be a silhouette.
+    lidLeft: 0.66, lidRight: 0.6, lowerLid: 0.85, browRaise: 0.35, browAngry: 0.2,
+    browAsym: 0.6, headTilt: 7.5, headY: -20, lean: -0.075,
+    bellySwell: 1.5, bodyRise: 10, squashY: 1.04, squashX: 1.03,
     antennaDroop: -0.5, antennaTwist: 0.7,
   },
   /** Shift lost to an empty belly. */
@@ -327,9 +355,9 @@ const EXPRESSIONS = {
     // The lower lid is not optional here: with the eye drained of colour, the
     // painted eyeball's own lower edge shows under the drawn one and reads as a
     // second iris sitting behind the first.
-    lidLeft: 0.62, lidRight: 0.62, lowerLid: 0.34, browSad: 1,
+    lidLeft: 0.46, lidRight: 0.5, lowerLid: 0.22, browSad: 1,
     headY: 34, headTilt: 9, bodyRise: -38, squashY: 0.86, squashX: 1.09,
-    cheekPuff: -0.85, antennaDroop: 1.35, antennaTwist: 0.35, pupilScale: 0.85,
+    cheekPuff: -0.85, antennaDroop: 1.15, antennaTwist: 0.15, pupilScale: 0.85,
   },
   /** Shift lost to irritation. */
   rageEnd: {
@@ -575,12 +603,17 @@ export class CreatureAnimator {
     }
     if (step2 > 0.2) target.pupilY = mix(target.pupilY, -0.25, step2);
     if (ended && state?.phase === "survived") { target.pupilX = -0.35; target.pupilY = -0.15; }
-    if (ended && state?.failureReason === "empty-belly") target.pupilY = 0.65;
+    // Down, but not so far down that the lids and the gaze between them push
+    // the pupil out of the socket: a drained eye with no pupil in it reads as a
+    // missing texture, and this is the frame the results screen holds.
+    if (ended && state?.failureReason === "empty-belly") target.pupilY = 0.3;
 
     // Skin. These accumulate rather than blend: heat and pallor are conditions,
     // not expressions, and two of them can be true at once.
     target.pallor = hunger * 0.9;
-    target.rageFlush = step2 * 0.62 + step3 * 0.38;
+    // Weighted late on purpose: when the colour arrived with step two, steps one
+    // and two were the same drawing with the red turned up.
+    target.rageFlush = step2 * 0.3 + step3 * 0.7;
     target.sweat = step2 * 0.35 + step3 * 0.5;
     if (warning && mutation?.ingredient === "pepper") {
       // The warning is pressure, not heat: blotches and sweat on a face that is
@@ -596,6 +629,10 @@ export class CreatureAnimator {
       target.sweat = Math.max(target.sweat, 0.7);
       if (mutation.gustActive) target.exhale = 1;
     }
+    // Stretched-skin sheen, balloon only. Keyed off the mutation rather than off
+    // `bellySwell`, because a full creature at the end of a survived shift swells
+    // too and must not borrow the balloon's colour.
+    if (mutation?.ingredient === "balloon") target.taut = active ? 1 : strain * 0.7;
     if (mutation?.ingredient === "metal") {
       const grip = active ? 1 : strain;
       target.magnetism = active ? 1 : strain * 0.45;
@@ -620,6 +657,16 @@ export class CreatureAnimator {
     // The reaction beats add their own skin on top.
     if (feed) this.gulpSkin(target, feed, reduced);
 
+    // Inflation rides the uniform body scale rather than a deformer of its own:
+    // a local kernel big enough to read is also steep enough to tear the paint.
+    // Wider than it is tall, and lifting, so it still reads as a balloon rather
+    // than as the camera moving closer.
+    if (target.bellySwell !== 0) {
+      target.squashX *= 1 + target.bellySwell * 0.1;
+      target.squashY *= 1 + target.bellySwell * 0.075;
+      target.bodyRise += target.bellySwell * 16;
+    }
+
     target.jawOpen = clamp01(target.jawOpen);
     target.lidLeft = clamp(0, 0.66, target.lidLeft);
     target.lidRight = clamp(0, 0.66, target.lidRight);
@@ -639,28 +686,46 @@ export class CreatureAnimator {
    */
   private applyGulp(target: CreaturePose, feed: Reaction, reduced: boolean): Gaze | null {
     const age = feed.age;
-    const contact = Math.exp(-Math.abs(age - 0.05) * 15);
-    const shut = Math.exp(-age * 2.6);
 
-    this.wear("snap", Math.max(contact, shut * 0.7));
-
+    // Each ingredient gets its own curve, not its own tint on one curve. The
+    // three strips were frame-for-frame identical with the projectile
+    // recoloured, and all three spent their last three frames on a held pose.
     if (feed.ingredient === "metal") {
-      // A short, hard, high-frequency beat that is over quickly.
-      this.wear("clank", Math.exp(-Math.abs(age - 0.07) * 13));
+      // Hard and fast: clamp on contact, then a recoil that overshoots open
+      // again before it settles. Over in half a second.
+      const contact = Math.exp(-Math.abs(age - 0.04) * 20);
+      this.wear("snap", Math.max(contact, Math.exp(-age * 5)));
+      this.wear("clank", Math.exp(-Math.abs(age - 0.06) * 15));
       const ring = reduced ? 0 : Math.exp(-age * 4.5) * Math.sin(age * 46);
       target.headX += ring * 5;
       target.headTilt += ring * 2.4;
+      // The recoil: the jaw rebounds past shut and the body unsquashes through
+      // its rest size rather than easing back to it.
+      const recoil = Math.exp(-Math.abs(age - 0.26) * 7);
+      target.jawOpen += recoil * 0.3;
+      target.squashY += recoil * 0.05;
+      target.squashX -= recoil * 0.05;
+      target.headY -= recoil * 9;
       target.antennaShake = Math.max(target.antennaShake, Math.exp(-age * 3));
     } else if (feed.ingredient === "balloon") {
-      // Slow in, floaty, with a rebound that outlasts the other two.
-      this.wear("puff", Math.exp(-Math.abs(age - 0.3) * 4.2));
-      const float = reduced ? 0 : Math.exp(-age * 1.9) * Math.sin(age * 7.5 - 0.6);
-      target.bodyRise += float * 7;
-      target.headY -= float * 4;
+      // Slow and soft: a long squish in, a held compression, then a release
+      // that floats. Deliberately half the frequency of the metal beat.
+      const contact = Math.exp(-Math.abs(age - 0.12) * 7);
+      this.wear("snap", Math.max(contact, Math.exp(-age * 2.2)) * 0.85);
+      this.wear("puff", Math.exp(-Math.abs(age - 0.42) * 2.6));
+      const float = reduced ? 0 : Math.exp(-age * 1.5) * Math.sin(age * 5.2 - 0.6);
+      target.bodyRise += float * 11;
+      target.headY -= float * 6;
       target.headTilt += float * 2;
+      target.cheekPuff += Math.exp(-Math.abs(age - 0.5) * 2.2) * 0.5;
     } else if (feed.ingredient === "pepper") {
+      const contact = Math.exp(-Math.abs(age - 0.05) * 15);
+      this.wear("snap", Math.max(contact, Math.exp(-age * 3)));
       // Nothing for a beat, then the heat arrives and takes over the face.
-      const onset = clamp01((age - 0.34) / 0.16);
+      // Started earlier and ramped over longer. At the old timing the strip
+      // spent three frames on a held closed smile and then the heat arrived
+      // between one frame and the next, which reads as a cut, not a reaction.
+      const onset = clamp01((age - 0.16) / 0.34) ** 0.7;
       const fade = 1 - clamp01((age - 1.05) / 0.4);
       this.wear("burn", onset * fade);
       if (!reduced) {
@@ -677,7 +742,10 @@ export class CreatureAnimator {
     }
 
     // Then the verdict.
-    const settle = clamp01((age - 0.55) / 0.6);
+    // Earlier and faster. At the old ramp the verdict was still only half worn
+    // when the beat was over, so both delight and indifference resolved back
+    // toward the resting face and became each other.
+    const settle = clamp01((age - 0.4) / 0.34);
     if (settle <= 0) return null;
     const verdict = settle * (feed.ingredient === "pepper" ? 0.35 : 1);
     this.wear(feed.craved ? "delight" : "shrug", verdict);
@@ -692,7 +760,7 @@ export class CreatureAnimator {
   /** Skin changes belonging to a catch, layered after the mood's own. */
   private gulpSkin(target: CreaturePose, feed: Reaction, reduced: boolean) {
     if (feed.ingredient !== "pepper") return;
-    const heat = clamp01((feed.age - 0.32) / 0.18) * (1 - clamp01((feed.age - 1.05) / 0.4));
+    const heat = clamp01((feed.age - 0.16) / 0.34) ** 0.7 * (1 - clamp01((feed.age - 1.05) / 0.4));
     target.flush = Math.max(target.flush, heat);
     target.cheekMarks = Math.max(target.cheekMarks, heat * 0.8);
     target.sweat = Math.max(target.sweat, heat);
@@ -728,6 +796,21 @@ export class CreatureAnimator {
   private applyRecovery(recovery: Reaction): Gaze {
     const sag = Math.sin(clamp01(recovery.age / 1.5) * Math.PI) ** 0.7;
     this.wear("deflate", sag);
+    // A residue of whatever it just was, draining away. "Wearing off" is not a
+    // pose on its own — it is the previous state at a fraction of strength, and
+    // without that fraction on screen the state is just a tired face.
+    const leaving = (1 - clamp01(recovery.age / 1.5)) ** 1.4;
+    if (recovery.ingredient === "metal") {
+      this.target.teethAlign = Math.max(this.target.teethAlign, leaving * 0.7);
+      this.target.teethLong = Math.max(this.target.teethLong, leaving * 0.55);
+      this.target.magnetism = Math.max(this.target.magnetism, leaving * 0.5);
+    } else if (recovery.ingredient === "balloon") {
+      this.target.taut = Math.max(this.target.taut, leaving * 0.6);
+      this.target.bellySwell = Math.max(this.target.bellySwell, leaving * 0.5);
+    } else {
+      this.target.flush = Math.max(this.target.flush, leaving * 0.5);
+      this.target.sweat = Math.max(this.target.sweat, leaving * 0.6);
+    }
     // Deliberately no `exhale`: that plume belongs to the pepper gust, and
     // borrowing it here left a puff of pepper smoke hanging on the cheek of a
     // creature that had just finished being a balloon.

@@ -31,7 +31,7 @@ export interface DevRenderControl {
   /** Holds the eyes open: a blink landing on a capture reads as a missing face. */
   holdBlink: boolean;
   /** Rolling scene-draw cost in milliseconds. */
-  timing: { samples: number; total: number; max: number; last: number };
+  timing: { samples: number; total: number; max: number; last: number; all: number[] };
 }
 
 export const devRender: DevRenderControl = {
@@ -41,19 +41,43 @@ export const devRender: DevRenderControl = {
   hideAim: false,
   hideLabels: false,
   holdBlink: false,
-  timing: { samples: 0, total: 0, max: 0, last: 0 },
+  timing: { samples: 0, total: 0, max: 0, last: 0, all: [] as number[] },
 };
 
+/**
+ * Every sample is kept, not just the running total.
+ *
+ * A mean over a couple of dozen frames is dominated by whatever else the
+ * machine was doing: one scheduler stall or GC pause during a four-second
+ * window moves it by milliseconds, which is the whole budget. The median is
+ * what a frame actually costs, and p95 is what the worst honest frame costs.
+ */
 export function recordDrawCost(milliseconds: number) {
   const timing = devRender.timing;
   timing.samples++;
   timing.total += milliseconds;
   timing.last = milliseconds;
   if (milliseconds > timing.max) timing.max = milliseconds;
+  if (timing.all.length < 4000) timing.all.push(milliseconds);
+}
+
+export function drawCostSummary() {
+  const timing = devRender.timing;
+  const sorted = [...timing.all].sort((a, b) => a - b);
+  const at = (fraction: number) =>
+    sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * fraction))] : 0;
+  return {
+    samples: timing.samples,
+    average: timing.samples ? timing.total / timing.samples : 0,
+    median: at(0.5),
+    p95: at(0.95),
+    max: timing.max,
+    last: timing.last,
+  };
 }
 
 export function resetDrawCost() {
-  devRender.timing = { samples: 0, total: 0, max: 0, last: 0 };
+  devRender.timing = { samples: 0, total: 0, max: 0, last: 0, all: [] };
 }
 
 type HookBag = Record<string, unknown>;

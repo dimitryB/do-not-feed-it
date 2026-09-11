@@ -31,7 +31,14 @@ export interface CreatureRig {
   tooth: Patch;
   /** Soft creature silhouette, low resolution, for colour grading only. */
   bodyMask: HTMLCanvasElement;
-  /** Scratch surface for grading, so a tint can be masked to the creature. */
+  /**
+   * Scratch surface for grading, so a tint can be masked to the creature.
+   *
+   * A third of arena size on purpose. Everything drawn through it is a soft
+   * radial falloff, so the resolution buys nothing visible, and there can be
+   * four or five passes in a frame — each one a clear, a fill and a mask
+   * composite over every pixel of this surface.
+   */
   grade: HTMLCanvasElement;
   palette: {
     skinLit: string; skinMid: string; skinShadow: string;
@@ -421,6 +428,6 @@ export function buildRig(image: HTMLImageElement): CreatureRig {
 
   return {
     art, pupil, lidUpper, lidLower, tongue, tooth,
-    bodyMask: buildBodyMask(), grade: canvasOf(ARENA_WIDTH / 2, ARENA_HEIGHT / 2), palette,
+    bodyMask: buildBodyMask(), grade: canvasOf(ARENA_WIDTH / 3, ARENA_HEIGHT / 3), palette,
   };
 }

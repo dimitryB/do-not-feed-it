@@ -92,33 +92,15 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
     const chin = bump(x, y, 840, 348, 236, 126) * gate;
     if (chin > 0) dy -= jaw * chin;
 
-    // Belly: inflation pushes out and up, never down into the counter.
-    // The push grows with distance from the centre rather than following a
-    // normalised direction: a normalised one flips sign through the centre,
-    // which is a discontinuity, and a discontinuity folds a warp cell.
-    if (pose.bellySwell !== 0) {
-      // Two constraints fix where this kernel can sit.
-      //
-      // It has to clear the mouth: the mouth is drawn at fixed anatomy
-      // coordinates and follows the warp through one affine sample taken at its
-      // centre, so a steep gradient running through the muzzle cannot be
-      // tracked, and the drawn mouth tears away from the painted one. That is
-      // how iteration 9 grew a second mouth across the chin.
-      //
-      // And it has to fall off on its own rather than being multiplied by the
-      // floor gate: a second ramp inside the first makes a gradient the affine
-      // cells cannot follow either, which is the stepped horizontal seam that
-      // appeared across the inflated belly.
-      // Wide and shallow. The steepest part of this kernel is a vertical
-      // compression, and vertical compression is what the per-cell affines
-      // approximate worst: too tight a kernel and the skin above the belly
-      // breaks into short horizontal dashes.
-      const belly = bump(x, y, BELLY.x, 336, 300, 116);
-      if (belly > 0) {
-        dx += (x - BELLY.x) / 300 * pose.bellySwell * 64 * belly;
-        dy += (y - 336) / 116 * pose.bellySwell * 14 * belly - pose.bellySwell * 11 * belly;
-      }
-    }
+    // Belly inflation is deliberately NOT a kernel of its own any more.
+    //
+    // Four attempts at placing one all failed the same way: a local kernel big
+    // enough to read is also steep enough that the per-cell affines cannot
+    // follow it, and the result is a field of vertical smear streaks with a
+    // torn fringe where the compression peaks. The body kernel above is a
+    // near-uniform scale about a single point, which the affines approximate
+    // exactly, so `bellySwell` now feeds that instead — see `pose.ts`, where it
+    // is folded into squashX/squashY rather than driving a deformer here.
 
     // Swallow: a travelling bulge from the throat into the belly.
     if (pose.throat > 0.01) {
@@ -188,6 +170,12 @@ function inverseAt(field: WarpField, x: number, y: number, out: { x: number; y: 
   }
   out.x = qx;
   out.y = qy;
+}
+
+/** Where a painted point ends up, for placing a part corner by corner. */
+export function placePoint(field: WarpField, x: number, y: number) {
+  inverseAt(field, x, y, found);
+  return { x: found.x, y: found.y };
 }
 
 /** Local translation and scale of the field at a point, for placing a part. */

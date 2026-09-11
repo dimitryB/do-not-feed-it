@@ -2,7 +2,7 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { ARENA, type ArcadeState, type Ingredient } from "../../lib/game/arcade";
 import { createScene } from "../../lib/render/scene";
-import { DEV_HOOKS, devHookBag, devRender, recordDrawCost, resetDrawCost } from "../../lib/dev/hook";
+import { DEV_HOOKS, devHookBag, devRender, drawCostSummary, recordDrawCost, resetDrawCost } from "../../lib/dev/hook";
 
 export function GameCanvas({runRef,angle,selected,playing,reduced,onAim}:{runRef:RefObject<ArcadeState|null>;angle:number;selected:Ingredient;playing:boolean;reduced:boolean;onAim:(angle:number)=>void}) {
   const canvasRef=useRef<HTMLCanvasElement>(null);
@@ -65,7 +65,7 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,onAim}:{runRef
         bag.reduced=(value:boolean|null)=>{devRender.reduced=value;};
         bag.hideAim=(value:boolean)=>{devRender.hideAim=value;};bag.hideLabels=(value:boolean)=>{devRender.hideLabels=value;};
         bag.holdBlink=(value:boolean)=>{devRender.holdBlink=value;};
-        bag.timing=()=>({...devRender.timing,average:devRender.timing.samples?devRender.timing.total/devRender.timing.samples:0});
+        bag.timing=()=>drawCostSummary();
         bag.resetTiming=()=>{resetDrawCost();};
         bag.sceneReady=()=>scene.ready();
         bag.rigDump=(part:string)=>{

@@ -1,0 +1,119 @@
+{
+  "iteration": 20,
+  "capturedAt": "2026-09-11T04:10:37.652Z",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "streamWidth": 960,
+  "states": [
+    "attract-idle",
+    "hungry-mild",
+    "hungry-severe",
+    "tracking-far",
+    "tracking-near",
+    "gulp-metal",
+    "gulp-balloon",
+    "gulp-pepper",
+    "miss-floor",
+    "miss-vent",
+    "irritation-1",
+    "irritation-2",
+    "irritation-3",
+    "warn-metal",
+    "warn-balloon",
+    "warn-pepper",
+    "active-metal",
+    "active-balloon",
+    "active-pepper",
+    "recovery",
+    "craving-satisfied",
+    "off-menu",
+    "end-survived",
+    "end-starved",
+    "end-enraged"
+  ],
+  "strips": [
+    "gulp-metal",
+    "gulp-balloon",
+    "gulp-pepper",
+    "miss-floor",
+    "onset-metal",
+    "onset-balloon",
+    "onset-pepper",
+    "pepper-exhale"
+  ],
+  "reducedStates": [
+    "hungry-severe",
+    "irritation-3",
+    "gulp-metal",
+    "active-metal",
+    "active-balloon",
+    "active-pepper",
+    "end-survived"
+  ],
+  "hudShots": [
+    "hud-title.png",
+    "hud-midplay.png",
+    "hud-result.png"
+  ],
+  "renderTiming": {
+    "samples": 28,
+    "average": 5.207142857119574,
+    "median": 4.899999999906868,
+    "p95": 6.7000000001862645,
+    "max": 7.399999999906868,
+    "last": 6.7000000001862645,
+    "canvas": {
+      "width": 1920,
+      "height": 1080
+    }
+  },
+  "trace": {
+    "reached": [
+      "active-balloon",
+      "active-metal",
+      "active-pepper",
+      "attract-idle",
+      "craving-satisfied",
+      "end-enraged",
+      "end-starved",
+      "end-survived",
+      "gulp-balloon",
+      "gulp-metal",
+      "gulp-pepper",
+      "hungry-mild",
+      "hungry-severe",
+      "irritation-1",
+      "irritation-2",
+      "irritation-3",
+      "miss-floor",
+      "miss-vent",
+      "off-menu",
+      "recovery",
+      "tracking-far",
+      "tracking-near",
+      "warn-balloon",
+      "warn-metal",
+      "warn-pepper"
+    ],
+    "missing": [],
+    "runs": {
+      "survived": {
+        "phase": "survived",
+        "tick": 7200,
+        "score": 4580
+      },
+      "enraged": {
+        "phase": "lost",
+        "failureReason": "too-many-missed-shots",
+        "tick": 1739
+      },
+      "starved": {
+        "phase": "lost",
+        "failureReason": "empty-belly",
+        "tick": 4615
+      }
+    }
+  }
+}
