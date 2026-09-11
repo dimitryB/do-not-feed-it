@@ -29,6 +29,8 @@ export interface CreatureRig {
   lidLower: Record<EyeSide, Patch>;
   tongue: Patch;
   tooth: Patch;
+  /** The same tooth in chrome, cross-faded in when the jaw is magnetised. */
+  steelTooth: Patch;
   /** Soft creature silhouette, low resolution, for colour grading only. */
   bodyMask: HTMLCanvasElement;
   /**
@@ -146,6 +148,45 @@ function cutEllipse(source: HTMLCanvasElement, x: number, y: number, rx: number,
  * cannot be scaled up into a whole jaw. This paints a cone in the sampled
  * palette instead and rubs a little of the real tooth over it for grain.
  */
+/**
+ * The same tooth in chrome.
+ *
+ * Desaturating the ivory one toward steel was not enough: measured, the tinted
+ * teeth came out at rgb(206,218,213) — genuinely cool and genuinely grey — and
+ * reviewers still called them bone-white, because what makes a surface read as
+ * metal at stream resolution is not its hue but its *contrast*. Polished metal
+ * is mostly dark with a few hard bright bands. So this is a separate sprite the
+ * renderer cross-fades to, rather than a tint over the ivory one.
+ */
+function buildSteelTooth(shape: Patch): Patch {
+  const patch = canvasOf(shape.canvas.width, shape.canvas.height);
+  const context = contextOf(patch);
+  context.drawImage(shape.canvas, 0, 0);
+  context.globalCompositeOperation = "source-in";
+  const w = patch.width;
+  const h = patch.height;
+  const chrome = context.createLinearGradient(0, 0, w, h * 0.85);
+  chrome.addColorStop(0, "#0e1519");
+  chrome.addColorStop(0.18, "#5d6f7b");
+  chrome.addColorStop(0.3, "#e8f4fa");
+  chrome.addColorStop(0.42, "#7b8d99");
+  chrome.addColorStop(0.6, "#1b262c");
+  chrome.addColorStop(0.78, "#9fb2bd");
+  chrome.addColorStop(1, "#38454e");
+  context.fillStyle = chrome;
+  context.fillRect(0, 0, w, h);
+  // A hard specular running down the length, which is the thing that says metal.
+  context.globalCompositeOperation = "source-atop";
+  const spec = context.createLinearGradient(w * 0.3, 0, w * 0.52, 0);
+  spec.addColorStop(0, "rgba(255,255,255,0)");
+  spec.addColorStop(0.5, "rgba(255,255,255,0.85)");
+  spec.addColorStop(1, "rgba(255,255,255,0)");
+  context.fillStyle = spec;
+  context.fillRect(0, 0, w, h);
+  context.globalCompositeOperation = "source-over";
+  return { ...shape, canvas: patch };
+}
+
 function buildTooth(art: HTMLCanvasElement): Patch {
   const width = 30;
   const height = 56;
@@ -427,7 +468,7 @@ export function buildRig(image: HTMLImageElement): CreatureRig {
   for (const patch of sclera) artContext.drawImage(patch.canvas, patch.x * HI, patch.y * HI);
 
   return {
-    art, pupil, lidUpper, lidLower, tongue, tooth,
+    art, pupil, lidUpper, lidLower, tongue, tooth, steelTooth: buildSteelTooth(tooth),
     bodyMask: buildBodyMask(), grade: canvasOf(ARENA_WIDTH / 3, ARENA_HEIGHT / 3), palette,
   };
 }

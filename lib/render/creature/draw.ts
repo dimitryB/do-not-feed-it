@@ -176,9 +176,9 @@ function drawTeeth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
   context.save();
   for (let index = 0; index < row.length; index++) {
     const [stop, scale] = row[index];
-    const t = mix(stop, 0.055 + index * (0.89 / (row.length - 1)), align);
+    const t = mix(stop, 0.055 + index * (0.89 / (row.length - 1)), align * 0.78);
     const spot = onCurve(shape, t, upper);
-    const size = mix(scale, 0.9, align);
+    const size = mix(scale, 0.9, align * 0.72);
     // Hard cap at the far lip: a fang that overshoots is drawn hanging outside
     // the mouth, over the lip, which is the single most obvious tell that the
     // teeth are pasted on rather than in there.
@@ -196,27 +196,23 @@ function drawTeeth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
     context.shadowColor = "rgba(6,2,2,0.75)";
     context.shadowBlur = 5;
     context.shadowOffsetY = 2.5;
-    context.drawImage(rig.tooth.canvas, -width / 2, 0, width, height);
+    // One sprite or the other wherever the cross-fade would be invisible, so a
+    // full set of metal teeth is not twenty-four extra draws a frame.
+    if (align > 0.82) {
+      context.drawImage(rig.steelTooth.canvas, -width / 2, 0, width, height);
+    } else {
+      context.drawImage(rig.tooth.canvas, -width / 2, 0, width, height);
+      if (align > 0.05) {
+        context.globalAlpha = Math.min(1, align * 1.2);
+        context.drawImage(rig.steelTooth.canvas, -width / 2, 0, width, height);
+        context.globalAlpha = 1;
+      }
+    }
     context.restore();
-    // Metal teeth are metal. A cold edge light alone was not enough: the row
-    // still read as ivory, so the mutation read as "bigger teeth". The whole
-    // tooth is desaturated toward steel and given a hard specular streak.
+    // The cold rim light stays: it is what separates one steel tooth from the
+    // next where the chrome gradient happens to match.
     if (align > 0.15) {
-      context.save();
-      context.globalCompositeOperation = "saturation";
-      context.globalAlpha = align * 0.85;
-      context.fillStyle = "rgb(150,176,192)";
-      context.fillRect(-width / 2, 0, width, height);
-      context.globalCompositeOperation = "overlay";
-      context.globalAlpha = align * 0.55;
-      const chrome = context.createLinearGradient(-width / 2, 0, width / 2, height);
-      chrome.addColorStop(0, "rgba(226,244,252,0.9)");
-      chrome.addColorStop(0.45, "rgba(96,124,144,0.5)");
-      chrome.addColorStop(1, "rgba(232,246,252,0.8)");
-      context.fillStyle = chrome;
-      context.fillRect(-width / 2, 0, width, height);
-      context.restore();
-      context.strokeStyle = `rgba(226,248,255,${0.7 * align})`;
+      context.strokeStyle = `rgba(226,248,255,${0.6 * align})`;
       context.lineWidth = 1.5;
       context.beginPath();
       context.moveTo(-width * 0.26, height * 0.1);

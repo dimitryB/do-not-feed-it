@@ -17,7 +17,13 @@ export const WARP_REGION = { x: 512, y: 52, width: 632, height: 462 };
 const CELLS_X = 38;
 const CELLS_Y = 30;
 /** How far the chin travels between a wide-open and a closed mouth. */
-export const JAW_TRAVEL = 40;
+// Smaller than it was, over a wider kernel. The lift is applied in almost every
+// state — the painting's mouth is open and the rig rebuilt it shut, so a closed
+// mouth means a lifted chin — and at forty pixels over a tight kernel it was
+// compressing the whole chin and upper belly hard enough to dissolve the skin
+// texture into vertical streaks. The same travel spread over more pixels is a
+// gentler gradient and resamples far less.
+export const JAW_TRAVEL = 26;
 
 const bump = (x: number, y: number, cx: number, cy: number, rx: number, ry: number) => {
   const nx = (x - cx) / rx;
@@ -89,7 +95,7 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
 
     // Jaw: closing the mouth lifts and compresses the whole lower face. The
     // kernel dies out well above the counter so it never meets the floor gate.
-    const chin = bump(x, y, 840, 348, 236, 126) * gate;
+    const chin = bump(x, y, 840, 340, 268, 196) * gate;
     if (chin > 0) dy -= jaw * chin;
 
     // Belly inflation is deliberately NOT a kernel of its own any more.

@@ -666,6 +666,18 @@ export class CreatureAnimator {
       target.squashY *= 1 + target.bellySwell * 0.075;
       target.bodyRise += target.bellySwell * 16;
     }
+    // Hard ceiling on how far the painting may be stretched. Scale magnifies
+    // the source, and past about fourteen percent the skin's bump detail
+    // dissolves into mush — which is a texture problem no grid density fixes,
+    // because the detail is simply not in the source at that magnification.
+    // Lift is free by comparison: a translation resamples nothing.
+    const widest = Math.max(target.squashX, target.squashY);
+    if (widest > 1.14) {
+      const trim = 1.14 / widest;
+      target.squashX *= trim;
+      target.squashY *= trim;
+      target.bodyRise += (widest - 1.14) * 150;
+    }
 
     target.jawOpen = clamp01(target.jawOpen);
     target.lidLeft = clamp(0, 0.66, target.lidLeft);
