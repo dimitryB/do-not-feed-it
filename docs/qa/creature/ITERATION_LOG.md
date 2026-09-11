@@ -887,3 +887,91 @@ and three ingredients that read by hue rather than by material or timing.
 
 **Decision:** stop. This is the second time cap. See the final report at the top
 of this file for what passed, what did not, and the recommended next step.
+
+## Iterations 14-17 — a second pass, and what the scores turned out to be worth
+
+Four more iterations, seven fresh-context critic passes. Averages across the 25
+states, in order: **3.84, 4.36, 4.32, 3.88, 4.04, 4.76, 4.28, 4.16.**
+
+### The number is noise at this resolution
+
+Mean 4.21, standard deviation 0.29. Every pass is judged by a different critic
+with no memory of the previous one, and the spread between two critics looking
+at *the same* image set is larger than anything a single iteration changes. Two
+passes scored the same build 4.76 and 4.28. `attract-idle` was scored 5, 5, 7, 8
+and 5 across five consecutive reviews of images that barely changed.
+
+So: **the averages in this log should not be read as a trend.** They are a
+sanity check that nothing has collapsed, and a source of specific faults. The
+fault lists agree with each other far more than the numbers do, and that
+agreement is the real signal.
+
+What every critic in this pass independently named, in the same order:
+
+1. Twenty-five states are built from about four faces — a closed smile, a flat
+   line, an open toothy grin, a red flush. Nine states are capped at 5 for
+   confusability alone, and the fix is head *position* rather than mouth shape.
+2. The drawn overlays — teeth, tears, blush, heat — sit on the painting with no
+   occlusion and no contact shadow, so they read as clip art on a photograph.
+3. Each ingredient needs one tell that survives 960 px and is not a hue.
+
+### What was fixed, and how each was found
+
+- **The mouth was drawn under a single affine sampled at its centre.** That is
+  exact only where the field's scale is constant across the whole mouth, and it
+  is not: the body kernel falls off across the muzzle, so on an inflated pose
+  the mouth's centre scaled by 1.22 while its corners scaled by 1.10. The
+  painting's own smile crease runs past the drawn mouth to the cheeks — skin
+  rather than mouth, so the rig never paints it out — and it followed the field
+  correctly while the drawn mouth did not. Three consecutive reviewers described
+  the result as the creature having two mouths. Each defining point of the
+  aperture is now placed through its own inversion of the field.
+- **Both pupils rested at different offsets and travelled different distances**,
+  because a share of the painting's inward bias was being kept. A hard look left
+  came out as one eye left and the other barely moving, which reads as no
+  eyeline rather than as a direction. One critic diagnosed this as "the eyes
+  never move"; measuring the rendered frames showed they move up to twelve
+  pixels, so the claim was wrong and the underlying fault was real.
+- **The antenna kernel was centred on the ceiling.** Measured off the painting,
+  the antennae occupy roughly y 100-155; their deformer sat at y 78 with a 60 px
+  radius, so most of it was on the beam behind them and they had only ever moved
+  by way of the head kernel. Adding the head's travel there to stop them lagging
+  pulled a torn sawtooth arc of the ceiling down with it — a blocking defect on
+  the results screen. Moving the kernel onto them exposed the next layer, that
+  thirty pixels of travel across a forty-eight pixel radius chips the stalks.
+- **Eyelids were a shaded fill**, and every reviewer called them a flat plate.
+  They are now a tall slab of the creature's own brow skin, translated down and
+  never stretched, tinted to wherever the surrounding skin currently is.
+- **Inflation stopped being a deformer.** Four attempts at a local belly kernel
+  all failed identically — big enough to read is also steep enough that the
+  per-cell affines cannot follow it — so it folds into the uniform body scale,
+  which the affines reproduce exactly. The scale is then capped at 1.14, because
+  past that the painting runs out of detail and the skin dissolves.
+- **Metal got a material.** Desaturating the ivory teeth was not enough:
+  measured, the tinted row came out at rgb(206,218,213), genuinely cool and grey,
+  and reviewers still called it bone-white. What reads as metal at stream
+  resolution is contrast, not hue, so there is a second tooth sprite in chrome.
+- **The pepper plume and the vent prop were both abandoned rather than tuned.**
+  Four reviewers called the plume a smudge on the lens; it is now the mouth
+  itself running hot, bounded by the aperture so it cannot detach. Four called
+  the vent a floating UI panel; there is no wall at that point to mount one on,
+  so it is a jet of steam, which is something this kitchen already does.
+- **The drool was a line with a bead on the end**, drawn at a fixed offset from
+  the aperture, so on a wide-open mouth it landed on the tongue. Three reviewers
+  independently identified it as debug art left in the build.
+
+### Render
+
+5.00 ms median / 6.20 ms p95 at 1920x1080 on the container this pass ran in.
+That container is slower than the one the earlier iterations used: the commit
+that measured 3.32 ms there measures 4.85 ms here, so this is roughly 3.5 ms on
+the machine the 4 ms budget was set against. The harness now reports median and
+p95 as well as the mean, because a mean over two dozen frames is dominated by
+whatever else the machine was doing.
+
+### Decision
+
+Stop. The remaining distance to "every state at 8" is the three structural items
+above, and the first of them — giving each state its own head position rather
+than another mouth shape — is a single focused pass worth more than the last
+four iterations combined. It is listed first in the recommended next steps.
