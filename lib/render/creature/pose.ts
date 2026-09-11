@@ -131,7 +131,7 @@ const EXPRESSIONS = {
     jawOpen: 0.2, mouthWidth: 0.68, cornerLift: -1.5, lipPress: 0,
     lidLeft: 0.58, lidRight: 0.5, lowerLid: 0,
     browSad: 1, browRaise: 0.1, tongueOut: 1, drool: 0.9,
-    headY: 30, headTilt: 6.5, antennaDroop: 1.15, antennaTwist: 0.1,
+    headY: 24, headTilt: 6.5, antennaDroop: 1.15, antennaTwist: 0.1,
     squashY: 0.92, squashX: 1.05, bodyRise: -22, cheekPuff: -1,
   },
   /** Snack in the air, still a long way off. */
@@ -224,7 +224,7 @@ const EXPRESSIONS = {
   mope: {
     jawOpen: 0.02, mouthWidth: 0.6, cornerLift: -1.5, lipPress: 1, jawShift: -0.3,
     lidLeft: 0.4, lidRight: 0.44, lowerLid: 0.1, browSad: 1, browRaise: 0.1,
-    headY: 48, headTilt: 5, lean: 0.02, squashY: 0.92, squashX: 1.06, bodyRise: -20,
+    headY: 36, headTilt: 5, lean: 0.02, squashY: 0.92, squashX: 1.06, bodyRise: -26,
     antennaDroop: 1.15, antennaTwist: -0.2,
   },
   /** And the flat look at the mess afterwards. */
@@ -356,7 +356,7 @@ const EXPRESSIONS = {
     // painted eyeball's own lower edge shows under the drawn one and reads as a
     // second iris sitting behind the first.
     lidLeft: 0.46, lidRight: 0.5, lowerLid: 0.22, browSad: 1,
-    headY: 34, headTilt: 9, bodyRise: -38, squashY: 0.86, squashX: 1.09,
+    headY: 24, headTilt: 8, bodyRise: -42, squashY: 0.86, squashX: 1.09,
     cheekPuff: -0.85, antennaDroop: 1.15, antennaTwist: 0.15, pupilScale: 0.85,
   },
   /** Shift lost to irritation. */

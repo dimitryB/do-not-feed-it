@@ -76,6 +76,15 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
     if (gate <= 0) { out.x = 0; out.y = 0; return; }
 
     // Head: tilt, offset, and a lean that brings it toward the camera.
+    // Deliberately stops short of the ceiling.
+    //
+    // This kernel moves the painting, not a cut-out, so wherever its gradient is
+    // steep it stretches whatever is underneath — and above the creature that is
+    // a hard-edged ceiling beam, which tears into a visible sawtooth. Extending
+    // it upward so the antennae travel with the skull produced exactly that.
+    // The antennae lag slightly on a large head drop as a result; that is the
+    // cheaper of the two artifacts, and the drop is kept small enough that the
+    // lag reads as the stalks trailing rather than as a mistake.
     const head = bump(x, y, HEAD.x, HEAD.y + 26, 250, 214);
     if (head > 0) {
       const rx = x - HEAD.x;
@@ -128,23 +137,21 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
 
     // Antennae: droop outward and down when the belly is empty.
     if (Math.abs(pose.antennaDroop) > 0.01 || Math.abs(pose.antennaTwist) > 0.01 || pose.antennaShake > 0.01) {
-      const stalk = bump(x, y, 848, 78, 142, 60);
+      // Measured off the painting: the antennae occupy roughly y 100-155, not
+      // y 18-138, so this kernel had been sitting mostly on the ceiling beam
+      // behind them. Now that it is on them, its own gradient matters: the
+      // travel is smaller and spread over a wider falloff, because thirty pixels
+      // of displacement across a forty-eight pixel radius chips the stalks.
+      const stalk = bump(x, y, 848, 116, 168, 78);
       if (stalk > 0) {
-        // The head kernel only reaches a third of the way up the stalks, so a
-        // head that drops thirty pixels left the antennae behind and stretched
-        // them into three straight masts — which two reviewers read as the
-        // creature changing species at the moment it starves. The shortfall is
-        // added back here so they travel with the skull they are attached to.
-        dx += (pose.headX + tremorX) * (1 - head) * stalk;
-        dy += (pose.headY + tremorY) * (1 - head) * stalk;
         // A smooth fan outward, not Math.sign: a step across the centre line
         // folds the cells there and duplicates the antennae.
         const fan = Math.max(-1, Math.min(1, (x - 848) / 96));
-        dy += pose.antennaDroop * 17 * stalk;
-        dx += fan * pose.antennaDroop * 11 * stalk;
+        dy += pose.antennaDroop * 12 * stalk;
+        dx += fan * pose.antennaDroop * 8 * stalk;
         // Twist tips one antenna up and the other down, which is the cheapest
         // silhouette cue there is for a shrug or a cocked head.
-        dy += fan * pose.antennaTwist * 13 * stalk;
+        dy += fan * pose.antennaTwist * 9 * stalk;
         if (!reduced) dx += Math.sin(time * 21 + x * 0.05) * pose.antennaShake * 2.6 * stalk;
       }
     }
