@@ -379,19 +379,29 @@ function drawMouth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
     context.restore();
   }
 
+  // Drool hangs off the outside of the lower lip. Drawn at a fixed offset from
+  // the aperture it landed *inside* a wide-open mouth, on the tongue, where a
+  // thin line with a bead on the end reads as a stray pin sprite left in the
+  // build — three reviewers flagged it as debug art.
   if (pose.drool > 0.05) {
-    const length = pose.drool * 26 + (reduced ? 0 : Math.sin(time * 1.6) * 3);
+    const swing = reduced ? 0 : Math.sin(time * 1.6) * 3;
+    const length = pose.drool * 26 + swing;
+    const anchor = onCurve(shape, 0.72, false);
     context.save();
     context.globalAlpha = Math.min(0.8, pose.drool);
-    context.strokeStyle = "rgba(226,232,196,0.7)";
-    context.lineWidth = 2;
+    // A tapered thread rather than a stroke of even width, so it reads as a
+    // liquid strand rather than as a drawn line.
+    context.fillStyle = "rgba(228,236,200,0.72)";
     context.beginPath();
-    context.moveTo(shape.centerX + 54, shape.lowerApex - 8);
-    context.lineTo(shape.centerX + 54, shape.lowerApex - 8 + length);
-    context.stroke();
-    context.fillStyle = "rgba(232,238,206,0.75)";
+    context.moveTo(anchor.x - 2.2, anchor.y - 2);
+    context.quadraticCurveTo(anchor.x + 0.6, anchor.y + length * 0.55,
+                             anchor.x + 0.4, anchor.y + length);
+    context.quadraticCurveTo(anchor.x - 0.8, anchor.y + length * 0.55,
+                             anchor.x + 2.2, anchor.y - 2);
+    context.closePath();
+    context.fill();
     context.beginPath();
-    context.arc(shape.centerX + 54, shape.lowerApex - 8 + length, 2.8, 0, Math.PI * 2);
+    context.ellipse(anchor.x + 0.4, anchor.y + length, 2.6, 3.2, 0, 0, Math.PI * 2);
     context.fill();
     context.restore();
   }
@@ -519,19 +529,39 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     const right = eye.x + eye.rx + 6;
     const lidEdge = eye.y - eye.ry - 1 + lid * (eye.ry * 2 + 4) - pose.browRaise * 3.5;
     const paintLid = (edge: number, from: number, bulge: number, lit: string, shade: string) => {
+      // The curve is taken out of the middle of the lid, not added to it. A
+      // quadratic that sags `bulge` below the edge covers that much more of the
+      // eye at its centre, so deepening the curve to stop it reading as a
+      // straight cut also quietly shut both eyes on the half-lidded states.
+      const lip = edge - bulge / 2;
       context.beginPath();
       context.moveTo(left, from);
       context.lineTo(right, from);
-      context.lineTo(right, edge);
-      context.quadraticCurveTo(eye.x, edge + bulge, left, edge);
+      context.lineTo(right, lip);
+      context.quadraticCurveTo(eye.x, lip + bulge, left, lip);
       context.closePath();
-      const skin = context.createLinearGradient(0, from, 0, edge + bulge);
+      // Real skin, translated. The slab is cut from the brow well above the eye
+      // and moved down to meet the lid edge — never scaled — so the grain and
+      // the lighting are the painting's own at whatever coverage the lid is at.
+      const slab = rig.lidSkin[side];
+      context.save();
+      context.clip();
+      context.drawImage(slab.canvas, slab.x, lip + bulge - slab.height, slab.width, slab.height);
+      // Then shaded and tinted to wherever the surrounding skin currently is,
+      // since colour grading has already been composited under this.
+      const skin = context.createLinearGradient(0, lip - slab.height * 0.5, 0, lip + bulge);
       skin.addColorStop(0, shade);
-      skin.addColorStop(0.55, lit);
-      skin.addColorStop(0.86, lit);
+      skin.addColorStop(0.6, lit);
       skin.addColorStop(1, shade);
+      context.globalCompositeOperation = "color";
+      context.globalAlpha = 0.55;
       context.fillStyle = skin;
       context.fill();
+      context.globalCompositeOperation = "multiply";
+      context.globalAlpha = 0.28;
+      context.fillStyle = shade;
+      context.fill();
+      context.restore();
       // The rolled margin of the lid catches the lamp, and the lash line under
       // it is a crease rather than an outline. Without these the lid is a flat
       // shape laid on the eye instead of a piece of the same head.
@@ -540,15 +570,15 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
       context.strokeStyle = "rgba(214,196,132,0.3)";
       context.lineWidth = 3;
       context.beginPath();
-      context.moveTo(left, edge - Math.sign(bulge) * 3.2);
-      context.quadraticCurveTo(eye.x, edge + bulge - Math.sign(bulge) * 3.2, right, edge - Math.sign(bulge) * 3.2);
+      context.moveTo(left, lip - Math.sign(bulge) * 3.2);
+      context.quadraticCurveTo(eye.x, lip + bulge - Math.sign(bulge) * 3.2, right, lip - Math.sign(bulge) * 3.2);
       context.stroke();
       context.filter = "blur(0.8px)";
       context.strokeStyle = "rgba(24,18,4,0.55)";
       context.lineWidth = 2.2;
       context.beginPath();
-      context.moveTo(left, edge);
-      context.quadraticCurveTo(eye.x, edge + bulge, right, edge);
+      context.moveTo(left, lip);
+      context.quadraticCurveTo(eye.x, lip + bulge, right, lip);
       context.stroke();
       context.restore();
     };
@@ -556,7 +586,7 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
     // `from` reaches well clear of the eye: a lid whose far edge sits just
     // outside it swings into view as soon as the brow rotates, and a straight
     // horizontal line across the top of an eyeball reads as a torn sprite.
-    paintLid(lidEdge, eye.y - eye.ry - 70, 9, lidLit, lidShade);
+    paintLid(lidEdge, eye.y - eye.ry - 70, 14, lidLit, lidShade);
     if (lid > 0.06) {
       context.save();
       context.globalAlpha = Math.min(0.5, lid * 0.7);
@@ -570,7 +600,7 @@ function drawEyes(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
 
     if (lowerLid > 0.03) {
       const rise = lowerLid * eye.ry * 0.62;
-      paintLid(eye.y + eye.ry - rise, eye.y + eye.ry + 70, -7, lidLit, lidShade);
+      paintLid(eye.y + eye.ry - rise, eye.y + eye.ry + 70, -11, lidLit, lidShade);
     }
     context.restore();
 

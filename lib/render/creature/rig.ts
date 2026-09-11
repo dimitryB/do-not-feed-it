@@ -31,6 +31,8 @@ export interface CreatureRig {
   tooth: Patch;
   /** The same tooth in chrome, cross-faded in when the jaw is magnetised. */
   steelTooth: Patch;
+  /** Brow skin, translated down to make a lid that is made of the creature. */
+  lidSkin: Record<EyeSide, Patch>;
   /** Soft creature silhouette, low resolution, for colour grading only. */
   bodyMask: HTMLCanvasElement;
   /**
@@ -185,6 +187,31 @@ function buildSteelTooth(shape: Patch): Patch {
   context.fillRect(0, 0, w, h);
   context.globalCompositeOperation = "source-over";
   return { ...shape, canvas: patch };
+}
+
+/**
+ * A slab of the creature's own brow skin, for the eyelids.
+ *
+ * The lids were a painted fill for several iterations, and reviewers kept
+ * describing them the same way: a flat pale plate laid on the eyeball. They
+ * were right — no gradient reproduces skin that is bumpy, mottled and lit from
+ * a specific direction.
+ *
+ * The first attempt at using real skin failed because it stretched a thin band
+ * to whatever height the lid needed, which tears the texture. This takes a tall
+ * slab from well above the eye and only ever *translates* it down, so the grain
+ * stays the size it was painted at whatever the lid is doing.
+ */
+function buildLidSkin(art: HTMLCanvasElement, side: EyeSide): Patch {
+  const eye = EYE[side];
+  const width = eye.rx * 2 + 30;
+  const height = eye.ry * 4;
+  const x = eye.x - width / 2;
+  const y = eye.y - eye.ry - height;
+  const patch = canvasOf(width * HI, height * HI);
+  const context = contextOf(patch);
+  context.drawImage(art, x * HI, y * HI, width * HI, height * HI, 0, 0, patch.width, patch.height);
+  return { canvas: patch, x, y, width, height };
 }
 
 function buildTooth(art: HTMLCanvasElement): Patch {
@@ -447,12 +474,14 @@ export function buildRig(image: HTMLImageElement): CreatureRig {
   };
 
   // Cut every moving part from the untouched painting first.
+  const lidSkin = {} as Record<EyeSide, Patch>;
   const pupil = {} as Record<EyeSide, Patch>;
   const lidUpper = {} as Record<EyeSide, Patch>;
   const lidLower = {} as Record<EyeSide, Patch>;
   for (const side of EYE_SIDES) {
     const eye = EYE[side];
     pupil[side] = cutEllipse(art, eye.pupil.x, eye.pupil.y, eye.pupil.r, eye.pupil.r, 0.18);
+    lidSkin[side] = buildLidSkin(art, side);
     lidUpper[side] = cutSkinBand(art,
       { x: eye.x - eye.rx - 11, y: eye.y - eye.ry - 22, width: (eye.rx + 11) * 2, height: 28 }, "bottom");
     lidLower[side] = cutSkinBand(art,
@@ -468,7 +497,7 @@ export function buildRig(image: HTMLImageElement): CreatureRig {
   for (const patch of sclera) artContext.drawImage(patch.canvas, patch.x * HI, patch.y * HI);
 
   return {
-    art, pupil, lidUpper, lidLower, tongue, tooth, steelTooth: buildSteelTooth(tooth),
+    art, pupil, lidUpper, lidLower, lidSkin, tongue, tooth, steelTooth: buildSteelTooth(tooth),
     bodyMask: buildBodyMask(), grade: canvasOf(ARENA_WIDTH / 3, ARENA_HEIGHT / 3), palette,
   };
 }

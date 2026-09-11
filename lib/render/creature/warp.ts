@@ -130,6 +130,13 @@ export function buildField(pose: CreaturePose, time: number, reduced: boolean): 
     if (Math.abs(pose.antennaDroop) > 0.01 || Math.abs(pose.antennaTwist) > 0.01 || pose.antennaShake > 0.01) {
       const stalk = bump(x, y, 848, 78, 142, 60);
       if (stalk > 0) {
+        // The head kernel only reaches a third of the way up the stalks, so a
+        // head that drops thirty pixels left the antennae behind and stretched
+        // them into three straight masts — which two reviewers read as the
+        // creature changing species at the moment it starves. The shortfall is
+        // added back here so they travel with the skull they are attached to.
+        dx += (pose.headX + tremorX) * (1 - head) * stalk;
+        dy += (pose.headY + tremorY) * (1 - head) * stalk;
         // A smooth fan outward, not Math.sign: a step across the centre line
         // folds the cells there and duplicates the antennae.
         const fan = Math.max(-1, Math.min(1, (x - 848) / 96));
