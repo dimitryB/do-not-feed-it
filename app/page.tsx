@@ -56,6 +56,10 @@ export default function Home(){
         if(extra?.pressure!==undefined)run.creature.pressure=extra.pressure;
         setView(clone(run));return snapshot();},
       point:(value:number)=>{aim(value);},
+      // Development only: holds or releases the charge the way the space bar
+      // does, so a capture can show the launcher winding up before a shot
+      // instead of the power appearing only in the command that fires it.
+      hold:(on:boolean,fromTick?:number)=>{const run=runRef.current;charging.current=on?(fromTick??run?.tick??0):null;if(!on&&run)run.charge=0;},
       state:snapshot,
       commands:()=>commands.current.map(item=>({...item})),
       stop:()=>{manual.current=false;setActive(false);},

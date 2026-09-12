@@ -25,7 +25,7 @@ function drawMutations(ctx:CanvasRenderingContext2D,state:ArcadeState,time:numbe
   // Levels are 0-3. Every strength below is a fraction of the cap, because the
   // first version multiplied an alpha by the level itself and washed the whole
   // creature in flat orange at three pepper.
-  const metal=m.metal/3;const balloon=m.balloon/3;const pepper=m.pepper/3;
+  const balloon=m.balloon/3;const pepper=m.pepper/3;
 
   // ---- METAL: the kitchen's cutlery, stuck to it ----
   //
@@ -265,13 +265,47 @@ export function createScene(){
         ctx.lineWidth=2;ctx.globalAlpha=.9;ctx.beginPath();ctx.arc(64+len,0,5+charge*4,0,Math.PI*2);ctx.stroke();
         ctx.restore();}
       ctx.restore();
-      // Aim, always: a short stub of barrel direction so a spectator can see
-      // where the player is pointing even once the full guide is gone.
-      ctx.save();ctx.translate(x,y);ctx.rotate(angle*Math.PI/180);
-      ctx.globalAlpha=.5;ctx.strokeStyle='#e0f4be';ctx.lineWidth=2;ctx.setLineDash([3,9]);
-      ctx.beginPath();ctx.moveTo(74,0);ctx.lineTo(150,0);ctx.stroke();ctx.restore();
-      ctx.save();
-      if(!state||tick-state.lastLaunchTick>=ARENA.cooldownTicks)item(ctx,selected,x,y,47,angle*Math.PI/180);
+      // The aim, always on screen. A dashed stub was there before and a
+      // spectator could not see it at 960px, so the two things the player is
+      // actually choosing — where it points and how hard it throws — are now
+      // drawn on the launcher itself: a solid lance out of the muzzle, with a
+      // crossbar at the distance the current power stands for.
+      const rad=angle*Math.PI/180;
+      const waitEnd=state?Math.max(state.reloadUntil,state.lastLaunchTick+ARENA.cooldownTicks):0;
+      const loaded=!state||tick>=waitEnd;
+      const refill=state?clampAlpha(1-(waitEnd-tick)/ARENA.cooldownTicks):1;
+      const notch=78+clampAlpha((power-ARENA.minPower)/(ARENA.maxPower-ARENA.minPower))*128;
+      ctx.save();ctx.translate(x,y);ctx.rotate(rad);ctx.lineCap='round';
+      ctx.globalAlpha=loaded?.92:.4;ctx.strokeStyle=loaded?'#e0f4be':'#7f8f6e';ctx.lineWidth=3.5;
+      ctx.beginPath();ctx.moveTo(74,0);ctx.lineTo(notch,0);ctx.stroke();
+      ctx.globalAlpha=loaded?.4:.18;ctx.lineWidth=2;ctx.setLineDash([4,10]);
+      ctx.beginPath();ctx.moveTo(notch,0);ctx.lineTo(notch+62,0);ctx.stroke();ctx.setLineDash([]);
+      ctx.globalAlpha=loaded?1:.45;ctx.lineWidth=4;
+      ctx.strokeStyle=charge>0.92?'#fff0a8':loaded?'#dded92':'#7f8f6e';
+      ctx.beginPath();ctx.moveTo(notch,-11);ctx.lineTo(notch,11);ctx.stroke();
+      ctx.restore();
+      // The loaded serving sits in the breech whether or not it can be fired:
+      // it used to vanish for the whole reload, so two thirds of every strip
+      // showed an empty counter. Reloading now dims it and fills a ring.
+      ctx.save();ctx.translate(x,y);ctx.lineCap='round';
+      if(!loaded){
+        // A dark pocket behind the waiting serving: at a third alpha over
+        // polished brass the snack disappeared entirely, which is the fault
+        // this was meant to fix.
+        ctx.fillStyle='#06100dcc';ctx.beginPath();ctx.arc(0,0,30,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle='#33422f';ctx.lineWidth=4.5;
+        ctx.beginPath();ctx.arc(0,0,34,0,Math.PI*2);ctx.stroke();
+        ctx.strokeStyle='#dded92';ctx.globalAlpha=.9;
+        ctx.beginPath();ctx.arc(0,0,34,-Math.PI/2,-Math.PI/2+Math.PI*2*refill);ctx.stroke();
+      } else if(state&&!reduced&&tick-waitEnd<15){
+        const pop=clampAlpha(1-(tick-waitEnd)/15);
+        ctx.globalAlpha=pop*.85;ctx.strokeStyle='#dded92';ctx.lineWidth=3.5;
+        ctx.beginPath();ctx.arc(0,0,34+(1-pop)*18,0,Math.PI*2);ctx.stroke();
+      }
+      ctx.restore();
+      ctx.save();ctx.globalAlpha=loaded?1:.7;
+      item(ctx,selected,x,y,loaded?47:40,rad);
+      ctx.restore();
     }
     if(playing&&state&&state.tick<state.hatchClosedUntil){
       // The hatch, down over the serving window. It was an unlabelled striped
@@ -408,137 +442,6 @@ export function createScene(){
         ctx.beginPath();ctx.roundRect(x-12,y-20,w+24,54,10);ctx.stroke();
       }
       ctx.restore();
-    }
-    if(playing){
-      const {x,y}=ARENA.launcher;const recoil=state?Math.max(0,1-(tick-state.lastLaunchTick)/12)*9:0;
-      ctx.save();ctx.translate(x,y);ctx.shadowColor='#0009';ctx.shadowBlur=20;ctx.fillStyle='#071011';ctx.beginPath();ctx.ellipse(0,42,74,15,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
-      const base=ctx.createLinearGradient(0,10,0,43);base.addColorStop(0,'#68776b');base.addColorStop(.35,'#2b3c37');base.addColorStop(1,'#10211f');ctx.fillStyle=base;ctx.beginPath();ctx.roundRect(-50,12,100,35,8);ctx.fill();ctx.strokeStyle='#465448';ctx.lineWidth=1;ctx.stroke();
-      ctx.fillStyle='#b6c980';for(let i=0;i<4;i++)ctx.fillRect(-35+i*18,34,9,3);
-      const pivot=ctx.createRadialGradient(-5,8,2,0,13,25);pivot.addColorStop(0,'#8b9275');pivot.addColorStop(.3,'#4e6353');pivot.addColorStop(1,'#0c211e');ctx.fillStyle=pivot;ctx.beginPath();ctx.arc(0,13,24,0,Math.PI*2);ctx.fill();ctx.fillStyle='#b5aa76';ctx.beginPath();ctx.arc(0,13,5,0,Math.PI*2);ctx.fill();
-      ctx.rotate(angle*Math.PI/180);ctx.translate(-recoil,0);
-      if(cannon.complete&&cannon.naturalWidth){ctx.drawImage(masked(cannon)??cannon,90,360,1100,480,-64,-40,140,70);}
-      // The charge, drawn along the barrel. Power is half of the aim and it has
-      // to be visible on the launcher, not only in the corner.
-      if(charge>0.01){const len=54+charge*86;
-        ctx.save();ctx.globalCompositeOperation='screen';
-        ctx.strokeStyle=charge>0.92?'#fff0a8':'#dded92';ctx.lineWidth=5;ctx.lineCap='round';
-        ctx.globalAlpha=.35+charge*.5;ctx.beginPath();ctx.moveTo(64,0);ctx.lineTo(64+len,0);ctx.stroke();
-        ctx.lineWidth=2;ctx.globalAlpha=.9;ctx.beginPath();ctx.arc(64+len,0,5+charge*4,0,Math.PI*2);ctx.stroke();
-        ctx.restore();}
-      ctx.restore();
-      // Aim, always: a short stub of barrel direction so a spectator can see
-      // where the player is pointing even once the full guide is gone.
-      ctx.save();ctx.translate(x,y);ctx.rotate(angle*Math.PI/180);
-      ctx.globalAlpha=.5;ctx.strokeStyle='#e0f4be';ctx.lineWidth=2;ctx.setLineDash([3,9]);
-      ctx.beginPath();ctx.moveTo(74,0);ctx.lineTo(150,0);ctx.stroke();ctx.restore();
-      ctx.save();
-      if(!state||tick-state.lastLaunchTick>=ARENA.cooldownTicks)item(ctx,selected,x,y,47,angle*Math.PI/180);
-    }
-    if(playing&&state&&state.tick<state.hatchClosedUntil){
-      // The hatch, down over the serving window. It was an unlabelled striped
-      // panel floating above the launcher and read as a rendering bug; it is
-      // now bolted to the counter, lit, and it says what it is.
-      ctx.save();const hx=ARENA.launcher.x;const t=Math.min(1,(state.hatchClosedUntil-state.tick)/10);
-      const h=Math.max(0,116*t);const top=HATCH_TOP-h;
-      ctx.fillStyle='#0b1414';ctx.strokeStyle='#9db08a';ctx.lineWidth=3;
-      ctx.beginPath();ctx.roundRect(hx-104,top,208,h,5);ctx.fill();ctx.stroke();
-      ctx.fillStyle='#1d2a24';for(let i=0;i<6;i++)ctx.fillRect(hx-94+i*33,top+8,24,Math.max(0,h-16));
-      ctx.strokeStyle='#59685288';ctx.lineWidth=1;for(let i=0;i<6;i++)ctx.strokeRect(hx-94.5+i*33,top+7.5,25,Math.max(0,h-15));
-      if(h>34){ctx.fillStyle='#dded92';ctx.font="700 15px 'Helvetica Neue',sans-serif";ctx.textAlign='center';
-        ctx.fillText('HATCH SHUT',hx,top+h/2+5);}
-      ctx.globalCompositeOperation='screen';ctx.globalAlpha=.4;
-      const glow=ctx.createLinearGradient(0,top,0,top+h);glow.addColorStop(0,'#dded9255');glow.addColorStop(1,'#dded9200');
-      ctx.fillStyle=glow;ctx.fillRect(hx-104,top,208,h);
-      ctx.restore();
-    }
-    if(playing)state?.projectiles.forEach(p=>{
-      if(p.kind==='junk'){
-        // Kitchen metal on its way into the teeth. Deliberately not a snack: a
-        // spectator has to see that this is the room being eaten, not a shot.
-        ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.age*.09);
-        ctx.fillStyle='#c3cdb8';ctx.strokeStyle='#6f7a68';ctx.lineWidth=1;
-        ctx.fillRect(-16,-2.5,32,5);ctx.strokeRect(-16,-2.5,32,5);
-        ctx.beginPath();ctx.ellipse(14,0,8,6,0,0,Math.PI*2);ctx.fill();ctx.stroke();
-        ctx.restore();
-        ctx.save();ctx.strokeStyle='#ddea9c66';ctx.lineWidth=1.4;ctx.setLineDash([4,6]);
-        ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo((creature?.x??ARENA.mouth.x),(creature?.y??ARENA.mouth.y));ctx.stroke();ctx.restore();
-        return;
-      }
-      // A dark snack crossing the dark half of the room disappears at stream
-      // bitrate, so it carries its own light.
-      ctx.save();const glow=ctx.createRadialGradient(p.x,p.y,2,p.x,p.y,42);const tint=COLORS[p.ingredient];
-      glow.addColorStop(0,`${tint}66`);glow.addColorStop(.45,`${tint}22`);glow.addColorStop(1,`${tint}00`);
-      ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,42,0,Math.PI*2);ctx.fill();ctx.restore();if(levels&&levels.metal>0&&p.ingredient==='metal'&&p.assisted&&p.kind!=='spit'){ctx.save();ctx.strokeStyle='#d4f7b54a';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.quadraticCurveTo((p.x+(creature?.x??ARENA.mouth.x))/2,p.y-45,creature?.x??ARENA.mouth.x,creature?.y??ARENA.mouth.y);ctx.stroke();ctx.restore();}ctx.save();ctx.strokeStyle=COLORS[p.ingredient];ctx.globalAlpha=.55;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(p.x-p.vx*3.2,p.y-p.vy*3.2);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.globalAlpha=.9;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(p.x-p.vx*1.6,p.y-p.vy*1.6);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();item(ctx,p.ingredient,p.x,p.y,48,reduced?0:p.age*.065);});
-    // A missed snack stays on the floor for a moment. Without it, a miss and a
-    // catch look the same on a stream: the creature reacts and nothing else
-    // changes.
-    for(const e of recent){if(e.type!=='miss')continue;const age=tick-e.tick;const rest=Math.min(ARENA.floor-4,e.y+age*1.6);
-      // Only once it is actually on the floor. A snack that stopped against the
-      // creature's chest used to be drawn where it stopped, which pinned a
-      // decal on its face and left others hanging in mid-air.
-      if(rest<ARENA.floor-30)continue;
-      ctx.save();ctx.globalAlpha=Math.max(0,Math.min(1,(70-age)/26));
-      ctx.fillStyle='#040908a0';ctx.beginPath();ctx.ellipse(e.x,rest+12,34,8,0,0,Math.PI*2);ctx.fill();
-      ctx.translate(e.x,rest);ctx.rotate(.42);ctx.scale(1,.72);
-      item(ctx,e.ingredient??selected,0,0,54);ctx.restore();
-      if(!reduced&&age<22){ctx.save();ctx.globalAlpha=Math.max(0,(22-age)/44);ctx.fillStyle='#cbbfa855';
-        for(let i=0;i<5;i++){const a=Math.PI+i*.6;const r=8+age*2.4;ctx.beginPath();ctx.arc(e.x+Math.cos(a)*r,rest-Math.abs(Math.sin(a))*r*.5,Math.max(0,5-age/5),0,Math.PI*2);ctx.fill();}ctx.restore();}
-    }
-
-    // Score pops are UI, so they read as UI: a pill above the action rather
-    // than loose text composited over the creature's body.
-    // Score pops are UI, so they read as UI: a pill above the action rather
-    // than loose text composited over the creature's body. At most three at a
-    // time and never on top of each other — five of them landing together was
-    // rendering as one unreadable smear.
-    if(!(DEV_HOOKS&&devRender.hideLabels)){
-      // Two at a time, and never the same words twice: two projectiles landing
-      // together used to draw "ONE MORE CHANCE" twice in one frame, and four
-      // stacked verdicts cannot be attributed to anything.
-      const seenLabel=new Set<string>();
-      const pills=recent.filter(e=>e.type==='feed'||e.type==='miss'||e.type==='bounce'||e.type==='snub'||e.type==='grow'||e.type==='clog'||e.type==='sneeze'||e.type==='hit'||e.type==='spit'||e.type==='mutation'||e.type==='burp')
-        .filter(e=>{if(seenLabel.has(e.label))return false;seenLabel.add(e.label);return true;}).slice(-2);
-      const taken:{x:number;y:number;w:number}[]=[];
-      pills.forEach((e)=>{const age=tick-e.tick;
-        const good=e.type==='feed'||e.type==='sneeze'||e.type==='burp';
-        const loud=e.type==='mutation'||e.type==='hit'||e.type==='spit';
-        ctx.save();ctx.globalAlpha=Math.max(0,Math.min(1,(65-age)/9));
-        ctx.font=`bold ${good||loud?18:14}px 'Helvetica Neue',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-        const w=ctx.measureText(e.label).width+22;
-        let y=good?Math.max(74,86-(reduced?0:age*.4)):Math.max(70,e.y-46-(reduced?0:age*.55));
-        const x=Math.max(w/2+16,Math.min(1184-w/2,e.x));
-        // Push down until it is clear of anything already placed this frame.
-        for(let guard=0;guard<4;guard++){
-          const hit=taken.find(t=>Math.abs(t.y-y)<38&&Math.abs(t.x-x)<(t.w+w)/2+12);
-          if(!hit)break;y=hit.y+40;}
-        taken.push({x,y,w});
-        ctx.fillStyle='#050d0cf2';ctx.strokeStyle=loud?'#ffc59866':good?'#cfe89066':'#e5a97a55';ctx.lineWidth=loud?2:1;
-        ctx.beginPath();ctx.roundRect(x-w/2,y-13,w,26,13);ctx.fill();ctx.stroke();
-        ctx.fillStyle=loud?'#ffd7ad':good?'#efffc3':'#ffc698';ctx.fillText(e.label,x,y+1);ctx.textBaseline='alphabetic';
-        if(!reduced&&age<26&&good){ctx.globalAlpha*=Math.max(0,1-age/26);for(let i=0;i<7;i++){const a=i*2.4+age*.02;const r=6+age*2.1;ctx.fillStyle=COLORS[e.ingredient??selected];ctx.beginPath();ctx.arc(e.x+Math.cos(a)*r,e.y+Math.sin(a)*r*.7+age*.4,Math.max(0,2.2-age/13),0,Math.PI*2);ctx.fill();}}
-        ctx.restore();
-      });
-    }
-    // What it wants, drawn on the creature at a size a spectator can read, with
-    // the time left as a ring around it. It was a ten-pixel label in a chip in
-    // the opposite corner of the frame from the thing it describes.
-    if(playing&&state&&state.craving){
-      const c=state.creature;const cr=state.craving;
-      const span=Math.max(1,cr.endsAt-cr.startedAt);
-      const left=Math.max(0,Math.min(1,(cr.endsAt-tick)/span));
-      const bx=Math.min(1128,c.x+c.rx*0.92+52);const by=Math.max(112,c.y-c.ry-64);
-      const urgent=left<0.3;
-      ctx.save();
-      ctx.globalAlpha=urgent&&!reduced?.82+.18*Math.sin(time*11):.94;
-      ctx.fillStyle='#08100fe8';ctx.strokeStyle=urgent?'#eea66d':'#b9cf8e';ctx.lineWidth=2.5;
-      ctx.beginPath();ctx.arc(bx,by,40,0,Math.PI*2);ctx.fill();ctx.stroke();
-      // The clock, counting down around the rim.
-      ctx.strokeStyle=urgent?'#eea66d':'#dded92';ctx.lineWidth=6;ctx.lineCap='round';
-      ctx.beginPath();ctx.arc(bx,by,33,-Math.PI/2,-Math.PI/2+Math.PI*2*left);ctx.stroke();
-      ctx.restore();
-      item(ctx,cr.ingredient,bx,by,46);
-      ctx.save();ctx.font="700 12px 'Helvetica Neue',sans-serif";ctx.textAlign='center';
-      ctx.fillStyle=urgent?'#ffc698':'#dfe9cb';ctx.fillText('IT WANTS',bx,by-48);ctx.restore();
     }
   }
   const ready=()=>[kitchen,items,cannon].every(image=>image.complete&&image.naturalWidth>0)&&(rig!==null||rigFailed);

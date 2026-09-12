@@ -30,6 +30,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { playShift } from "./loop-bots.mjs";
+import { ARENA } from "../lib/game/arcade.ts";
 import {
   CHROMIUM, HEIGHT, WIDTH, buildGrid, buildStrip, makeStreamCopies,
   measureRenderCost, settle, startDevServer, stopServer, waitForScene, wait,
@@ -52,6 +53,8 @@ const STRIP_EVERY = 20 * TICKS;
 const MAX_STRIPS = 7;
 const STRIP_FRAMES = 12;
 const STRIP_GAP = 6;            // 100 ms
+/** How long before a shot the launcher starts moving towards it. */
+const AIM_LEAD = 44;
 /** Canvas filling exactly 1920x1080, which is where the render budget is set. */
 const STAGE_FILL = `
   .masthead,.underbar,.control-deck,.preflight,.hud,.craving,.mutation-banner,
@@ -65,7 +68,7 @@ const CLIP_FRAMES = 12;
 const CLIP_GAP = Math.round(2.5 * TICKS);  // 30 s across twelve frames
 const CLIP_LEAD = 5 * TICKS;
 /** Real frames rendered before a capture, so the springs are where play put them. */
-const SETTLE_TICKS = 14;
+const SETTLE_TICKS = 52;   // long enough to contain a whole wind-up
 
 const stamp = (tick) => {
   const seconds = Math.floor(tick / TICKS);
@@ -101,12 +104,15 @@ function buildSchedule(run) {
     // so a 1.2-second window on a fixed cadence usually contains no shot at all
     // and the critic — correctly — reads twelve identical frames as a player
     // doing nothing.
+    // Five frames of that window sit before the shot, not three: a strip has
+    // to show the aim being set before it shows the shot, or the choice the
+    // player made is off-camera and only its result is on it.
     const nearest = launches.find((tick) => tick >= slot) ?? slot;
-    const start = Math.max(0, Math.min(nearest - 3 * STRIP_GAP, lastStrip - STRIP_FRAMES * STRIP_GAP));
+    const start = Math.max(0, Math.min(nearest - 5 * STRIP_GAP, lastStrip - STRIP_FRAMES * STRIP_GAP));
     for (let i = 0; i < STRIP_FRAMES; i += 1) {
       shots.push({ tick: start + i * STRIP_GAP, group: `strip-${stamp(slot)}`, kind: "strip", index: i });
     }
-    shots.push({ tick: start + 4 * STRIP_GAP, group: `hud-${stamp(slot)}`, kind: "still", index: 0 });
+    shots.push({ tick: start + 6 * STRIP_GAP, group: `hud-${stamp(slot)}`, kind: "still", index: 0 });
   }
   const clips = [
     { name: "first-mutation", at: run.markers.firstMutation },
@@ -138,13 +144,45 @@ const DRIVER = () => {
   const raf = () => new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
   const CLOCK0 = 40;
   window.__loop = {
-    commands: [], index: 0,
-    start(commands, seed) {
+    commands: [], index: 0, arena: null, angle: 0, holding: false,
+    start(commands, seed, arena) {
       this.commands = commands;
       this.index = 0;
+      this.arena = arena;
+      this.angle = arena.defaultAngle;
+      this.holding = false;
       play.start(seed >>> 0);
       play.manual(true);
       window.__dnfi.clock(CLOCK0);
+    },
+    /**
+     * What a player does between shots, put back on screen.
+     *
+     * The bot decides a shot some ticks before it fires it; a person turns that
+     * decision into a barrel that sweeps and a button held down. Replaying only
+     * the command made the launcher teleport to its angle on the frame it
+     * fired, so every frame that was not the firing frame showed a launcher
+     * doing nothing — which is exactly what the critic reported seeing. The
+     * sweep runs at the game's own aim rate and the charge starts exactly as
+     * far back as the power in the command is worth, so what is drawn is the
+     * shot the bot actually took, not a dramatisation of it.
+     */
+    aimAhead() {
+      const state = play.state();
+      const next = this.commands[this.index];
+      if (!state || !next || next.kind === "hatch") return;
+      const lead = next.tick - state.tick;
+      if (lead <= this.arena.aimLead && this.angle !== next.angle) {
+        const delta = next.angle - this.angle;
+        this.angle = Math.abs(delta) <= 0.5 ? next.angle : this.angle + Math.sign(delta) * 0.5;
+        play.point(this.angle);
+      }
+      const { minPower, maxPower, chargeTicks } = this.arena;
+      const fraction = Math.max(0, Math.min(1, ((next.power ?? minPower) - minPower) / (maxPower - minPower)));
+      if (!this.holding && fraction > 0.02 && state.tick >= next.tick - Math.round(fraction * chargeTicks)) {
+        play.hold?.(true, next.tick - Math.round(fraction * chargeTicks));
+        this.holding = true;
+      }
     },
     /** Fires every command whose tick has arrived. */
     pump() {
@@ -153,7 +191,11 @@ const DRIVER = () => {
         const command = this.commands[this.index];
         this.index += 1;
         if (command.kind === "hatch") play.hatch?.();
-        else play.launch(command.ingredient, command.angle, command.power ?? undefined);
+        else {
+          play.launch(command.ingredient, command.angle, command.power ?? undefined);
+          this.angle = command.angle;
+        }
+        if (this.holding) { play.hold?.(false); this.holding = false; }
       }
     },
     /**
@@ -169,9 +211,15 @@ const DRIVER = () => {
         const state = play.state();
         if (!state || state.phase !== "playing" || state.tick >= tick || guard > 20000) break;
         this.pump();
-        const next = this.commands[this.index] ? this.commands[this.index].tick : Infinity;
+        this.aimAhead();
+        const upcoming = this.commands[this.index];
+        const next = upcoming ? upcoming.tick : Infinity;
         const limit = Math.min(tick, Math.max(next, play.state().tick + 1));
-        const span = Math.max(1, Math.min(limit - play.state().tick, perFrame));
+        // Never fast-forward through a wind-up: inside the aim lead the clock
+        // runs slowly enough for the sweep and the charge to happen on screen.
+        const winding = upcoming && upcoming.kind !== "hatch"
+          && upcoming.tick - play.state().tick <= this.arena.aimLead;
+        const span = Math.max(1, Math.min(limit - play.state().tick, winding ? 2 : perFrame));
         play.step(span);
         window.__dnfi.clock(CLOCK0 + play.state().tick / 60);
         guard += 1;
@@ -253,8 +301,10 @@ async function main() {
     await shoot(path.join(outDir, "hud-title.jpg"));
 
     await page.evaluate(DRIVER);
-    await page.evaluate(({ commands, seed }) => window.__loop.start(commands, seed),
-      { commands: run.commands, seed: args.seed });
+    await page.evaluate(({ commands, seed, arena }) => window.__loop.start(commands, seed, arena),
+      { commands: run.commands, seed: args.seed, arena: {
+        minPower: ARENA.minPower, maxPower: ARENA.maxPower, chargeTicks: ARENA.chargeTicks,
+        defaultAngle: ARENA.defaultAngle, aimLead: AIM_LEAD } });
 
     let previous = 0;
     for (const shot of schedule) {
