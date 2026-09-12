@@ -128,6 +128,15 @@ function aperture(pose: CreaturePose): Aperture {
  * Sampling each defining point separately costs four extra field inversions a
  * frame and removes the whole class of problem.
  */
+/**
+ * The mouth the rig last drew, in arena coordinates.
+ *
+ * Development only, and the reason the target ring can be trusted: the rules'
+ * collision ellipse is calibrated against this rather than against constants
+ * someone chose by eye, so the lit ring is the mouth the player can see.
+ */
+export const lastMouth = { x: 0, y: 0, rx: 0, ry: 0 };
+
 function placed(shape: Aperture, field: WarpField): Aperture {
   const left = placePoint(field, shape.leftX, shape.leftY);
   const right = placePoint(field, shape.rightX, shape.rightY);
@@ -965,6 +974,11 @@ export function drawCreature(context: CanvasRenderingContext2D, rig: CreatureRig
   // Placed once and reused: the exhale has to sit in exactly the mouth that was
   // drawn, not in the mouth's resting position.
   const shape = placed(aperture(pose), field);
+  // Record what was actually drawn, for the calibration script.
+  lastMouth.x = (shape.leftX + shape.rightX) / 2;
+  lastMouth.y = (shape.upperApex + shape.lowerApex) / 2;
+  lastMouth.rx = (shape.rightX - shape.leftX) / 2;
+  lastMouth.ry = (shape.lowerApex - shape.upperApex) / 2;
   drawMouth(context, rig, pose, shape, time, reduced);
 
   // Skin colour goes on before the eyes: a hungry creature loses colour in the

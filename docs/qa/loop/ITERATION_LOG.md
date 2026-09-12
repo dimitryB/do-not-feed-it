@@ -286,6 +286,139 @@ putting them on screen.
 
 ---
 
+## Iteration 2 — putting the growth on screen
+
+Stage 1's rules were right and its picture was not. This iteration changed no
+stage; it made the stage that exists visible, and fixed three things the critic
+found that were simply wrong.
+
+**Changed:**
+
+- **The rig has room to loom.** `WARP_REGION` widened up and to the left
+  (`512,52,632x462` → `470,6,674x508`). The region only bounds where warp cells
+  are *drawn*; the kernels that displace them are unchanged and die to zero well
+  inside the new edges. The creature's head can now rise thirty pixels per unit
+  of size instead of six, and at full size it fills the serving hatch.
+- **The target ring is measured, not chosen.** New `scripts/mouth-calibrate.mjs`
+  reads the mouth the rig actually drew at five sizes through a development hook
+  and fits the rule constants to it. `ARENA.mouth` went from a guessed
+  `{840, 284, 86, 58}` to a measured `{840, 280, 113, 68}`, and the mouth rises
+  33 px per unit of size rather than 5. The linear fit's residual is ±3 px.
+  Re-run it after any change to the pose's growth channels or to the warp.
+- **The creature's chest is a collider.** "Three to five tin cans are drawn on
+  top of the creature's belly and chin… the body is not a collider" — correct,
+  and now it is: a snack that falls short hits the chest, says OFF THE BELLY and
+  drops. Only the part below the mouth blocks; food arrives at the mouth almost
+  level and a silhouette that included the cheek would stop every shot before it
+  reached the target.
+- **The scheduled vent flap is gone.** It appeared at 38 seconds on a timer and
+  deflected shots off something the player could not see. It returns in stage 7
+  as damage a lunge does to the kitchen.
+- **The passive score drip** cut from 30 points/second to 6, so a landed serving
+  is unmistakably the thing that scored.
+- **Two bugs found while fixing the first one:** `bounceOffFace` refreshed the
+  snack's life on *every* contact, so one snack rattled against the chest for
+  nine hundred ticks without timing out; and a shot that fell short was charged
+  for the chest contact *and* the floor miss, two charges for one mistake, which
+  made irritation the only way anyone died (moderate: `kitchen-destroyed`
+  199/200). A snack that has already bounced off the creature is not charged
+  again, and a fourth contact simply ends it.
+
+### Bots — 200 seeded shifts each
+
+| bot      | n   | p10    | median | p90    | max    | feeds | score | size | worst 30s bucket |
+|----------|-----|--------|--------|--------|--------|-------|-------|------|------------------|
+| naive    | 200 | 12.3s  | 12.3s  | 12.3s  | 12.3s  | 0     | 73    | 1.00 | 100%             |
+| moderate | 200 | 92.5s  | 101.7s | 113.7s | 133.7s | 23    | 7339  | 2.40 | 90.5%            |
+| good     | 200 | 108.7s | 137.4s | 173.9s | 205.4s | 38    | 11909 | 2.40 | 43%              |
+
+Causes: naive `kitchen-destroyed` ×200; moderate and good `empty-belly` ×200.
+Decision density (moderate): **79.2/min**, range 69.1–101.6.
+
+| gate | target | iter 1 | iter 2 |
+|---|---|---|---|
+| naive median survival | ≤ 45 s | 12.3 s PASS | 12.3 s PASS |
+| moderate median survival | 90–150 s | 90.5 s PASS | 101.7 s PASS |
+| moderate death spread | no bucket > 40 % | 51.5 % FAIL | **90.5 % FAIL** |
+| good vs naive | ≥ 2.5× | 9.7× PASS | 11.2× PASS |
+| decision density | ≥ 6/min | 55.8/min PASS | 79.2/min PASS |
+| replay fixtures | exact | pass | pass |
+
+The death spread got *worse*, and the reason is legible: with the double rage
+charge gone, irritation now kills nobody who aims, so every skilled run ends the
+same way — an empty belly at the point where appetite outruns the open window.
+There is still no per-run variance. Stages 3, 4 and 7 are where it comes from,
+and until they land this gate is not going to move.
+
+### Render — measured on a full-grown creature, canvas filling 1920×1080
+
+| | size 1.0 | size 1.7 | size 2.4 |
+|---|---|---|---|
+| median | 3.00 ms | 3.20 ms | 3.30 ms |
+| p95 | 3.90 ms | 4.20 ms | 4.20 ms |
+| mean | 3.10 ms | 3.32 ms | **3.41 ms** |
+
+Inside the 4 ms budget at every size, and better than the 3.32 ms the rig loop
+reported for a creature that never grew. Widening the region cost nothing — the
+draw is priced per cell, not per pixel — and the warp grid was cut from 38×30 to
+34×27 to pay for the extra displacement, which is what brought 4.59 ms down to
+3.41 ms. Full-size frames were checked for tile edges and streaking afterwards.
+
+The harness's own figure for this iteration (4.30 / 8.00 / 4.69) was measured
+while the capture page was still animating in another context; the measurement
+now runs before the capture browser context is created.
+
+### Critic — iteration 2
+
+| Criterion | iter 1 | iter 2 |
+|---|---|---|
+| Agency | 3 | **2** |
+| Consequence | 1 | **7** |
+| Tension | 3 | 3 |
+| Readability | 2 | **4** |
+| Comedy | 6 | 6 |
+| Fairness | 3 | 3 |
+
+Consequence 1 → 7 is the iteration's result, and it is the score the previous
+critic's single change was aimed at: *"×1.19 and lean at 11.6 s, spike teeth and
+extra eyes by 21.6 s, balloon belly at 72.2 s, inflamed orange throat at 87.2 s,
+and a pale bloated ×2.40 hulk on the shift report."* Readability 2 → 4 came with
+it: "mutations do read from the body at 960 px."
+
+Agency fell from 3 to 2, which is within this loop's noise between critics but is
+also fair: *"the launcher is identical in all 12 frames of each, no shot is
+fired, and no aim or charge indicator exists."* Two separate causes, both real:
+
+1. There is no visible aim. A faint 36-tick dotted guide exists and reads as
+   ambient dust. The barrel carries no indication of angle or power. **Stage 5
+   is where this is fixed** — power charge plus an aim that shows the two
+   things the player is choosing.
+2. The strips are landing between shots. The moderate bot feeds 23 times in
+   100 seconds, so a 1.2-second window at a fixed 20-second cadence usually
+   contains no launch at all. That is a harness fault, not a game fault, and the
+   strips are now aligned to the nearest launch.
+
+Other faults taken as work, in the critic's words:
+
+- "`SNACK DOWN` means a miss… the phrase reads as a successful swallow."
+- "Three toasts overlap into unreadable fragments."
+- "The third HUD stat changes from `ITS SIZE ×2.31` to `ITS APPETITE ×1.29` in
+  the same slot with the same formatting, so the number appears to fall."
+- "Fullness only turns orange at 13 %… roughly 2.5 s of warning before a loss."
+- "Death by empty belly while the creature is the fattest, palest and most
+  placid it has been all run… there is no death beat."
+- "Neither the creature nor the tray nor the launcher carries the current
+  craving" — stage 4.
+- "The `the ending` and `shift report` cells are the same screen twice."
+
+### Next decision
+
+Stage 3: mutations as permanent, stacking creature changes, with the copy and
+HUD faults above folded in because they are a few lines each and they are
+costing Readability and Fairness every iteration they stay.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s

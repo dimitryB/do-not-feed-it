@@ -33,7 +33,7 @@ export const ARENA = Object.freeze({
    * the lit target ring is this ellipse, so if the two disagree the player is
    * told a snack went in when it did not, or the reverse.
    */
-  mouth: { x: 840, y: 284, rx: 86, ry: 58 }, floor: 620,
+  mouth: { x: 840, y: 280, rx: 113, ry: 68 }, floor: 620,
   tickRate: 60,
   /** Endless in practice; the cap exists so a replay is bounded. Twelve minutes. */
   maxTicks: 43200,
@@ -96,18 +96,31 @@ export const TUNING = Object.freeze({
   /** Irritation is a rate, not a ratchet: it cools while you are landing shots. */
   rageCool: 0.01,
 
+  /**
+   * The chest and belly, at size 1.
+   *
+   * Only the part of the creature *below* the mouth is a blocker. Food arrives
+   * at the mouth almost level, crossing the cheek on the way in, so a silhouette
+   * that included the face would stop every shot before it ever reached the
+   * target. What the player sees — and what used to be wrong — is a snack that
+   * falls short and sails straight through the creature's chest on its way to
+   * the floor.
+   */
+  belly: { x: 838, y: 372, rx: 236, ry: 150 },
+  bellyFloor: 462,
+  blockRage: 1.4,
+
   /** Where the mouth sits, as a function of size. */
   /**
    * How far the mouth moves as the creature grows.
    *
-   * Small on purpose. The rig displaces the painting rather than moving a
-   * cut-out, and the warp region it is allowed to touch stops about thirty
-   * pixels above the creature's head, so a mouth that travelled a hundred
-   * pixels would leave the ring hanging in the air off the face. Growth is
-   * spent on the mouth's size instead, which the rig can show.
+   * Not chosen: measured. `scripts/mouth-calibrate.mjs` reads the mouth the rig
+   * actually drew at five sizes and fits these, so the lit target ring and the
+   * painted mouth are the same object at every size. Re-run it after any change
+   * to the pose's growth channels or to the warp.
    */
-  leanPerSize: 7,
-  risePerSize: 5,
+  leanPerSize: 5,
+  risePerSize: 33,
   /**
    * How much the mouth grows, per axis.
    *
@@ -117,8 +130,10 @@ export const TUNING = Object.freeze({
    * what the picture can actually show, because a target ring larger than the
    * mouth under it is a lie the player pays for.
    */
-  mouthGrowX: 0.2,
-  mouthGrowY: 0.3,
+  mouthGrowX: 0.229,
+  mouthGrowY: 0.454,
+  /** How much the body itself swells, matching the rig's warp. */
+  bodyGrow: 0.085,
 
   /** Hungry tracking: it leans toward incoming food when the belly is low. */
   trackFrom: 46,
@@ -148,6 +163,8 @@ export interface Creature {
   size: number;
   /** Mouth centre and half-axes in arena space, after growth and lean. */
   x: number; y: number; rx: number; ry: number;
+  /** The chest and belly below the mouth, which stop a shot that falls short. */
+  bx: number; by: number; brx: number; bry: number;
   /** 0 shut, 1 as wide as it goes. Food is only accepted above `openMin`. */
   aperture: number;
   /** Ticks until the mouth next opens past `openMin`; negative while it is open. */
@@ -281,11 +298,16 @@ function ticksUntilOpen(creature: Creature): number {
 /** Where the mouth sits for a given size, before tracking. */
 function mouthFor(size: number) {
   const grow = size - 1;
+  const body = 1 + grow * TUNING.bodyGrow;
   return {
     x: quantize(ARENA.mouth.x - grow * TUNING.leanPerSize),
     y: quantize(ARENA.mouth.y - grow * TUNING.risePerSize),
     rx: quantize(ARENA.mouth.rx * (1 + grow * TUNING.mouthGrowX)),
     ry: quantize(ARENA.mouth.ry * (1 + grow * TUNING.mouthGrowY)),
+    bx: quantize(TUNING.belly.x - grow * TUNING.leanPerSize * 0.6),
+    by: quantize(TUNING.belly.y - grow * TUNING.risePerSize * 0.5),
+    brx: quantize(TUNING.belly.rx * body),
+    bry: quantize(TUNING.belly.ry * body),
   };
 }
 
@@ -343,6 +365,9 @@ function stepCreature(creature: Creature, seed: number, rage: number, hunger: nu
   creature.rx = placed.rx;
   creature.ry = placed.ry;
   creature.x = placed.x;
+  creature.brx = placed.brx;
+  creature.bry = placed.bry;
+  creature.bx = placed.bx;
 
   const eager = clamp01((TUNING.trackFrom - hunger) / TUNING.trackFrom);
   let want = 0;
@@ -351,6 +376,7 @@ function stepCreature(creature: Creature, seed: number, rage: number, hunger: nu
   }
   creature.track = quantize(creature.track + (want - creature.track) * TUNING.trackRate);
   creature.y = quantize(placed.y + creature.track);
+  creature.by = quantize(placed.by + creature.track * 0.4);
 }
 
 function makeProjectile(id: number, ingredient: Ingredient, angle: number): Projectile {
@@ -381,9 +407,16 @@ export function launchFood(state: ArcadeState, ingredient: Ingredient, angle: nu
 
 export interface KitchenHazard { x: number; y: number; width: number; height: number; warning: boolean }
 
-/** The center moves 145 → 375 → 145 over a 300-tick deterministic cycle. */
+/**
+ * The vent flap.
+ *
+ * Disabled. It was on a schedule — it simply appeared at 38 seconds — which is
+ * the opposite of a consequence, and the critic reported "VENT DEFLECTION fires
+ * with no visible vent". It returns in stage 7 as damage the creature does to
+ * the kitchen when a lunge is not stopped.
+ */
 export function getHazard(tick: number): KitchenHazard | null {
-  if (tick < 2280) return null;
+  if (tick < Number.MAX_SAFE_INTEGER) return null;
   const phase = Math.max(0, tick - 2400) % 300 / 300;
   const center = 260 + 115 * (1 - 4 * Math.abs(phase - 0.5));
   return { x: 550, y: quantize(center - 57.5), width: 18, height: 115, warning: tick < 2400 };
@@ -408,6 +441,7 @@ function gustAt(mutation: ArcadeMutation | null, tick: number) {
 interface Env {
   tick: number;
   mouthX: number; mouthY: number; mouthRx: number; mouthRy: number;
+  bellyX: number; bellyY: number; bellyRx: number; bellyRy: number;
   aperture: number;
   mutation: ArcadeMutation | null;
 }
@@ -416,11 +450,12 @@ function envOf(state: ArcadeState): Env {
   const c = state.creature;
   return {
     tick: state.tick, mouthX: c.x, mouthY: c.y, mouthRx: c.rx, mouthRy: c.ry,
+    bellyX: c.bx, bellyY: c.by, bellyRx: c.brx, bellyRy: c.bry,
     aperture: c.aperture, mutation: state.mutation,
   };
 }
 
-type Outcome = "flying" | "fed" | "snubbed" | "missed" | "bounced" | "hazard";
+type Outcome = "flying" | "fed" | "snubbed" | "blocked" | "missed" | "bounced" | "hazard";
 
 /** One physics step, shared by live play, the prediction and the guide. */
 function moveFood(food: Projectile, env: Env): Outcome {
@@ -461,9 +496,20 @@ function moveFood(food: Projectile, env: Env): Outcome {
   const dx = (food.x - env.mouthX) / env.mouthRx;
   const dyFace = (food.y - env.mouthY) / env.mouthRy;
   if (dx * dx + dyFace * dyFace <= 1) {
+    // A snack that has already been turned away three times is done: it is on
+    // the floor, not still negotiating.
+    if (food.faceHits >= 3) return "missed";
     if (env.aperture < TUNING.openMin) return "snubbed";
     const dyGap = (food.y - env.mouthY) / (env.mouthRy * Math.max(TUNING.gapFloor, env.aperture));
     return dx * dx + dyGap * dyGap <= 1 ? "fed" : "snubbed";
+  }
+
+  // The chest, below the mouth. A snack that falls short hits the creature
+  // rather than passing through it on the way to the floor.
+  if (food.y > env.mouthY + env.mouthRy * 0.9 && food.y < TUNING.bellyFloor) {
+    const bx = (food.x - env.bellyX) / env.bellyRx;
+    const by = (food.y - env.bellyY) / env.bellyRy;
+    if (bx * bx + by * by <= 1) return food.faceHits >= 3 ? "missed" : "blocked";
   }
 
   const hazard = getHazard(env.tick);
@@ -510,15 +556,26 @@ function moveFood(food: Projectile, env: Env): Outcome {
  * bank off the floor into the next open window, which is the recovery the
  * timing skill is worth having.
  */
-function bounceOffFace(food: Projectile, env: Env) {
-  const dx = food.x - env.mouthX;
-  const dy = food.y - env.mouthY;
+function bounceOffFace(food: Projectile, env: Env, belly = false) {
+  const cx = belly ? env.bellyX : env.mouthX;
+  const cy = belly ? env.bellyY : env.mouthY;
+  const rx = belly ? env.bellyRx : env.mouthRx;
+  const ry = belly ? env.bellyRy : env.mouthRy;
+  const dx = food.x - cx;
+  const dy = food.y - cy;
   const length = Math.max(1, Math.hypot(dx, dy));
-  food.x = quantize(env.mouthX + dx / length * (env.mouthRx + 2));
-  food.y = quantize(env.mouthY + dy / length * (env.mouthRy + 2));
+  food.x = quantize(cx + dx / length * (rx + 2));
+  food.y = quantize(cy + dy / length * (ry + 2));
+  // Away from the creature and downward. Off the mouth it pops up a little, so
+  // a bank shot back into the next open window is possible; off the chest it
+  // simply drops, because a snack that could hover against the belly rattled
+  // there forever.
   food.vx = quantize(-Math.abs(food.vx) * 0.52 - 1.4);
-  food.vy = quantize(food.vy * 0.4 - 2.2);
-  food.age = Math.min(food.age, LIFE_TICKS - 90);
+  food.vy = quantize(belly ? Math.abs(food.vy) * 0.4 + 1.6 : food.vy * 0.4 - 2.2);
+  // Only the first contact buys more time in the air. Refreshing it on every
+  // contact is what let one snack bounce against the chest for nine hundred
+  // ticks without ever timing out.
+  if (food.faceHits === 0) food.age = Math.min(food.age, LIFE_TICKS - 90);
 }
 
 function acceptFood(state: ArcadeState, food: Projectile) {
@@ -552,7 +609,7 @@ function acceptFood(state: ArcadeState, food: Projectile) {
     creature.size = quantize(Math.min(TUNING.sizeMax, creature.size + step));
     state.size = creature.size;
     if (Math.floor(before * 10) !== Math.floor(creature.size * 10)) {
-      event(state, "grow", creature.x, creature.y, "IT IS BIGGER NOW");
+      event(state, "grow", creature.x, creature.y - creature.ry - 96, "IT IS BIGGER NOW");
     }
   }
 
@@ -636,12 +693,32 @@ export function stepArcade(state: ArcadeState): void {
       food.faceHits++;
       bounceOffFace(food, env);
       remaining.push(food);
+    } else if (outcome === "blocked") {
+      // Off the chest. It barely notices; the snack is still on the floor.
+      if (food.faceHits === 0) {
+        state.snubs++;
+        state.combo = 0;
+        state.rage = Math.min(100, state.rage + TUNING.blockRage);
+        state.announcement = "Off the belly. The mouth is further up.";
+        event(state, "snub", food.x, food.y, "OFF THE BELLY", { ingredient: food.ingredient });
+      }
+      food.faceHits++;
+      bounceOffFace(food, env, true);
+      remaining.push(food);
     } else if (outcome === "missed") {
+      // A snack that already bounced off the creature has been paid for. Before
+      // this, a shot that fell short cost the chest contact *and* the floor
+      // miss, which is two charges for one mistake and made irritation the only
+      // way anyone ever died.
+      const charged = food.faceHits > 0;
       state.misses++;
-      state.combo = 0;
-      state.rage = Math.min(100, state.rage + TUNING.missRage);
-      state.announcement = "Snack down. Adjust your aim and try again.";
-      event(state, "miss", clamp(food.x, 50, 1150), clamp(food.y, 0, 620), "SNACK DOWN", { ingredient: food.ingredient });
+      if (!charged) {
+        state.combo = 0;
+        state.rage = Math.min(100, state.rage + TUNING.missRage);
+        state.announcement = "Snack down. Adjust your aim and try again.";
+      }
+      event(state, "miss", clamp(food.x, 50, 1150), clamp(food.y, 0, 620),
+        charged ? "GONE" : "SNACK DOWN", { ingredient: food.ingredient });
     } else {
       if (outcome === "bounced") event(state, "bounce", food.x, food.y, "ONE MORE CHANCE", { ingredient: food.ingredient });
       if (outcome === "hazard") event(state, "bounce", food.x, food.y, "VENT DEFLECTION", { ingredient: food.ingredient });
@@ -658,8 +735,10 @@ export function stepArcade(state: ArcadeState): void {
   }
 
   // Score is time kept fed plus what you did with it.
-  if (state.tick % 6 === 0 && state.hunger > 0) {
-    state.score += 3 + Math.floor(state.creature.size * 3);
+  // A slow drip, not a salary: at six points per second, staying alive is worth
+  // having and a landed serving is still unmistakably the thing that scored.
+  if (state.tick % 10 === 0 && state.hunger > 0) {
+    state.score += 1;
   }
 
   if (state.hunger <= 0) {
@@ -688,7 +767,8 @@ export function stepArcade(state: ArcadeState): void {
 function projectCreature(state: ArcadeState): Creature {
   const c = state.creature;
   return {
-    size: c.size, x: c.x, y: c.y, rx: c.rx, ry: c.ry, aperture: c.aperture,
+    size: c.size, x: c.x, y: c.y, rx: c.rx, ry: c.ry,
+    bx: c.bx, by: c.by, brx: c.brx, bry: c.bry, aperture: c.aperture,
     untilOpen: c.untilOpen, track: c.track, cycle: c.cycle, cycleTick: c.cycleTick,
     openTicks: c.openTicks, shutTicks: c.shutTicks,
   };
@@ -717,13 +797,15 @@ export function probeFlight(state: ArcadeState, ingredient: Ingredient, angle: n
     stepCreature(creature, state.seed, state.rage, state.hunger, food);
     const env: Env = {
       tick: state.tick + i, mouthX: creature.x, mouthY: creature.y,
-      mouthRx: creature.rx, mouthRy: creature.ry, aperture: creature.aperture,
-      mutation: state.mutation,
+      mouthRx: creature.rx, mouthRy: creature.ry,
+      bellyX: creature.bx, bellyY: creature.by, bellyRx: creature.brx, bellyRy: creature.bry,
+      aperture: creature.aperture, mutation: state.mutation,
     };
     const outcome = moveFood(food, env);
     if (outcome === "fed") return { fed: true, snubbed, ticks: i, bounces: food.bounces, x: food.x, y: food.y };
     if (outcome === "missed") return { fed: false, snubbed, ticks: i, bounces: food.bounces, x: food.x, y: food.y };
     if (outcome === "snubbed") { snubbed = true; bounceOffFace(food, env); }
+    if (outcome === "blocked") { snubbed = true; bounceOffFace(food, env, true); }
   }
   return { fed: false, snubbed, ticks: maxTicks, bounces: food.bounces, x: food.x, y: food.y };
 }
@@ -739,13 +821,15 @@ export function trajectoryPreview(state: ArcadeState, ingredient: Ingredient, an
     stepCreature(creature, state.seed, state.rage, state.hunger, food);
     const env: Env = {
       tick: state.tick + i, mouthX: creature.x, mouthY: creature.y,
-      mouthRx: creature.rx, mouthRy: creature.ry, aperture: creature.aperture,
-      mutation: state.mutation,
+      mouthRx: creature.rx, mouthRy: creature.ry,
+      bellyX: creature.bx, bellyY: creature.by, bellyRx: creature.brx, bellyRy: creature.bry,
+      aperture: creature.aperture, mutation: state.mutation,
     };
     const outcome = moveFood(food, env);
     if (i % 3 === 0) points.push({ x: food.x, y: food.y });
     if (outcome === "fed" || outcome === "missed") break;
     if (outcome === "snubbed") bounceOffFace(food, env);
+    if (outcome === "blocked") bounceOffFace(food, env, true);
   }
   return points;
 }

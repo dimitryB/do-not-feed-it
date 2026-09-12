@@ -78,7 +78,11 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,onAim}:{runRef
           return parts[part]?.toDataURL('image/png')??null;
         };
         bag.canvasSize=()=>({width:canvas.width,height:canvas.height});
-        detachHooks=()=>{delete bag.sceneReady;delete bag.canvasSize;delete bag.rigDump;delete bag.settle;delete bag.hideAim;delete bag.hideLabels;delete bag.holdBlink;};
+        // The mouth the rig drew on the last frame, in arena coordinates. Used
+        // by scripts/mouth-calibrate.mjs to keep the rules' collision ellipse
+        // and the drawn mouth the same object.
+        bag.mouthBox=async()=>{const {lastMouth}=await import("../../lib/render/creature/draw");return {...lastMouth};};
+        detachHooks=()=>{delete bag.mouthBox;delete bag.sceneReady;delete bag.canvasSize;delete bag.rigDump;delete bag.settle;delete bag.hideAim;delete bag.hideLabels;delete bag.holdBlink;};
       }
     }
     return()=>{disposed=true;cancelAnimationFrame(frame);observer.disconnect();detachHooks?.();};

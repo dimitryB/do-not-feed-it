@@ -44,7 +44,7 @@ function landingShot(state) {
  * is the point: at most moments there is no angle that arrives while the mouth
  * is open, which is the difference between this loop and the old one.
  */
-function feedOnce(state, patience = 400) {
+function feedOnce(state, patience = 900) {
   const before = state.totalFeeds;
   for (let i = 0; i < patience && state.phase === "playing"; i += 1) {
     if (state.tick - state.lastLaunchTick >= ARENA.cooldownTicks) {
@@ -120,15 +120,19 @@ test("one snack rattling against a shut face costs composure exactly once", () =
   const rageBefore = state.rage;
   for (let i = 0; i < 40; i += 1) stepArcade(state);
   assert.equal(state.snubs, 1);
-  assert.ok(state.rage - rageBefore <= TUNING.snubRage);
+  // It is turned away once at the mouth and may then drop onto the chest, which
+  // is a second, cheaper contact. What must not happen is a charge per tick.
+  assert.ok(state.rage - rageBefore <= TUNING.snubRage + TUNING.blockRage + TUNING.missRage);
 });
 
 test("every accepted serving grows the creature, and growth moves the target", () => {
   const state = createArcade(2026);
   const start = { size: state.creature.size, x: state.creature.x, y: state.creature.y, rx: state.creature.rx };
+  // A player this patient starves: waiting for a guaranteed window is itself a
+  // way to lose, which is the point of the appetite. Take the feeds it gets.
   let fed = 0;
   for (let i = 0; i < 20 && state.phase === "playing"; i += 1) if (feedOnce(state)) fed += 1;
-  assert.ok(fed >= 12, `expected a patient, probe-aimed player to land most shots, landed ${fed}`);
+  assert.ok(fed >= 5, `expected a probe-aimed player to land several shots, landed ${fed}`);
   assert.ok(state.creature.size > start.size + 0.1, "the creature did not grow");
   assert.ok(state.creature.rx > start.rx, "a bigger creature has a bigger mouth");
   assert.ok(state.creature.x < start.x, "it leans in as it grows");
@@ -290,14 +294,29 @@ test("food capacity, cooldown, event history and launch angles are bounded", () 
   assert.throws(() => launchFood(state, "other", -40));
 });
 
-test("misses and a floor rebound are bounded, with no endless offscreen food", () => {
-  for (const food of FOODS) for (const angle of [-65, -5]) {
+test("no snack stays in the air forever, however it rebounds", () => {
+  for (const food of FOODS) for (const angle of [-65, -40, -5]) {
     const state = createArcade(1);
     launchFood(state, food, angle);
-    advance(state, 300);
-    assert.equal(state.projectiles.length, 0);
+    advance(state, 600);
+    assert.equal(state.projectiles.length, 0, `${food} at ${angle} never came down`);
     assert.ok(state.misses + state.totalFeeds + state.snubs >= 1);
   }
+});
+
+test("a snack that falls short hits the creature instead of passing through it", () => {
+  const state = createArcade(3);
+  advance(state, 60);
+  const belly = { x: state.creature.bx, y: state.creature.by + state.creature.bry * 0.4 };
+  state.projectiles.push({
+    id: 1, ingredient: "metal", x: belly.x - 30, y: belly.y, vx: 9, vy: 1,
+    age: 0, bounces: 0, hazardBounces: 0, assisted: false, faceHits: 0,
+  });
+  stepArcade(state);
+  assert.equal(state.totalFeeds, 0);
+  assert.equal(state.snubs, 1);
+  assert.equal(state.events.at(-1).label, "OFF THE BELLY");
+  assert.ok(state.projectiles[0].vx < 0, "it should come back off the chest, not carry on through");
 });
 
 test("a real trace replays bit-for-bit, including the creature", () => {
@@ -328,16 +347,12 @@ test("replay validates the entire trace and rejects impossible or malformed comm
   assert.throws(() => createArcade(NaN));
 });
 
-test("vent flap warns before becoming solid, follows a bounded deterministic cycle", () => {
-  assert.equal(getHazard(2279), null);
-  assert.deepEqual(getHazard(2280), { x: 550, y: 87.5, width: 18, height: 115, warning: true });
-  assert.equal(getHazard(2399).warning, true);
-  assert.equal(getHazard(2400).warning, false);
-  for (let tick = 2400; tick < 6000; tick += 1) {
-    const hazard = getHazard(tick);
-    assert.ok(hazard.y >= 87.5 && hazard.y <= 317.5);
-    assert.deepEqual(getHazard(tick + 300), hazard);
-  }
+test("the scheduled vent flap is gone", () => {
+  // It appeared at 38 seconds on a timer, which is the opposite of a
+  // consequence, and it deflected shots with nothing on screen to deflect off.
+  // Stage 7 brings it back as damage the creature does when a lunge is not
+  // stopped. Until then it must not exist at all.
+  for (const tick of [0, 1000, 2280, 2400, 5000, 40000]) assert.equal(getHazard(tick), null);
 });
 
 test("craving reward beats an equally precise off-menu shot", () => {

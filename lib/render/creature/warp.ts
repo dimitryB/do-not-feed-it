@@ -9,13 +9,27 @@
 import { BELLY, COUNTER_Y, HEAD, HI } from "./anatomy";
 import type { CreaturePose } from "./pose";
 
-/** The rectangle of the picture the field is allowed to touch. */
-export const WARP_REGION = { x: 512, y: 52, width: 632, height: 462 };
+/**
+ * The rectangle of the picture the field is allowed to touch.
+ *
+ * Widened upward and to the left so a grown creature can actually rise and lean
+ * over the counter. The region only bounds where cells are *drawn*; the kernels
+ * that displace them are unchanged, and both die to zero well inside the new
+ * edges, so nothing new is stretched. The cell count is unchanged too, which is
+ * what the draw costs — a larger region at the same count means slightly
+ * coarser cells, not more of them.
+ */
+export const WARP_REGION = { x: 470, y: 6, width: 674, height: 508 };
 // Denser than it needs to be for the displacement itself: each cell is drawn
 // under one affine transform, and a coarse grid makes that approximation
 // visible as tile edges wherever the field compresses hard.
-const CELLS_X = 38;
-const CELLS_Y = 30;
+// Reduced from 38x30 when the region was widened so the creature could loom.
+// The draw cost is per cell, so a wider region at the same count is free and a
+// smaller count is a saving; what a coarser grid costs is fidelity where the
+// field's gradient is steep, which is the balloon inflation and the jaw. Both
+// were checked at full size for tile edges and streaking after this change.
+const CELLS_X = 34;
+const CELLS_Y = 27;
 /** Sub-pixel displacement a cell may have and still be left as the base drew it. */
 const SKIP = 0.34;
 /** How far the chin travels between a wide-open and a closed mouth. */

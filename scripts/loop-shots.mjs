@@ -103,11 +103,14 @@ function buildSchedule(run) {
   const clips = [
     { name: "first-mutation", at: run.markers.firstMutation },
     { name: "first-stack", at: run.markers.firstStack },
-    { name: "ending", at: run.ticks - CLIP_FRAMES * CLIP_GAP + CLIP_LEAD },
+    // The ending clip has to contain the ending: its last scheduled frame is
+            // the final tick, and two more are taken after the run is over so
+            // the death screen is in the set.
+    { name: "ending", at: run.ticks - (CLIP_FRAMES - 1) * CLIP_GAP + CLIP_LEAD },
   ];
   for (const clip of clips) {
     if (clip.at === null || clip.at === undefined) continue;
-    const start = Math.max(0, Math.min(clip.at - CLIP_LEAD, run.ticks - CLIP_FRAMES * CLIP_GAP));
+    const start = Math.max(0, Math.min(clip.at - CLIP_LEAD, run.ticks - (CLIP_FRAMES - 1) * CLIP_GAP));
     for (let i = 0; i < CLIP_FRAMES; i += 1) {
       const tick = start + i * CLIP_GAP;
       if (tick > run.ticks) break;
@@ -199,18 +202,6 @@ async function main() {
   try {
     // Taller than 1080 so the whole shell — canvas, HUD and control deck — is
     // in frame. Render cost is measured separately at exactly 1920x1080.
-    const context = await browser.newContext({ viewport: { width: WIDTH, height: SHELL_HEIGHT }, deviceScaleFactor: 1 });
-    const page = await context.newPage();
-    page.on("pageerror", (error) => console.error("[page error]", error.message));
-    await page.goto(server.url, { waitUntil: "domcontentloaded" });
-    await page.waitForFunction(() => Boolean(window.__dnfi && window.__dnfi.play), null, { timeout: 60_000 });
-    await waitForScene(page);
-    await page.addStyleTag({ content: FRAME_PAGE });
-    await settle(page, 5);
-
-    // A fixed clip rectangle rather than an element screenshot: Playwright's
-    // element capture re-measures and waits for stability on every call, which
-    // on a canvas that never stops moving costs more than the frame is worth.
     // The budget is stated at 1920x1080 with the canvas filling the frame, so
     // it is measured that way rather than on the capture layout.
     const timingContext = await browser.newContext({ viewport: { width: WIDTH, height: HEIGHT }, deviceScaleFactor: 1 });
@@ -226,6 +217,19 @@ async function main() {
       window.__dnfi.play.setSize(2.4);
     }));
     await timingPage.close();
+
+    const context = await browser.newContext({ viewport: { width: WIDTH, height: SHELL_HEIGHT }, deviceScaleFactor: 1 });
+    const page = await context.newPage();
+    page.on("pageerror", (error) => console.error("[page error]", error.message));
+    await page.goto(server.url, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => Boolean(window.__dnfi && window.__dnfi.play), null, { timeout: 60_000 });
+    await waitForScene(page);
+    await page.addStyleTag({ content: FRAME_PAGE });
+    await settle(page, 5);
+
+    // A fixed clip rectangle rather than an element screenshot: Playwright's
+    // element capture re-measures and waits for stability on every call, which
+    // on a canvas that never stops moving costs more than the frame is worth.
 
     const shell = page.locator(".game-shell");
     const box = await shell.boundingBox();
@@ -269,10 +273,22 @@ async function main() {
       if (state && state.phase !== "playing") break;
     }
 
-    // Run out whatever is left so the ending screen is the real one.
+    // Run out whatever is left so the ending screen is the real one, and put
+    // two frames of it into the ending clip — a clip named "ending" that stops
+    // before the creature wins is the one thing it must not be.
     await page.evaluate(() => window.__loop.runTo(10_000_000, 60));
     await settle(page, 8);
     await shoot(path.join(outDir, "hud-end.jpg"));
+    const ending = groups.get("clip-ending");
+    if (ending) {
+      for (const [index, delay] of [[0, 2], [1, 30]]) {
+        await settle(page, delay);
+        const file = path.join(frameDir, `clip-ending-${String(CLIP_FRAMES + index).padStart(2, "0")}.jpg`);
+        await shoot(file);
+        ending.frames.push(file);
+        ending.labels.push(index === 0 ? "the ending" : "shift report");
+      }
+    }
     const finalState = await page.evaluate(() => window.__loop.state());
 
     // Assemble.

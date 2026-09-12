@@ -694,12 +694,12 @@ export class CreatureAnimator {
       // which took the draw from 4.0 ms to 5.6 ms at full size. Rise and lean
       // are the same cost as scale here, so they are kept small too and the
       // growth is spent where it is free.
-      target.squashX *= 1 + grow * 0.05;
-      target.squashY *= 1 + grow * 0.045;
-      target.bodyRise += grow * 19;
-      target.headX -= grow * 12;
-      target.headY -= grow * 6;
-      target.lean += grow * 0.04;
+      target.squashX *= 1 + grow * 0.085;
+      target.squashY *= 1 + grow * 0.08;
+      target.bodyRise += grow * 34;
+      target.headX -= grow * 26;
+      target.headY -= grow * 30;
+      target.lean += grow * 0.1;
       target.teethLong = Math.max(target.teethLong, clamp01(grow / 1.4) * 0.55);
       // A shut mouth on a big creature is the thing the player is waiting out,
       // so it tightens rather than simply closing.
