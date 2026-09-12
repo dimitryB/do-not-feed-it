@@ -759,6 +759,189 @@ median / 5.10 ms p95 / 4.04 ms mean**; 3.39 ms at size 1.
 
 ---
 
+## Iteration 6 — a silhouette per mutation
+
+**The change.** The iteration-5 critic could not name a mutation from a 960 px
+frame: the metal, balloon and pepper states were a HUD chip and a colour wash,
+and "pressure burp" had no picture at all. `drawMutations` in `lib/render/scene.ts`
+gives each one a noun at silhouette scale — the kitchen's cutlery clinging to the
+chest, clipped to the body outline; a valve on the shoulder with the burp's
+pressure drawn as an arc around it; heat off the body and steam out of the nose.
+Nothing here is a rule: every value is read from `ArcadeState`.
+
+Two bugs were found while doing it. The overlays multiplied alpha by the
+mutation *level* (0–3) rather than by a fraction of the cap, so three pepper
+washed the whole creature flat orange. And the meters were being drawn twice —
+an older canvas meter block had survived an earlier replacement.
+
+### Bots — 200 seeded shifts each
+
+| bot | median | worst 30 s bucket | causes |
+|---|---|---|---|
+| naive | 12.4 s | 100 % | kitchen destroyed 200 |
+| moderate | 99.2 s | **62 %** | empty belly 145, kitchen destroyed 55 |
+| good | 136.8 s | 68 % | empty belly 186, kitchen destroyed 14 |
+
+Density 104/min. Four gates of five; the death-spread gate still failing at 62 %.
+
+### Critic — iteration 6
+
+Agency 3, Consequence 6, Tension 4, Readability 4, Comedy 6, Fairness 4.
+
+---
+
+## Iteration 7 — make a good decision compound
+
+**The change.** The death-spread gate had never passed. The reason was
+structural rather than statistical: every good decision in the game paid the
+same amount. Satisfying a craving was worth a fixed bonus, so two hundred
+competent runs converged on the same curve and died in the same thirty seconds.
+
+A craving satisfied now pays into the *next* one. `state.cravingStreak` counts
+cravings met in a row; the growth pause scales with the streak
+(`pausePerStreak`), and from the second in a row the creature's permanent
+appetite multiplier is reduced (`appetiteRelief`), announced on the creature as
+`IT EASES OFF ×N`. A missed craving resets it. The reward is now super-linear in
+the one skill the game is about, so two runs that differ slightly in that skill
+diverge instead of converging.
+
+The first version of this was keyed to `state.combo` — the feed streak — which
+almost never reaches four, so the compounding never fired at all. That is worth
+recording, because the measurement said "no effect" for a reason that had
+nothing to do with the design.
+
+### Bots — 200 seeded shifts each
+
+| bot | p10 | median | p90 | worst 30 s bucket | causes |
+|---|---|---|---|---|---|
+| naive | 26.5 s | 28.6 s | 30.6 s | 78.5 % | kitchen destroyed 200 |
+| moderate | 97.2 s | **129.1 s** | 166.7 s | **37 %** | empty belly 164, kitchen destroyed 36 |
+| good | 137 s | **182.4 s** | 233.8 s | 30.5 % | empty belly 177, kitchen destroyed 23 |
+
+Density 108/min. Good ÷ naive = 6.4×. **All five numeric gates pass for the
+first time**, the death-spread gate included.
+
+### Critic — iteration 7
+
+Agency 5, Consequence 7, Tension 5, Readability 3, Comedy 7, Fairness 4.
+
+The specific fault that set the next iteration: *"strip-0020 shows twelve frames
+of identical launcher angle, identical snack and no aim guide at all because the
+launcher is reloading, so the headline 108 changes/min is not what a spectator
+actually sees."*
+
+---
+
+## Iteration 8 — put the aim on screen
+
+**The change.** No rule changed. The player's two choices — where the launcher
+points and how hard it throws — were drawn as a faint dashed stub and a number
+in the corner, and the loaded snack was hidden entirely for the whole 80-tick
+reload. So two thirds of every sampled second showed an empty counter and a
+launcher that appeared to be doing nothing.
+
+- The aim is a solid lance out of the muzzle with a **crossbar at the distance
+  the current power stands for**, so angle and power are one drawing on the
+  launcher itself.
+- The loaded serving **sits in the breech whether or not it can be fired**,
+  dimmed over a dark pocket while reloading, at full strength when ready.
+- A **reload ring** fills around the breech, so the wait is an event with a
+  visible end rather than an absence.
+
+A whole duplicated draw block was found and removed while doing this: 131 lines —
+launcher, hatch, projectiles, event labels and the craving ring — were being
+executed twice per frame. Same class of bug as the duplicate meters in iteration
+6, and it had been costing roughly a millisecond a frame.
+
+**The capture harness was lying about the game.** The bot's command trace was
+replayed by firing each command on its tick, which made the launcher teleport to
+its angle on the frame it fired. `scripts/loop-shots.mjs` now plays the wind-up:
+the barrel sweeps towards the next shot at the game's own aim rate over the 44
+ticks before it, the charge starts exactly as far back as that shot's power is
+worth, and the fast-forward refuses to skip a wind-up. Strips start five frames
+before the shot rather than three. What is filmed is the same trace as before —
+only the frames between the commands are no longer blank.
+
+### Bots — 200 seeded shifts each
+
+Identical to iteration 7 by construction (no rule changed), and the frozen
+replay traces came back byte-identical, which is the check that proves it:
+naive 28.6 s, moderate 129.1 s at a 37 % worst bucket, good 182.4 s = 6.4×,
+density 108/min. **All five gates pass — second consecutive iteration.**
+
+### Critic — iteration 8
+
+| | Agency | Consequence | Tension | Readability | Comedy | Fairness |
+|---|---|---|---|---|---|---|
+| iteration 7 | 5 | 7 | 5 | 3 | 7 | 4 |
+| **iteration 8** | **8** | **9** | **7** | **5** | **7** | **6** |
+
+*"Across clip-first-mutation frames 00, 06 and 08 — 15 seconds apart — the
+launcher sits at three clearly different barrel angles, with three different
+snacks visibly loaded in the breech, the highlighted slot moves 3 → 2 → 3, and
+the dotted trajectory preview redraws to match. Nothing here repeats."*
+
+**Open cheap-death finding.** *"clip-ending frame-10, 01:45. Fullness 11 % and
+falling. HATCH SHUT is displayed. The launcher barrel is empty. The player has
+no available verb. The run ends at 01:47 — the manifest shows the hatch becoming
+usable exactly one tick after the player loses."*
+
+---
+
+## Iteration 9 — a shift may not end on a tick the player was locked out of
+
+**The change.** The hatch is the player's own reaction verb and it takes their
+launcher away for 84 ticks. Running the starvation clock through that produced
+the shape of loss nobody reads as their own fault: the game tells the player to
+land a snack, removes their ability to land one, and ends the shift for not
+landing it.
+
+**The belly now runs a tab instead of emptying.** While the hatch is shut the
+drain accumulates in `state.hungerDebt` rather than being applied; the moment the
+hatch lifts it is taken back at three times the rate, visibly, with the player
+holding a loaded launcher. The fullness bar says `HELD` while the tab is running
+and `CATCHING UP` while it is being paid. Nothing is forgiven, so the economy
+over a shift is unchanged to within the repayment lag — only the tick the loss
+can land on has moved.
+
+Two smaller fairness fixes rode along. A lunge bite is no longer allowed to take
+the last point of fullness, because it jams the launcher in the same beat.
+And `ENDINGS[2]` was "It has eaten the kitchen." — chosen on size alone, so a
+shift that ended on an empty belly announced *"Empty belly. It has eaten the
+kitchen."*, naming the other failure state in the same sentence as the meters
+that contradicted it. The size endings no longer name any cause of death.
+
+### What was tried first, measured, and reverted
+
+Two earlier versions of this rule **forgave** the drain rather than deferring it.
+Both broke the death-spread gate, and the measurement is the reason the third
+version exists:
+
+| version | moderate median | worst bucket | moderate causes |
+|---|---|---|---|
+| freeze during hatch **and** jams | 141.8 s | **42 %** | kitchen destroyed 166, empty belly 34 |
+| freeze during the hatch only | 137.9 s | **43 %** | kitchen destroyed 138, empty belly 62 |
+| **defer and repay (kept)** | 128.0 s | **35 %** | empty belly 160, kitchen destroyed 40 |
+
+Relieving even a second and a half of starvation pressure per hatch slam flipped
+the game's dominant failure from starving to enraging, and rage deaths bunch:
+rage climbs on a straight line, so two hundred runs reach 100 at nearly the same
+place. Starvation is the failure with variance in it, and the gate is a good
+detector of exactly that.
+
+### Bots — 200 seeded shifts each
+
+| bot | p10 | median | p90 | worst 30 s bucket | causes |
+|---|---|---|---|---|---|
+| naive | 26.5 s | 28.6 s | 30.6 s | 78.5 % | kitchen destroyed 200 |
+| moderate | 94.7 s | **128 s** | 168.7 s | **35 %** | empty belly 160, kitchen destroyed 40 |
+| good | 134.1 s | **178.2 s** | 233.4 s | 32.5 % | empty belly 170, kitchen destroyed 30 |
+
+Density 112/min. Good ÷ naive = 6.2×. **All five gates pass — third consecutive
+iteration.** `GAME_VERSION` bumped to 3; fixtures regenerated; 36 tests green.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s

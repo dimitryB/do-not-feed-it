@@ -22,7 +22,7 @@ export const FOODS: readonly Ingredient[] = ["metal", "balloon", "pepper"];
  * curve; what ends a shift is failing to keep up with it.
  */
 /** Bumped whenever a rule, the trace format or the scoring changes. */
-export const GAME_VERSION = 2;
+export const GAME_VERSION = 3;
 
 export const ARENA = Object.freeze({
   width: 1200, height: 700, barrelLength: 70, launcher: { x: 210, y: 540 },
@@ -363,6 +363,8 @@ export interface ArcadeState {
   cravingStreak: number;
   /** The hatch. Shut until `hatchClosedUntil`, unusable until `hatchReadyAt`. */
   hatchClosedUntil: number; hatchReadyAt: number; hatchSaves: number;
+  /** Drain owed from a shut hatch, paid back once the player can serve again. */
+  hungerDebt: number;
   /** Drool on the floor: snacks slide and bounce differently until this tick. */
   slickUntil: number;
   /** The vent it bit off, once it has. */
@@ -390,10 +392,15 @@ const MAX_COMMANDS = Math.ceil(ARENA.maxTicks / ARENA.cooldownTicks)
  * the player let it become. The size thresholds are the quarters of the growth
  * curve; the copy is the handbook's.
  */
+// None of these may name a cause of death. "It has eaten the kitchen" was in
+// this list on size alone, so a shift that ended on an empty belly announced
+// "Empty belly. It has eaten the kitchen." — the other failure state's own
+// name, in the same sentence, contradicting the meters the player had been
+// watching. These describe the size it reached and nothing else.
 export const ENDINGS: readonly string[] = [
   "It has eaten the employee handbook.",
   "It has eaten the shift supervisor.",
-  "It has eaten the kitchen.",
+  "It no longer fits behind the counter.",
   "It no longer fits through the door. It has been promoted.",
 ];
 export function endingFor(size: number): number {
@@ -555,7 +562,7 @@ export function createArcade(seed: number): ArcadeState {
     reloadUntil: 0, spitAt: TUNING.spitEvery, junkAt: TUNING.junkEvery,
     beatAt: TUNING.beatEvery, threat: null,
     craving: null, cravingNextAt: 180, cravingsMet: 0, cravingsMissed: 0, cravingStreak: 0,
-    hatchClosedUntil: 0, hatchReadyAt: 0, hatchSaves: 0,
+    hatchClosedUntil: 0, hatchReadyAt: 0, hatchSaves: 0, hungerDebt: 0,
     slickUntil: 0, vent: null, ending: 0, charge: 0,
     announcement: "It only swallows when the mouth is open. Watch the mouth, not the line.",
     rolls: { rhythm: 0, craving: 0, beat: 0, spit: 0, junk: 0 },
@@ -1087,7 +1094,11 @@ export function stepArcade(state: ArcadeState): void {
       event(state, "beat", ARENA.launcher.x + 60, ARENA.launcher.y - 40, "IT TOOK THE TRAY");
     }
     state.rage = Math.min(100, state.rage + TUNING.lungeRage);
-    state.hunger = quantize(Math.max(0, state.hunger - TUNING.lungeHunger));
+    // It takes a bite and it jams the launcher in the same beat, so the bite
+    // itself is not allowed to be the last point of fullness: a loss landing on
+    // the tick that removes the player's launcher is the one shape of death
+    // nobody reads as their own fault.
+    state.hunger = quantize(Math.max(1, state.hunger - TUNING.lungeHunger));
     state.reloadUntil = Math.max(state.reloadUntil, state.tick + TUNING.lungeJams);
   }
 
@@ -1220,9 +1231,33 @@ export function stepArcade(state: ArcadeState): void {
 
   // Appetite. A bigger creature empties faster; nothing else about a serving
   // changes, so growth alone is the ramp.
+  //
+  // The belly does not empty while the hatch is shut — it runs a tab instead.
+  //
+  // The hatch is the player's own reaction verb, and it takes their launcher
+  // away for a second and a half. Running the starvation clock through that
+  // produced a loss with no available move: the game told the player to land a
+  // snack, removed their ability to land one, and then ended the shift for not
+  // landing it. A shift must not end on a tick the player was locked out of.
+  //
+  // Forgiving that drain outright was measured over two hundred shifts and is
+  // not an option: freeing even this much starvation pressure flipped moderate
+  // deaths from 82% empty-belly to 69% kitchen-destroyed and bunched them into
+  // one thirty-second bucket at 43%, past the spread gate. So nothing is
+  // forgiven. What would have drained is owed, and it is taken back at three
+  // times the rate the moment the hatch lifts — visibly, with the player
+  // holding a loaded launcher. The economy over a shift is unchanged to within
+  // the repayment lag; only the tick the loss can land on has moved.
+  const held = state.tick < state.hatchClosedUntil;
   if (state.tick > TUNING.graceTicks) {
     const drain = (TUNING.drainBase + (state.creature.size - 1) * TUNING.drainPerSize) * state.appetite;
-    state.hunger = quantize(Math.max(0, state.hunger - drain));
+    if (held) {
+      state.hungerDebt = quantize(state.hungerDebt + drain);
+    } else {
+      const owed = Math.min(state.hungerDebt, drain * 2);
+      state.hungerDebt = quantize(state.hungerDebt - owed);
+      state.hunger = quantize(Math.max(0, state.hunger - drain - owed));
+    }
   }
 
   // Score is time kept fed plus what you did with it.

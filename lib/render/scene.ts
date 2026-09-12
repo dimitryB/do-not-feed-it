@@ -425,6 +425,7 @@ export function createScene(){
       const fullness=Math.max(0,Math.min(1,state.hunger/100));
       const irritation=Math.max(0,Math.min(1,state.rage/100));
       const fullColour=fullness<0.18?'#ff6a4d':fullness<0.35?'#eea66d':'#cdec7a';
+      const held=tick<state.hatchClosedUntil;
       ctx.save();
       ctx.fillStyle='#04090988';ctx.beginPath();ctx.roundRect(x-12,y-20,w+24,54,10);ctx.fill();
       const rows=[['FULLNESS',fullness,fullColour,'#22301f'],['IRRITATION',irritation,'#e2493a','#341c1a']] as const;
@@ -435,6 +436,14 @@ export function createScene(){
         ctx.font="700 11px ui-monospace,monospace";ctx.textAlign='left';ctx.fillStyle='#cfd9c8';
         ctx.fillText(row[0],x,by-10);
         ctx.textAlign='right';ctx.fillStyle=row[2];ctx.fillText(`${Math.round(row[1]*100)}%`,x+w,by-10);
+        // The belly stops emptying whenever the launcher is taken away. The
+        // rule is only fair if it is visible, so the bar says so while it holds.
+        if(i===0&&(held||state.hungerDebt>0.01)){
+          const label=held?'HELD':'CATCHING UP';const lw=ctx.measureText(label).width+14;
+          ctx.fillStyle='#0c1a16';ctx.beginPath();ctx.roundRect(x+w/2-lw/2,by-20,lw,14,7);ctx.fill();
+          ctx.strokeStyle=held?'#9bd7c4':'#eea66d';ctx.lineWidth=1;ctx.stroke();
+          ctx.textAlign='center';ctx.fillStyle=held?'#9bd7c4':'#eea66d';ctx.fillText(label,x+w/2,by-10);
+        }
       }
       if(fullness<0.25&&!reduced){
         ctx.globalAlpha=.35+.35*Math.abs(Math.sin(time*7));
