@@ -77,8 +77,11 @@ function stream(seed) {
  * running the real rules forward, which is slower but cannot disagree with
  * them.
  * ------------------------------------------------------------------ */
-function probe(state, ingredient, angle, power) {
-  if (HAS_PROBE) return arcade.probeFlight(state, ingredient, angle, power, 240);
+const HAS_TIMELINE = typeof arcade.projectMouth === "function";
+const PROBE_TICKS = 240;
+
+function probe(state, ingredient, angle, power, timeline) {
+  if (HAS_PROBE) return arcade.probeFlight(state, ingredient, angle, power, PROBE_TICKS, timeline);
   const copy = structuredClone(state);
   copy.events = [];
   // The probe answers "would this shot land", not "may I fire now": readiness
@@ -125,11 +128,24 @@ function viewOf(state) {
   };
 }
 
-/** Which of `FOODS` the bot would rather be holding, before aiming at all. */
-function ingredientOrder(view) {
+/**
+ * Candidates that fly identically, grouped, with the craved one's group first.
+ *
+ * Only metal flies differently, and only once the creature has a magnetic
+ * mouth — the magnet is a force on metal and the teeth catch a flat metal shot,
+ * and nothing else in the rules distinguishes one ingredient's flight from
+ * another's. So a plan that would otherwise probe three ingredients through the
+ * same physics probes one representative per group and applies the answer to
+ * every member. This is exact, and it is most of the harness's cost, because
+ * the expensive case is the common one: while the mouth is shut nothing lands
+ * and every candidate gets tried.
+ */
+function flightGroups(view) {
   const wanted = view.wanted;
-  const rest = FOODS.filter((food) => food !== wanted);
-  return [wanted, ...rest];
+  const groups = (view.mutations && view.mutations.metal > 0)
+    ? [["metal"], FOODS.filter((food) => food !== "metal")]
+    : [[...FOODS]];
+  return groups.sort((a, b) => (b.includes(wanted) ? 1 : 0) - (a.includes(wanted) ? 1 : 0));
 }
 
 /**
@@ -150,18 +166,26 @@ function bestAction(view, feedBelow = 68) {
   // the tantrum is the biggest avoidable loss.
   const urgent = view.craving && view.craving.endsAt - view.tick < 150;
   if (view.hunger > feedBelow && !urgent) return { verb: "wait" };
+  // The creature's future is the same for every candidate, so it is projected
+  // once and shared. This is exact, not an approximation: the rules only make it
+  // shot-dependent when the creature is tracking, and `projectMouth` reports
+  // whether that was the case.
+  const timeline = HAS_TIMELINE ? arcade.projectMouth(view, PROBE_TICKS) : undefined;
   let best = null;
-  for (const ingredient of ingredientOrder(view)) {
-    const craved = ingredient === view.wanted;
+  for (const group of flightGroups(view)) {
+    const representative = group.includes(view.wanted) ? view.wanted : group[0];
     for (const angle of ANGLES) {
       for (const power of POWERS) {
-        const result = probe(view, ingredient, angle, power);
+        const result = probe(view, representative, angle, power, timeline);
         if (!result.fed) continue;
-        // Prefer the craving, then the shot that arrives soonest: a bot that
-        // waits for a marginally better angle is not a player.
-        const value = (craved ? 1000 : 0) + (result.bounces ? 120 : 0) - result.ticks;
-        if (!best || value > best.value) {
-          best = { verb: "launch", ingredient, angle, power, value, ticks: result.ticks };
+        for (const ingredient of group) {
+          const craved = ingredient === view.wanted;
+          // Prefer the craving, then the shot that arrives soonest: a bot that
+          // waits for a marginally better angle is not a player.
+          const value = (craved ? 1000 : 0) + (result.bounces ? 120 : 0) - result.ticks;
+          if (!best || value > best.value) {
+            best = { verb: "launch", ingredient, angle, power, value, ticks: result.ticks };
+          }
         }
       }
     }
@@ -272,8 +296,10 @@ export function playShift(name, seed, { trackDensity = false } = {}) {
     if (history.length > depth) history.shift();
     const view = history[0];
 
+    let planned = null;
     if (trackDensity) {
       const action = bestAction(view, config.feedBelow);
+      planned = action;
       ticksObserved += 1;
       if (run.action && !differs(action, run.action)) run.count += 1;
       else run = { action, count: 1 };
@@ -296,7 +322,7 @@ export function playShift(name, seed, { trackDensity = false } = {}) {
       if (wantsHatch(view) && HAS_HATCH && arcade.slamHatch(state)) {
         commands.push({ tick: state.tick, kind: "hatch" });
       } else if (canLaunch(state)) {
-        const action = bestAction(view, config.feedBelow);
+        const action = planned ?? bestAction(view, config.feedBelow);
         if (action && action.verb === "launch") {
           const jitter = (noise() * 2 - 1) * config.noise;
           const angle = Math.round(Math.max(ARENA.minAngle, Math.min(ARENA.maxAngle, action.angle + jitter)));

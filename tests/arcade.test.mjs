@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   ARENA, FOODS, TUNING, GAME_VERSION, createArcade, endingFor, getHazard, launchFood,
-  probeFlight, replayArcade, slamHatch, stepArcade, trajectoryPreview,
+  probeFlight, projectMouth, replayArcade, slamHatch, stepArcade, trajectoryPreview,
 } from "../lib/game/arcade.ts";
 
 function advance(state, tick) {
@@ -262,6 +262,32 @@ test("the prediction agrees with the rules it predicts", () => {
       assert.equal(ticks, predicted.ticks, `seed ${seed} angle ${angle}: timing disagreed`);
     }
   }
+});
+
+test("a shared mouth timeline predicts exactly what projecting per shot does", () => {
+  // The planner projects the creature once and reuses it for every candidate
+  // shot. That is only sound while the creature is not tracking incoming food,
+  // and `projectMouth` is what says so. If these two ever disagree the bot
+  // table stops measuring the game.
+  let checked = 0;
+  for (const seed of [1, 99, 4242]) {
+    const state = createArcade(seed);
+    for (let step = 0; step < 6; step += 1) {
+      advance(state, state.tick + 73);
+      const timeline = projectMouth(state, 240);
+      for (const ingredient of FOODS) {
+        for (let angle = ARENA.minAngle; angle <= ARENA.maxAngle; angle += 5) {
+          for (const power of [ARENA.minPower, 13, ARENA.maxPower]) {
+            const alone = probeFlight(state, ingredient, angle, power, 240);
+            const shared = probeFlight(state, ingredient, angle, power, 240, timeline);
+            assert.deepEqual(shared, alone, `seed ${seed} ${ingredient} ${angle}deg ${power}`);
+            checked += 1;
+          }
+        }
+      }
+    }
+  }
+  assert.ok(checked > 2000, `only ${checked} predictions compared`);
 });
 
 test("the trajectory guide uses exact flight physics without mutating its source", () => {

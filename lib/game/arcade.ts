@@ -1234,6 +1234,41 @@ function projectCreature(state: ArcadeState): Creature {
   };
 }
 
+/**
+ * The mouth's future, precomputed.
+ *
+ * Every candidate shot a planner evaluates re-derives the same creature motion,
+ * and the creature is by far the expensive half of a prediction. When the
+ * creature is not tracking — which is whenever the belly is at or above
+ * `trackFrom`, because the eagerness that drives tracking is then exactly zero
+ * for any projectile — its path does not depend on the shot at all, so it can be
+ * computed once and shared. `exact` says whether that held; when it is false the
+ * timeline must not be used and the caller has to fall back to projecting per
+ * shot.
+ */
+export interface MouthTimeline {
+  ticks: number; exact: boolean;
+  x: Float64Array; y: Float64Array; by: Float64Array;
+  rx: Float64Array; ry: Float64Array; open: Float64Array;
+}
+
+export function projectMouth(state: ArcadeState, ticks: number): MouthTimeline {
+  const creature = projectCreature(state);
+  const line: MouthTimeline = {
+    ticks, exact: state.hunger >= TUNING.trackFrom,
+    x: new Float64Array(ticks + 1), y: new Float64Array(ticks + 1),
+    by: new Float64Array(ticks + 1),
+    rx: new Float64Array(ticks + 1), ry: new Float64Array(ticks + 1),
+    open: new Float64Array(ticks + 1),
+  };
+  for (let i = 1; i <= ticks; i += 1) {
+    stepCreature(creature, state.seed, state.rage, state.hunger, null, state.mutations);
+    line.x[i] = creature.x; line.y[i] = creature.y; line.by[i] = creature.by;
+    line.rx[i] = creature.rx; line.ry[i] = creature.ry; line.open[i] = creature.open;
+  }
+  return line;
+}
+
 export interface FlightResult {
   fed: boolean; snubbed: boolean; ticks: number; bounces: number;
   x: number; y: number;
@@ -1246,23 +1281,38 @@ export interface FlightResult {
  * from the rules: this runs the same `moveFood` and the same creature step.
  */
 export function probeFlight(state: ArcadeState, ingredient: Ingredient, angle: number,
-                            power: number | null, maxTicks = 240): FlightResult {
+                            power: number | null, maxTicks = 240,
+                            timeline?: MouthTimeline): FlightResult {
   if (!FOODS.includes(ingredient) || !Number.isFinite(angle)) {
     return { fed: false, snubbed: false, ticks: 0, bounces: 0, x: 0, y: 0 };
   }
   const food = makeProjectile(0, ingredient,
     Math.round(clamp(angle, ARENA.minAngle, ARENA.maxAngle)), cleanPower(power ?? ARENA.defaultPower));
+  const shared = timeline && timeline.exact && timeline.ticks >= maxTicks ? timeline : null;
   const creature = projectCreature(state);
+  const env: Env = {
+    tick: state.tick, mouthX: 0, mouthY: 0, mouthRx: 0, mouthRy: 0,
+    bellyX: 0, bellyY: 0, bellyRx: 0, bellyRy: 0,
+    slick: false, vent: state.vent, aperture: 0, levels: state.mutations,
+  };
   let snubbed = false;
   for (let i = 1; i <= maxTicks; i++) {
-    stepCreature(creature, state.seed, state.rage, state.hunger, food, state.mutations);
-    const env: Env = {
-      tick: state.tick + i, mouthX: creature.x, mouthY: creature.y,
-      mouthRx: creature.rx, mouthRy: creature.ry,
-      bellyX: creature.bx, bellyY: creature.by, bellyRx: creature.brx, bellyRy: creature.bry,
-      slick: state.tick + i < state.slickUntil, vent: state.vent,
-      aperture: creature.open, levels: state.mutations,
-    };
+    if (shared) {
+      env.mouthX = shared.x[i]; env.mouthY = shared.y[i];
+      env.mouthRx = shared.rx[i]; env.mouthRy = shared.ry[i];
+      env.aperture = shared.open[i];
+      env.bellyX = creature.bx; env.bellyY = shared.by[i];
+      env.bellyRx = creature.brx; env.bellyRy = creature.bry;
+    } else {
+      stepCreature(creature, state.seed, state.rage, state.hunger, food, state.mutations);
+      env.mouthX = creature.x; env.mouthY = creature.y;
+      env.mouthRx = creature.rx; env.mouthRy = creature.ry;
+      env.bellyX = creature.bx; env.bellyY = creature.by;
+      env.bellyRx = creature.brx; env.bellyRy = creature.bry;
+      env.aperture = creature.open;
+    }
+    env.tick = state.tick + i;
+    env.slick = state.tick + i < state.slickUntil;
     const outcome = moveFood(food, env);
     if (outcome === "fed") return { fed: true, snubbed, ticks: i, bounces: food.bounces, x: food.x, y: food.y };
     if (outcome === "missed") return { fed: false, snubbed, ticks: i, bounces: food.bounces, x: food.x, y: food.y };
