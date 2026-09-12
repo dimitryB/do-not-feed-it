@@ -65,7 +65,7 @@ function add(state: ArcadeState, type: ArcadeEvent["type"], ageTicks: number, la
 function shot(state: ArcadeState, ingredient: Ingredient, x: number, y: number, vx: number, vy: number, age: number) {
   state.projectiles.push({
     id: state.nextProjectileId++, ingredient, x, y, vx, vy,
-    age, bounces: 0, hazardBounces: 0, assisted: false, faceHits: 0,
+    kind: "food", age, bounces: 0, hazardBounces: 0, assisted: false, faceHits: 0,
   });
 }
 
@@ -201,60 +201,44 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
     case "warn-metal":
     case "warn-balloon":
     case "warn-pepper": {
+      // A mutation no longer has a warning phase — it is permanent and it
+      // lands with the third serving — so these states are now "one level in",
+      // which is the pose a player sees for most of a shift.
       const ingredient = id.slice(5) as Ingredient;
       selected = ingredient;
       state.servings[ingredient] = 3;
-      // The warning is a 90-tick build. Past that the mutation actually lands:
-      // a strip that stops at the end of the build can only ever show a ramp,
-      // never the snap the ramp is anticipating, which is what made all three
-      // onset strips read as linear.
-      const startsAt = state.tick + 90 - ticks;
-      state.mutation = {
-        ingredient, phase: ticks >= 90 ? "active" : "warning",
-        startsAt,
-        endsAt: state.tick + 570 - ticks,
-        gustWarning: false, gustActive: false,
-      };
+      state.mutations[ingredient] = 1;
+      if (ingredient === "balloon") { state.creature.pressure = 0.85; state.creature.lift = 26; }
+      if (ingredient === "metal") state.creature.clog = 0.3;
       state.announcement = MUTATION_LABELS[ingredient];
-      add(state, ticks >= 90 ? "mutation" : "warning", Math.max(0, ticks - 90),
-          MUTATION_LABELS[ingredient], { ingredient });
+      add(state, "mutation", Math.max(0, ticks - 90), MUTATION_LABELS[ingredient], { ingredient });
       break;
     }
     case "active-metal":
     case "active-balloon": {
       const ingredient = id.slice(7) as Ingredient;
       selected = ingredient;
-      state.servings[ingredient] = 3;
-      state.mutation = {
-        ingredient, phase: "active",
-        startsAt: state.tick - ticks - 30,
-        endsAt: state.tick + 400,
-        gustWarning: false, gustActive: false,
-      };
+      state.servings[ingredient] = 9;
+      state.mutations[ingredient] = 3;
+      if (ingredient === "balloon") { state.creature.lift = 110; state.creature.pressure = 0.6; }
+      if (ingredient === "metal") state.creature.clog = 0.55;
       state.announcement = MUTATION_LABELS[ingredient];
       add(state, "mutation", ticks + 30, MUTATION_LABELS[ingredient], { ingredient });
       break;
     }
     case "active-pepper": {
       selected = "pepper";
-      state.servings.pepper = 3;
-      // Sits inside the deterministic 180-tick gust cycle: warning window is
-      // ticks 0-29 and the exhale itself is ticks 30-71.
-      const startsAt = state.tick - 24 - ticks;
-      const cycle = ((state.tick - startsAt) % 180 + 180) % 180;
-      state.mutation = {
-        ingredient: "pepper", phase: "active",
-        startsAt, endsAt: state.tick + 400,
-        gustWarning: cycle < 30, gustActive: cycle >= 30 && cycle < 72,
-      };
+      state.servings.pepper = 9;
+      state.mutations.pepper = 3;
       state.announcement = MUTATION_LABELS.pepper;
-      add(state, "gust", Math.max(0, cycle - 30), "BURP! HEADWIND", { ingredient: "pepper" });
+      add(state, "spit", Math.max(0, ticks - 6), "INCOMING", { ingredient: "pepper" });
       break;
     }
     case "recovery": {
-      selected = "balloon";
-      state.servings.balloon = 3;
-      add(state, "recovery", ticks, "KITCHEN BACK TO NORMAL", { ingredient: "balloon" });
+      selected = "pepper";
+      state.servings.pepper = 3;
+      state.mutations.metal = 2;
+      add(state, "sneeze", ticks, "SNEEZE — MOUTH CLEAR", { ingredient: "pepper" });
       break;
     }
     case "end-survived": {

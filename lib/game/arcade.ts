@@ -33,7 +33,7 @@ export const ARENA = Object.freeze({
    * the lit target ring is this ellipse, so if the two disagree the player is
    * told a snack went in when it did not, or the reverse.
    */
-  mouth: { x: 840, y: 280, rx: 113, ry: 68 }, floor: 620,
+  mouth: { x: 840, y: 281, rx: 113, ry: 68 }, floor: 620,
   tickRate: 60,
   /** Endless in practice; the cap exists so a replay is bounded. Twelve minutes. */
   maxTicks: 43200,
@@ -119,8 +119,8 @@ export const TUNING = Object.freeze({
    * painted mouth are the same object at every size. Re-run it after any change
    * to the pose's growth channels or to the warp.
    */
-  leanPerSize: 5,
-  risePerSize: 33,
+  leanPerSize: 6.5,
+  risePerSize: 54.5,
   /**
    * How much the mouth grows, per axis.
    *
@@ -130,10 +130,63 @@ export const TUNING = Object.freeze({
    * what the picture can actually show, because a target ring larger than the
    * mouth under it is a lie the player pays for.
    */
-  mouthGrowX: 0.229,
-  mouthGrowY: 0.454,
+  mouthGrowX: 0.235,
+  mouthGrowY: 0.447,
   /** How much the body itself swells, matching the rig's warp. */
   bodyGrow: 0.085,
+
+  /**
+   * Mutations. Three servings of an ingredient is one level, three levels is
+   * the cap, and nothing ever wears off.
+   *
+   * Each pair has exactly one escape, and each escape is a serving of the other
+   * ingredient, so the way out of a problem is always another decision about
+   * what to feed it:
+   *   metal + balloon  — a metal serving is ballast and drops it back down.
+   *   metal + pepper   — a pepper serving makes it sneeze the clog out.
+   *   balloon + pepper — every serving it spits back vents pressure and lowers it.
+   */
+  servingsPerLevel: 3,
+  maxLevel: 3,
+
+  /** Metal: a magnetic mouth that drags the kitchen into itself. */
+  magnetPerLevel: 0.075,
+  magnetRange: 360,
+  magnetRangePerLevel: 70,
+  junkEvery: 390,
+  junkEveryPerLevel: 70,
+  clogPerJunk: 0.1,
+  clogPerClang: 0.09,
+  clogMax: 0.72,
+  /** A metal shot arriving this flat is caught by the teeth instead of going in. */
+  clangSlope: 0.42,
+  sneezeClears: 0.45,
+
+  /**
+   * Balloon: it inflates and floats, and the target goes up with it.
+   *
+   * The ceiling is small — forty-six pixels at three levels — and it is a rig
+   * limit, not a design one. The warp may only touch a rectangle that stops
+   * just short of the ceiling beam, and the growth rise already spends most of
+   * that headroom, so a mouth that floated a hundred and forty pixels would
+   * leave the creature behind and the target ring with it.
+   */
+  liftPerLevel: 0.011,
+  liftMax: 16,
+  liftMaxPerLevel: 10,
+  pressurePerLevel: 0.00085,
+  burpKeeps: 0.28,
+  ballastDrops: 20,
+
+  /** Pepper: it spits servings back at the launcher. */
+  spitEvery: 530,
+  spitEveryPerLevel: 95,
+  spitSpeed: 9.4,
+  spitSpeedPerLevel: 0.9,
+  spitTell: 40,
+  spitJams: 72,
+  spitRage: 9,
+  spitVents: 10,
 
   /** Hungry tracking: it leans toward incoming food when the belly is low. */
   trackFrom: 46,
@@ -144,16 +197,31 @@ export const TUNING = Object.freeze({
 export interface ArcadeCommand { tick: number; ingredient: Ingredient; angle: number }
 
 export interface Projectile {
-  id: number; ingredient: Ingredient; x: number; y: number; vx: number; vy: number;
+  id: number; ingredient: Ingredient;
+  /**
+   * `food` is a serving. `junk` is loose kitchen metal the magnet has picked
+   * up, which clogs the mouth instead of feeding it. `spit` is a serving coming
+   * back at the launcher.
+   */
+  kind: "food" | "junk" | "spit";
+  x: number; y: number; vx: number; vy: number;
   age: number; bounces: number; hazardBounces: number; assisted: boolean;
   /** How many times this snack has hit a shut mouth. Only the first costs. */
   faceHits: number;
 }
 
-export interface ArcadeMutation {
-  ingredient: Ingredient; phase: "warning" | "active"; startsAt: number; endsAt: number;
-  gustWarning: boolean; gustActive: boolean;
-}
+/**
+ * A mutation is a change to the creature, not a weather effect on the kitchen,
+ * and it never wears off.
+ *
+ * Three servings of an ingredient raise its level by one, to a maximum of
+ * three, and every level it has is live for the rest of the shift. They stack:
+ * a floating, magnetic, spitting creature at minute three is the whole point.
+ */
+export interface MutationLevels { metal: number; balloon: number; pepper: number }
+
+/** Something the creature has telegraphed and the player can still answer. */
+export interface Threat { kind: "spit"; tick: number; x: number; y: number }
 
 /**
  * The creature, as the rules see it. The renderer reads exactly this — scale,
@@ -171,14 +239,22 @@ export interface Creature {
   untilOpen: number;
   /** Vertical tracking offset: it leans toward food when it is hungry. */
   track: number;
+  /** How far the balloon has floated it off the counter, in pixels. */
+  lift: number;
+  /** Balloon pressure, 0 to 1. At 1 it burps and drops. */
+  pressure: number;
+  /** Kitchen metal stuck in its teeth, 0 to 1. Narrows the gap. */
+  clog: number;
+  /** The gap the rules actually test: aperture after the clog. */
+  open: number;
   /** Rhythm bookkeeping. */
   cycle: number; cycleTick: number; openTicks: number; shutTicks: number;
 }
 
 export interface ArcadeEvent {
   id: number; tick: number;
-  type: "launch" | "feed" | "miss" | "snub" | "bounce" | "warning" | "mutation"
-  | "recovery" | "gust" | "grow" | "end";
+  type: "launch" | "feed" | "miss" | "snub" | "bounce" | "mutation" | "clog"
+  | "sneeze" | "spit" | "hit" | "burp" | "gust" | "grow" | "end";
   x: number; y: number; label: string;
   /** Presentation-only tag. Never read by the rules, replay or scoring. */
   ingredient?: Ingredient;
@@ -198,20 +274,35 @@ export interface ArcadeState {
   totalFeeds: number; correctFeeds: number; shots: number; misses: number; snubs: number;
   servings: Record<Ingredient, number>; mutationEvents: number; lastLaunchTick: number;
   growthPausedUntil: number;
-  mutation: ArcadeMutation | null; announcement: string;
+  /** Permanent, stacking. Zero means the creature has not eaten three yet. */
+  mutations: MutationLevels;
+  /** Ticks the launcher is jammed for, after taking a serving in the face. */
+  reloadUntil: number;
+  /** Next seeded spit and next seeded piece of loose metal. */
+  spitAt: number; junkAt: number;
+  threat: Threat | null;
+  announcement: string;
   /** Seeded draw counters. One stream per subsystem, so adding a draw in one
    *  place cannot shift the sequence in another. */
-  rolls: { rhythm: number; craving: number; beat: number };
+  rolls: { rhythm: number; craving: number; beat: number; spit: number; junk: number };
   projectiles: Projectile[]; events: ArcadeEvent[]; nextEventId: number; nextProjectileId: number;
 }
 
 const MAX_EVENTS = 48;
 const LIFE_TICKS = 240;
 const MAX_COMMANDS = Math.ceil(ARENA.maxTicks / ARENA.cooldownTicks) + 1;
-const MUTATION_LABELS: Record<Ingredient, string> = {
-  metal: "MAGNETIC TEETH · Metal curves toward its mouth",
-  balloon: "BALLOON BELLY · Every snack feels lighter",
-  pepper: "PRESSURE BURP · Watch for the next gust",
+export const MUTATION_LABELS: Record<Ingredient, string> = {
+  metal: "MAGNETIC TEETH · it drags the kitchen into its mouth",
+  balloon: "BALLOON BELLY · it is floating off the counter",
+  pepper: "PRESSURE BURP · it spits them back at you",
+};
+export const MUTATION_NAMES: Record<Ingredient, string> = {
+  metal: "Magnetic teeth", balloon: "Balloon belly", pepper: "Pressure burp",
+};
+export const MUTATION_RULES: Record<Ingredient, string> = {
+  metal: "Metal curves in, and so does the cutlery. Come in steep or it clangs.",
+  balloon: "The mouth is rising. Feed it metal for ballast.",
+  pepper: "It spits food back. Feed it pepper to clear a clogged mouth.",
 };
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -234,7 +325,7 @@ function roll(seed: number, stream: number, counter: number): number {
   x = (x ^ (x >>> 16)) >>> 0;
   return x / 4294967296;
 }
-const STREAM = { rhythm: 1, craving: 2, beat: 3 } as const;
+const STREAM = { rhythm: 1, craving: 2, beat: 3, spit: 4, junk: 5 } as const;
 
 function event(state: ArcadeState, type: ArcadeEvent["type"], x: number, y: number, label: string,
                extra?: { ingredient?: Ingredient; craved?: boolean }) {
@@ -315,6 +406,7 @@ function makeCreature(): Creature {
   const placed = mouthFor(1);
   return {
     size: 1, ...placed, aperture: 0, untilOpen: TUNING.rampTicks, track: 0,
+    lift: 0, pressure: 0, clog: 0, open: 0,
     cycle: 0, cycleTick: 0, openTicks: 0, shutTicks: 0,
   };
 }
@@ -332,9 +424,11 @@ export function createArcade(seed: number): ArcadeState {
     wanted: "metal", hunger: TUNING.hungerStart, rage: 0, score: 0, combo: 0,
     totalFeeds: 0, correctFeeds: 0, shots: 0, misses: 0, snubs: 0,
     servings: { metal: 0, balloon: 0, pepper: 0 }, mutationEvents: 0,
-    lastLaunchTick: -ARENA.cooldownTicks, growthPausedUntil: 0, mutation: null,
+    lastLaunchTick: -ARENA.cooldownTicks, growthPausedUntil: 0,
+    mutations: { metal: 0, balloon: 0, pepper: 0 },
+    reloadUntil: 0, spitAt: TUNING.spitEvery, junkAt: TUNING.junkEvery, threat: null,
     announcement: "It only swallows when the mouth is open. Watch the mouth, not the line.",
-    rolls: { rhythm: 0, craving: 0, beat: 0 },
+    rolls: { rhythm: 0, craving: 0, beat: 0, spit: 0, junk: 0 },
     projectiles: [], events: [], nextEventId: 1, nextProjectileId: 1,
   };
 }
@@ -348,7 +442,15 @@ export function createArcade(seed: number): ArcadeState {
  * a cliff.
  */
 function stepCreature(creature: Creature, seed: number, rage: number, hunger: number,
-                      nearest: Projectile | null): void {
+                      nearest: Projectile | null, levels: MutationLevels): void {
+  // Balloon. It inflates all shift and the target goes up with it, until the
+  // pressure wins and it burps itself back down. The burp itself is handled in
+  // `stepArcade`, which owns the events.
+  if (levels.balloon > 0) {
+    const ceiling = TUNING.liftMax + TUNING.liftMaxPerLevel * levels.balloon;
+    creature.lift = quantize(Math.min(ceiling, creature.lift + TUNING.liftPerLevel * levels.balloon));
+    creature.pressure = quantize(Math.min(1, creature.pressure + TUNING.pressurePerLevel * levels.balloon));
+  }
   const total = TUNING.rampTicks * 2 + creature.openTicks + creature.shutTicks;
   creature.cycleTick += 1;
   if (creature.cycleTick >= total) {
@@ -359,6 +461,10 @@ function stepCreature(creature: Creature, seed: number, rage: number, hunger: nu
     creature.shutTicks = shape.shutTicks;
   }
   creature.aperture = apertureAt(creature.cycleTick, creature.openTicks);
+  // What the rules actually test. Kitchen metal stuck in the teeth narrows the
+  // gap without changing the rhythm, so a clogged creature has the same beat and
+  // a smaller hole.
+  creature.open = quantize(creature.aperture * (1 - creature.clog));
   creature.untilOpen = ticksUntilOpen(creature);
 
   const placed = mouthFor(creature.size);
@@ -375,18 +481,46 @@ function stepCreature(creature: Creature, seed: number, rage: number, hunger: nu
     want = clamp(nearest.y - placed.y, -TUNING.trackRange, TUNING.trackRange) * eager;
   }
   creature.track = quantize(creature.track + (want - creature.track) * TUNING.trackRate);
-  creature.y = quantize(placed.y + creature.track);
-  creature.by = quantize(placed.by + creature.track * 0.4);
+  creature.y = quantize(placed.y + creature.track - creature.lift);
+  creature.by = quantize(placed.by + creature.track * 0.4 - creature.lift * 0.7);
 }
 
 function makeProjectile(id: number, ingredient: Ingredient, angle: number): Projectile {
   const radians = angle * Math.PI / 180;
   return {
-    id, ingredient,
+    id, ingredient, kind: "food",
     x: quantize(ARENA.launcher.x + Math.cos(radians) * ARENA.barrelLength),
     y: quantize(ARENA.launcher.y + Math.sin(radians) * ARENA.barrelLength),
     vx: quantize(Math.cos(radians) * 13.6), vy: quantize(Math.sin(radians) * 13.6),
     age: 0, bounces: 0, hazardBounces: 0, assisted: false, faceHits: 0,
+  };
+}
+
+/** Loose kitchen metal, dragged off a shelf by a magnetic mouth. */
+function makeJunk(id: number, seed: number, counter: number): Projectile {
+  const u = roll(seed, STREAM.junk, counter * 2);
+  const v = roll(seed, STREAM.junk, counter * 2 + 1);
+  return {
+    id, ingredient: "metal", kind: "junk",
+    x: quantize(330 + u * 220), y: quantize(470 + v * 90),
+    vx: quantize(0.6 + u), vy: quantize(-1.4 - v),
+    age: 0, bounces: 0, hazardBounces: 0, assisted: true, faceHits: 0,
+  };
+}
+
+/** A serving coming back. Aimed at the launcher, with seeded scatter. */
+function makeSpit(id: number, ingredient: Ingredient, creature: Creature,
+                  seed: number, counter: number, level: number): Projectile {
+  const u = roll(seed, STREAM.spit, counter * 2);
+  const speed = TUNING.spitSpeed + TUNING.spitSpeedPerLevel * level;
+  const dx = ARENA.launcher.x - creature.x;
+  const dy = ARENA.launcher.y - creature.y;
+  const angle = Math.atan2(dy, dx) + (u - 0.5) * 0.16 - 0.22;
+  return {
+    id, ingredient, kind: "spit",
+    x: quantize(creature.x - creature.rx * 0.4), y: quantize(creature.y),
+    vx: quantize(Math.cos(angle) * speed), vy: quantize(Math.sin(angle) * speed),
+    age: 0, bounces: 0, hazardBounces: 0, assisted: true, faceHits: 0,
   };
 }
 
@@ -395,6 +529,7 @@ export function launchFood(state: ArcadeState, ingredient: Ingredient, angle: nu
   if (!FOODS.includes(ingredient)) throw new Error("Unknown ingredient");
   if (!Number.isFinite(angle)) throw new Error("Invalid launch angle");
   if (state.phase !== "playing" || state.tick - state.lastLaunchTick < ARENA.cooldownTicks ||
+      state.tick < state.reloadUntil ||
       state.projectiles.length >= ARENA.maxProjectiles) return false;
   const food = makeProjectile(state.nextProjectileId++, ingredient,
     Math.round(clamp(angle, ARENA.minAngle, ARENA.maxAngle)));
@@ -422,17 +557,6 @@ export function getHazard(tick: number): KitchenHazard | null {
   return { x: 550, y: quantize(center - 57.5), width: 18, height: 115, warning: tick < 2400 };
 }
 
-function mutationAt(mutation: ArcadeMutation | null, tick: number) {
-  if (!mutation || tick < mutation.startsAt || tick >= mutation.endsAt) return null;
-  return mutation.ingredient;
-}
-
-function gustAt(mutation: ArcadeMutation | null, tick: number) {
-  if (mutationAt(mutation, tick) !== "pepper" || !mutation) return false;
-  const cycle = (tick - mutation.startsAt) % 180;
-  return cycle >= 30 && cycle < 72;
-}
-
 /**
  * Everything outside a projectile that its flight depends on. Passing this
  * explicitly is what lets the prediction and the live rules share one physics
@@ -442,8 +566,9 @@ interface Env {
   tick: number;
   mouthX: number; mouthY: number; mouthRx: number; mouthRy: number;
   bellyX: number; bellyY: number; bellyRx: number; bellyRy: number;
+  /** The gap after the clog: what decides whether a serving goes in. */
   aperture: number;
-  mutation: ArcadeMutation | null;
+  levels: MutationLevels;
 }
 
 function envOf(state: ArcadeState): Env {
@@ -451,11 +576,12 @@ function envOf(state: ArcadeState): Env {
   return {
     tick: state.tick, mouthX: c.x, mouthY: c.y, mouthRx: c.rx, mouthRy: c.ry,
     bellyX: c.bx, bellyY: c.by, bellyRx: c.brx, bellyRy: c.bry,
-    aperture: c.aperture, mutation: state.mutation,
+    aperture: c.open, levels: state.mutations,
   };
 }
 
-type Outcome = "flying" | "fed" | "snubbed" | "blocked" | "missed" | "bounced" | "hazard";
+type Outcome = "flying" | "fed" | "snubbed" | "blocked" | "clogged" | "clanged"
+  | "struck" | "missed" | "bounced" | "hazard";
 
 /** One physics step, shared by live play, the prediction and the guide. */
 function moveFood(food: Projectile, env: Env): Outcome {
@@ -465,20 +591,26 @@ function moveFood(food: Projectile, env: Env): Outcome {
   let ax = 0;
   let ay = 0.16;
   // Forces are applied in ingredient order — metal, balloon, pepper — so a
-  // future stack resolves the same way every time.
-  const active = mutationAt(env.mutation, env.tick);
-  if (active === "metal" && food.ingredient === "metal") {
+  // stack always resolves the same way.
+  //
+  // Only metal magnetism is a force on the food. The balloon moves the creature
+  // rather than the kitchen, and pepper sends a projectile the other way; both
+  // are handled where the creature is, not here. That is the whole difference
+  // between this and the mutations it replaces, which were three ways of
+  // nudging a snack in mid-air.
+  if (env.levels.metal > 0 && food.ingredient === "metal" && food.kind !== "spit") {
     const dx = env.mouthX - food.x;
     const dy = env.mouthY - food.y;
     const distance = Math.hypot(dx, dy);
-    if (distance < 510 && distance > 1) {
-      ax += dx / distance * 0.3;
-      ay += dy / distance * 0.3;
+    const range = TUNING.magnetRange + TUNING.magnetRangePerLevel * env.levels.metal;
+    if (distance < range && distance > 1) {
+      const pull = TUNING.magnetPerLevel * env.levels.metal;
+      ax += dx / distance * pull;
+      ay += dy / distance * pull;
       food.assisted = true;
     }
   }
-  if (active === "balloon") { ay = 0.025; food.assisted = true; }
-  if (gustAt(env.mutation, env.tick) && food.x > 440) { ax -= 0.31; ay -= 0.065; food.assisted = true; }
+  if (food.kind === "junk") ay = 0.04;
   food.vx = quantize(clamp(food.vx + ax, -18, 18));
   food.vy = quantize(clamp(food.vy + ay, -16, 16));
   food.x = quantize(food.x + food.vx);
@@ -495,18 +627,25 @@ function moveFood(food: Projectile, env: Env): Outcome {
   // gives the target ring an honest shape to draw.
   const dx = (food.x - env.mouthX) / env.mouthRx;
   const dyFace = (food.y - env.mouthY) / env.mouthRy;
-  if (dx * dx + dyFace * dyFace <= 1) {
-    // A snack that has already been turned away three times is done: it is on
-    // the floor, not still negotiating.
+  if (food.kind !== "spit" && dx * dx + dyFace * dyFace <= 1) {
+    // Loose metal does not care whether the mouth is open; it goes into the
+    // teeth either way, and stays there.
+    if (food.kind === "junk") return "clogged";
     if (food.faceHits >= 3) return "missed";
     if (env.aperture < TUNING.openMin) return "snubbed";
     const dyGap = (food.y - env.mouthY) / (env.mouthRy * Math.max(TUNING.gapFloor, env.aperture));
-    return dx * dx + dyGap * dyGap <= 1 ? "fed" : "snubbed";
+    if (dx * dx + dyGap * dyGap > 1) return "snubbed";
+    // Magnetic teeth catch a metal shot that comes in flat. The way past them
+    // is to arrive steeply — a lob, or a bank off the floor — which is the one
+    // rule in the game that asks for a specific *shape* of shot.
+    if (env.levels.metal > 0 && food.ingredient === "metal"
+        && Math.abs(food.vy) < Math.abs(food.vx) * TUNING.clangSlope) return "clanged";
+    return "fed";
   }
 
   // The chest, below the mouth. A snack that falls short hits the creature
   // rather than passing through it on the way to the floor.
-  if (food.y > env.mouthY + env.mouthRy * 0.9 && food.y < TUNING.bellyFloor) {
+  if (food.kind !== "spit" && food.y > env.mouthY + env.mouthRy * 0.9 && food.y < TUNING.bellyFloor) {
     const bx = (food.x - env.bellyX) / env.bellyRx;
     const by = (food.y - env.bellyY) / env.bellyRy;
     if (bx * bx + by * by <= 1) return food.faceHits >= 3 ? "missed" : "blocked";
@@ -539,6 +678,7 @@ function moveFood(food: Projectile, env: Env): Outcome {
       return "hazard";
     }
   }
+  if (food.kind === "spit" && Math.hypot(food.x - ARENA.launcher.x, food.y - ARENA.launcher.y) < 54) return "struck";
   if (food.age >= LIFE_TICKS || food.x < 50 || food.x > 1150 || food.y < -100 || food.y > 720) return "missed";
   if (food.y >= ARENA.floor - 12 && food.vy > 0) {
     if (food.bounces >= 1) return "missed";
@@ -623,16 +763,35 @@ function acceptFood(state: ArcadeState, food: Projectile) {
     { ingredient: food.ingredient, craved: craving });
 
   state.wanted = FOODS[Math.floor(state.totalFeeds / 3) % FOODS.length];
-  if (state.servings[food.ingredient] % 3 === 0 && !state.mutation) {
-    state.mutation = {
-      ingredient: food.ingredient, phase: "warning", startsAt: state.tick + 90,
-      endsAt: state.tick + 570, gustWarning: false, gustActive: false,
-    };
+
+  // The escapes. One per pair, each of them a serving of the other ingredient,
+  // so the way out of a problem is always another decision about what to feed
+  // it — and taking the escape deepens the mutation you escaped with.
+  if (food.ingredient === "metal" && creature.lift > 0) {
+    creature.lift = quantize(Math.max(0, creature.lift - TUNING.ballastDrops));
+    state.announcement = "Ballast. It comes back down to the counter.";
+    event(state, "burp", creature.x, creature.y, "BALLAST", { ingredient: "metal" });
+  }
+  if (food.ingredient === "pepper" && creature.clog > 0) {
+    creature.clog = quantize(Math.max(0, creature.clog - TUNING.sneezeClears));
+    state.announcement = "It sneezes the cutlery out. Charming.";
+    event(state, "sneeze", creature.x, creature.y, "SNEEZE — MOUTH CLEAR", { ingredient: "pepper" });
+  }
+
+  // Three servings is a level, and a level never goes away.
+  const level = Math.min(TUNING.maxLevel,
+    Math.floor(state.servings[food.ingredient] / TUNING.servingsPerLevel));
+  if (level > state.mutations[food.ingredient]) {
+    state.mutations[food.ingredient] = level;
     state.mutationEvents++;
     state.announcement = MUTATION_LABELS[food.ingredient];
-    event(state, "warning", creature.x, creature.y, MUTATION_LABELS[food.ingredient], { ingredient: food.ingredient });
+    event(state, "mutation", creature.x, creature.y - creature.ry - 60,
+      `${MUTATION_NAMES[food.ingredient].toUpperCase()} ×${level}`, { ingredient: food.ingredient });
   }
 }
+
+/** Total mutation levels the creature is carrying. */
+export const mutationLoad = (levels: MutationLevels) => levels.metal + levels.balloon + levels.pepper;
 
 /** Mutates only the owned state; call exactly once per fixed 1/60-second tick. */
 export function stepArcade(state: ArcadeState): void {
@@ -650,30 +809,63 @@ export function stepArcade(state: ArcadeState): void {
   // starved instead.
   if (state.rage > 0) state.rage = quantize(Math.max(0, state.rage - TUNING.rageCool));
 
-  if (state.mutation) {
-    const mutation = state.mutation;
-    if (state.tick >= mutation.endsAt) {
-      event(state, "recovery", state.creature.x, state.creature.y, "KITCHEN BACK TO NORMAL", { ingredient: mutation.ingredient });
-      state.mutation = null;
-      state.announcement = "Kitchen back to normal. Keep the snacks coming.";
-    } else {
-      if (state.tick >= mutation.startsAt && mutation.phase === "warning") {
-        mutation.phase = "active";
-        event(state, "mutation", state.creature.x, state.creature.y, MUTATION_LABELS[mutation.ingredient], { ingredient: mutation.ingredient });
-      }
-      const previousGust = mutation.gustActive;
-      mutation.gustActive = gustAt(mutation, state.tick);
-      mutation.gustWarning = mutation.phase === "active" && mutation.ingredient === "pepper" &&
-        (state.tick - mutation.startsAt) % 180 < 30;
-      if (mutation.gustActive && !previousGust) event(state, "gust", state.creature.x, state.creature.y, "BURP! HEADWIND", { ingredient: "pepper" });
+  const creature = state.creature;
+  const levels = state.mutations;
+
+  // Balloon: the pressure it has been building lets go, and it drops.
+  if (levels.balloon > 0 && creature.pressure >= 1) {
+    creature.pressure = 0;
+    creature.lift = quantize(creature.lift * TUNING.burpKeeps);
+    state.announcement = "It burps. Everything in the room moves.";
+    event(state, "burp", creature.x, creature.y, "BURP", { ingredient: "balloon" });
+    // A physics event, not a light show: the downdraft shoves whatever is in
+    // the air, so a shot already on its way is part of the joke.
+    for (const item of state.projectiles) {
+      item.vy = quantize(item.vy + 3.4);
+      item.vx = quantize(item.vx * 0.72);
     }
   }
+
+  // Metal: it drags loose kitchen metal into its own teeth. Nothing the player
+  // did causes this; it is what having a magnetic mouth is.
+  if (levels.metal > 0 && state.tick >= state.junkAt) {
+    state.junkAt = state.tick + Math.max(90, Math.round(
+      (TUNING.junkEvery - TUNING.junkEveryPerLevel * levels.metal)
+      * (0.7 + 0.6 * roll(state.seed, STREAM.junk, state.rolls.junk * 3 + 2))));
+    if (state.projectiles.length < ARENA.maxProjectiles) {
+      state.projectiles.push(makeJunk(state.nextProjectileId++, state.seed, state.rolls.junk));
+      event(state, "clog", 440, 500, "THE CUTLERY IS MOVING", { ingredient: "metal" });
+    }
+    state.rolls.junk += 1;
+  }
+
+  // Pepper: it spits a serving back at the launcher, after a tell long enough
+  // to answer.
+  if (levels.pepper > 0 && state.tick >= state.spitAt && state.totalFeeds > 0) {
+    state.spitAt = state.tick + Math.max(120, Math.round(
+      (TUNING.spitEvery - TUNING.spitEveryPerLevel * levels.pepper)
+      * (0.72 + 0.56 * roll(state.seed, STREAM.spit, state.rolls.spit * 3 + 2))));
+    const which = FOODS[Math.floor(roll(state.seed, STREAM.spit, state.rolls.spit * 3 + 1) * 3) % 3];
+    const shot = makeSpit(state.nextProjectileId++, which, creature, state.seed, state.rolls.spit, levels.pepper);
+    state.rolls.spit += 1;
+    if (state.projectiles.length < ARENA.maxProjectiles) {
+      state.projectiles.push(shot);
+      const travel = Math.max(1, Math.hypot(ARENA.launcher.x - shot.x, ARENA.launcher.y - shot.y)
+        / Math.max(1, Math.hypot(shot.vx, shot.vy)));
+      state.threat = { kind: "spit", tick: state.tick + Math.round(travel), x: shot.x, y: shot.y };
+      state.announcement = "It is giving that one back.";
+      event(state, "spit", shot.x, shot.y, "INCOMING", { ingredient: which });
+      // Venting pressure is the balloon's escape from a peppered creature.
+      if (creature.lift > 0) creature.lift = quantize(Math.max(0, creature.lift - TUNING.spitVents));
+    }
+  }
+  if (state.threat && state.threat.tick < state.tick - TUNING.spitTell) state.threat = null;
 
   // The body moves before the food does, so a lunge can meet a shot rather
   // than the shot always arriving at where the mouth used to be.
   let nearest: Projectile | null = null;
   for (const item of state.projectiles) if (!nearest || item.x > nearest.x) nearest = item;
-  stepCreature(state.creature, state.seed, state.rage, state.hunger, nearest);
+  stepCreature(creature, state.seed, state.rage, state.hunger, nearest, levels);
 
   const env = envOf(state);
   const remaining: Projectile[] = [];
@@ -685,7 +877,11 @@ export function stepArcade(state: ArcadeState): void {
       // shut face must not become a second, invisible failure state.
       if (food.faceHits === 0) {
         state.snubs++;
-        state.combo = 0;
+        // A rejection does not break the streak. Mistiming one window while
+        // still landing the rest is a different mistake from putting a snack on
+        // the floor, and a streak counter that reads zero all shift is a
+        // decoration rather than a score.
+        state.combo = Math.max(0, state.combo - 1);
         state.rage = Math.min(100, state.rage + TUNING.snubRage);
         state.announcement = "Shut. You have to catch the window.";
         event(state, "snub", food.x, food.y, "TOO LATE", { ingredient: food.ingredient });
@@ -693,6 +889,28 @@ export function stepArcade(state: ArcadeState): void {
       food.faceHits++;
       bounceOffFace(food, env);
       remaining.push(food);
+    } else if (outcome === "clogged") {
+      // Kitchen metal in the teeth. The rhythm is unchanged; the hole is not.
+      creature.clog = quantize(Math.min(TUNING.clogMax, creature.clog + TUNING.clogPerJunk));
+      state.announcement = "There is a ladle in its teeth now.";
+      event(state, "clog", food.x, food.y, "CLOGGED", { ingredient: "metal" });
+    } else if (outcome === "clanged") {
+      creature.clog = quantize(Math.min(TUNING.clogMax, creature.clog + TUNING.clogPerClang));
+      state.combo = 0;
+      state.rage = Math.min(100, state.rage + TUNING.snubRage);
+      state.snubs++;
+      state.announcement = "The teeth caught it. Come in steeper.";
+      event(state, "clog", food.x, food.y, "CLANG", { ingredient: food.ingredient });
+    } else if (outcome === "struck") {
+      // A serving in the face. The launcher is jammed for a second and a half,
+      // which is the most expensive thing that can happen to a player who is
+      // already behind.
+      state.reloadUntil = state.tick + TUNING.spitJams;
+      state.rage = Math.min(100, state.rage + TUNING.spitRage);
+      state.combo = 0;
+      state.threat = null;
+      state.announcement = "It got you. The launcher is a mess.";
+      event(state, "hit", ARENA.launcher.x, ARENA.launcher.y - 40, "JAMMED", { ingredient: food.ingredient });
     } else if (outcome === "blocked") {
       // Off the chest. It barely notices; the snack is still on the floor.
       if (food.faceHits === 0) {
@@ -715,10 +933,10 @@ export function stepArcade(state: ArcadeState): void {
       if (!charged) {
         state.combo = 0;
         state.rage = Math.min(100, state.rage + TUNING.missRage);
-        state.announcement = "Snack down. Adjust your aim and try again.";
+        state.announcement = "On the floor. Adjust your aim and try again.";
       }
       event(state, "miss", clamp(food.x, 50, 1150), clamp(food.y, 0, 620),
-        charged ? "GONE" : "SNACK DOWN", { ingredient: food.ingredient });
+        charged ? "DROPPED" : "ON THE FLOOR", { ingredient: food.ingredient });
     } else {
       if (outcome === "bounced") event(state, "bounce", food.x, food.y, "ONE MORE CHANCE", { ingredient: food.ingredient });
       if (outcome === "hazard") event(state, "bounce", food.x, food.y, "VENT DEFLECTION", { ingredient: food.ingredient });
@@ -768,7 +986,8 @@ function projectCreature(state: ArcadeState): Creature {
   const c = state.creature;
   return {
     size: c.size, x: c.x, y: c.y, rx: c.rx, ry: c.ry,
-    bx: c.bx, by: c.by, brx: c.brx, bry: c.bry, aperture: c.aperture,
+    bx: c.bx, by: c.by, brx: c.brx, bry: c.bry,
+    aperture: c.aperture, open: c.open, lift: c.lift, pressure: c.pressure, clog: c.clog,
     untilOpen: c.untilOpen, track: c.track, cycle: c.cycle, cycleTick: c.cycleTick,
     openTicks: c.openTicks, shutTicks: c.shutTicks,
   };
@@ -794,12 +1013,12 @@ export function probeFlight(state: ArcadeState, ingredient: Ingredient, angle: n
   const creature = projectCreature(state);
   let snubbed = false;
   for (let i = 1; i <= maxTicks; i++) {
-    stepCreature(creature, state.seed, state.rage, state.hunger, food);
+    stepCreature(creature, state.seed, state.rage, state.hunger, food, state.mutations);
     const env: Env = {
       tick: state.tick + i, mouthX: creature.x, mouthY: creature.y,
       mouthRx: creature.rx, mouthRy: creature.ry,
       bellyX: creature.bx, bellyY: creature.by, bellyRx: creature.brx, bellyRy: creature.bry,
-      aperture: creature.aperture, mutation: state.mutation,
+      aperture: creature.open, levels: state.mutations,
     };
     const outcome = moveFood(food, env);
     if (outcome === "fed") return { fed: true, snubbed, ticks: i, bounces: food.bounces, x: food.x, y: food.y };
@@ -818,12 +1037,12 @@ export function trajectoryPreview(state: ArcadeState, ingredient: Ingredient, an
   const creature = projectCreature(state);
   const points = [{ x: food.x, y: food.y }];
   for (let i = 1; i <= steps; i++) {
-    stepCreature(creature, state.seed, state.rage, state.hunger, food);
+    stepCreature(creature, state.seed, state.rage, state.hunger, food, state.mutations);
     const env: Env = {
       tick: state.tick + i, mouthX: creature.x, mouthY: creature.y,
       mouthRx: creature.rx, mouthRy: creature.ry,
       bellyX: creature.bx, bellyY: creature.by, bellyRx: creature.brx, bellyRy: creature.bry,
-      aperture: creature.aperture, mutation: state.mutation,
+      aperture: creature.open, levels: state.mutations,
     };
     const outcome = moveFood(food, env);
     if (i % 3 === 0) points.push({ x: food.x, y: food.y });

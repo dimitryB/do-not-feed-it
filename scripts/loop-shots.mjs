@@ -94,11 +94,19 @@ function buildSchedule(run) {
   // Capped so a long shift does not turn into an unreadable wall of frames;
   // the ending clip covers whatever the last strip does not.
   const lastStrip = Math.min(run.ticks, STRIP_EVERY * MAX_STRIPS);
-  for (let start = STRIP_EVERY; start + STRIP_FRAMES * STRIP_GAP < lastStrip; start += STRIP_EVERY) {
+  const launches = run.commands.filter((c) => c.kind !== "hatch").map((c) => c.tick);
+  for (let slot = STRIP_EVERY; slot + STRIP_FRAMES * STRIP_GAP < lastStrip; slot += STRIP_EVERY) {
+    // A strip every twenty seconds, but aligned to the nearest launch rather
+    // than to the clock. The bot feeds about twenty times in a hundred seconds,
+    // so a 1.2-second window on a fixed cadence usually contains no shot at all
+    // and the critic — correctly — reads twelve identical frames as a player
+    // doing nothing.
+    const nearest = launches.find((tick) => tick >= slot) ?? slot;
+    const start = Math.max(0, Math.min(nearest - 3 * STRIP_GAP, lastStrip - STRIP_FRAMES * STRIP_GAP));
     for (let i = 0; i < STRIP_FRAMES; i += 1) {
-      shots.push({ tick: start + i * STRIP_GAP, group: `strip-${stamp(start)}`, kind: "strip", index: i });
+      shots.push({ tick: start + i * STRIP_GAP, group: `strip-${stamp(slot)}`, kind: "strip", index: i });
     }
-    shots.push({ tick: start + 3 * STRIP_GAP, group: `hud-${stamp(start)}`, kind: "still", index: 0 });
+    shots.push({ tick: start + 4 * STRIP_GAP, group: `hud-${stamp(slot)}`, kind: "still", index: 0 });
   }
   const clips = [
     { name: "first-mutation", at: run.markers.firstMutation },
@@ -268,7 +276,12 @@ async function main() {
       }
       const entry = groups.get(shot.group) ?? { kind: shot.kind, frames: [], labels: [] };
       entry.frames.push(file);
-      entry.labels.push(`${(shot.tick / TICKS).toFixed(1)}s  score ${state?.score ?? 0}`);
+      const traits = state && state.mutations
+        ? ["metal", "balloon", "pepper"].filter((k) => state.mutations[k] > 0)
+          .map((k) => `${k[0].toUpperCase()}${state.mutations[k]}`).join(" ")
+        : "";
+      entry.labels.push(`${(shot.tick / TICKS).toFixed(1)}s  ${state?.score ?? 0}pts`
+        + `  x${(state?.creature?.size ?? 1).toFixed(2)}${traits ? `  ${traits}` : ""}`);
       groups.set(shot.group, entry);
       if (state && state.phase !== "playing") break;
     }

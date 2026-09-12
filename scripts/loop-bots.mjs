@@ -227,6 +227,9 @@ const BOTS = {
 
 /** How many mutations are live, across both the old and the rewritten rules. */
 function mutationCount(state) {
+  if (state.mutations && !Array.isArray(state.mutations)) {
+    return FOODS.filter((food) => (state.mutations[food] ?? 0) > 0).length;
+  }
   if (Array.isArray(state.mutations)) return state.mutations.filter((item) => item.level > 0).length;
   return state.mutation ? 1 : 0;
 }

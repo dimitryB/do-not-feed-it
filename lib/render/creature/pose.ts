@@ -476,9 +476,15 @@ export class CreatureAnimator {
     const peckish = ramp(fullness, 68, 34);
     const hunger = ramp(fullness, 52, 6);
     const ended = state ? state.phase !== "playing" : false;
-    const mutation = playing || ended ? state?.mutation ?? null : null;
-    const active = mutation?.phase === "active";
-    const warning = mutation?.phase === "warning";
+    // Mutations are permanent and they stack, so they are levels the creature
+    // carries rather than a weather state the kitchen is in.
+    const levels = (playing || ended ? state?.mutations : null) ?? { metal: 0, balloon: 0, pepper: 0 };
+    const metal = clamp01(levels.metal / 3);
+    const balloon = clamp01(levels.balloon / 3);
+    const pepper = clamp01(levels.pepper / 3);
+    const creatureNow = state?.creature;
+    const clog = clamp01(creatureNow?.clog ?? 0);
+    const pressure = clamp01(creatureNow?.pressure ?? 0);
     const clock = time - this.started;
 
     // 1. Baseline. On the title screen it watches the launcher; in play this is
@@ -500,38 +506,47 @@ export class CreatureAnimator {
     this.wear("annoy2", step2);
     this.wear("annoy3", step3);
 
-    // 4. Mutation build-up and the live effect.
-    let strain = 0;
-    if (warning && mutation) {
-      const progress = clamp01(1 - (mutation.startsAt - (state?.tick ?? 0)) / 90);
-      // Eased in hard rather than ramped: anticipation should be almost nothing
-      // for most of the build and then arrive all at once, so the moment the
-      // mutation lands is a change of direction and not the next sample.
-      strain = Math.min(0.95, progress ** 2.4 * 1.3);
-      const beat = reduced ? 1 : 0.86 + 0.14 * Math.sin(clock * 7);
-      if (mutation.ingredient === "metal") this.wear("warnMetal", strain);
-      else if (mutation.ingredient === "balloon") this.wear("warnBalloon", strain * beat);
-      else this.wear("warnPepper", strain * beat);
-    }
+    // 4. What it has become.
+    //
+    // Three permanent levels that stack, so the expressions are blended by
+    // weight rather than switched between: a creature that is magnetic and
+    // floating and full of pepper wears all three at once, which is the whole
+    // point of stacking them.
+    this.wear("activeMetal", metal * 0.9);
+    this.wear("activeBalloon", balloon * 0.9);
+    this.wear("holdPepper", pepper * 0.9);
+    // The pressure that is about to become a burp, and the spit that is about
+    // to leave, are the two moments worth anticipating.
+    const spitting = latest(state, ["spit"], 0.55);
+    if (spitting) this.wear("blowPepper", 1);
+    else if (pepper > 0 && pressure > 0.7) this.wear("warnPepper", pressure);
+    if (balloon > 0 && pressure > 0.8) this.wear("warnBalloon", (pressure - 0.8) * 5);
+
     const landed = latest(state, ["mutation"], 0.7);
-    if (active && mutation) {
-      if (mutation.ingredient === "metal") this.wear("activeMetal", 1);
-      else if (mutation.ingredient === "balloon") this.wear("activeBalloon", 1);
-      else if (mutation.gustActive) this.wear("blowPepper", 1);
-      else if (mutation.gustWarning) this.wear("warnPepper", 1);
-      else this.wear("holdPepper", 1);
-      // The moment it lands gets an overshoot. A mutation that eases in over
-      // ninety ticks and then simply arrives is a ramp, and a ramp is the one
-      // thing a six-frame strip cannot make look like animation.
-      if (landed) {
-        const pop = Math.exp(-landed.age * 6.5);
-        target.squashX += pop * 0.09;
-        target.squashY -= pop * 0.07;
-        target.bodyRise += pop * 16;
-        target.teethLong += pop * 0.45;
-        target.bellySwell += pop * 0.35;
-        if (!reduced) target.antennaShake = Math.max(target.antennaShake, pop);
-      }
+    if (landed) {
+      // The moment a level lands gets an overshoot. A change that eases in and
+      // then simply arrives is a ramp, and a ramp is the one thing a twelve
+      // frame strip cannot make look like animation.
+      const pop = Math.exp(-landed.age * 6.5);
+      target.squashX += pop * 0.09;
+      target.squashY -= pop * 0.07;
+      target.bodyRise += pop * 16;
+      target.teethLong += pop * 0.45;
+      target.bellySwell += pop * 0.35;
+      if (!reduced) target.antennaShake = Math.max(target.antennaShake, pop);
+    }
+    const clogged = latest(state, ["clog"], 0.8);
+    if (clogged) {
+      const pop = Math.exp(-clogged.age * 5);
+      target.jawShift += pop * 0.5;
+      target.teethQuiver = Math.max(target.teethQuiver, pop);
+    }
+    const burped = latest(state, ["burp"], 0.9);
+    if (burped) {
+      const pop = Math.exp(-burped.age * 4.4);
+      target.cheekPuff += pop * 0.9;
+      target.exhale = Math.max(target.exhale, pop);
+      target.squashY -= pop * 0.08;
     }
 
     // 5. Tracking. A snack in the air owns the face until it lands.
@@ -549,7 +564,7 @@ export class CreatureAnimator {
     // 6. One-shot reactions, which override whatever mood they land on.
     const feed = latest(state, ["feed"], 1.5);
     const miss = latest(state, ["miss", "bounce"], 1.2);
-    const recovery = latest(state, ["recovery"], 1.9);
+    const recovery = latest(state, ["sneeze", "burp"], 1.9);
     if (recovery) gaze = this.applyRecovery(recovery);
     if (feed && (!miss || feed.age <= miss.age)) gaze = this.applyGulp(target, feed, reduced) ?? gaze;
     else if (miss) this.applyFlinch(target, miss, reduced);
@@ -624,29 +639,30 @@ export class CreatureAnimator {
     // and two were the same drawing with the red turned up.
     target.rageFlush = step2 * 0.3 + step3 * 0.7;
     target.sweat = step2 * 0.35 + step3 * 0.5;
-    if (warning && mutation?.ingredient === "pepper") {
-      // The warning is pressure, not heat: blotches and sweat on a face that is
-      // still its own colour. Giving the warning the same full-face orange as
-      // the payoff made the tell and the consequence the same picture.
-      target.flush = Math.max(target.flush, strain * 0.42);
-      target.cheekMarks = Math.max(target.cheekMarks, strain);
-      target.sweat = Math.max(target.sweat, strain);
+    if (pepper > 0) {
+      // Heat that deepens with the level rather than switching on. The blotches
+      // are the tell that something is about to come back at you.
+      target.flush = Math.max(target.flush, 0.3 + pepper * 0.55);
+      target.cheekMarks = Math.max(target.cheekMarks, 0.4 + pepper * 0.6);
+      target.sweat = Math.max(target.sweat, 0.25 + pepper * 0.45);
+      if (spitting) target.exhale = 1;
+      if (pressure > 0.7) target.cheekPuff = Math.max(target.cheekPuff, (pressure - 0.7) * 2.4);
     }
-    if (active && mutation?.ingredient === "pepper") {
-      target.flush = Math.max(target.flush, 0.82);
-      target.cheekMarks = 1;
-      target.sweat = Math.max(target.sweat, 0.7);
-      if (mutation.gustActive) target.exhale = 1;
+    // Stretched-skin sheen, balloon only, and it tightens as the pressure
+    // builds toward the burp.
+    if (balloon > 0) {
+      target.taut = Math.max(target.taut, 0.35 + balloon * 0.65);
+      target.bellySwell = Math.max(target.bellySwell, balloon * (0.4 + pressure * 0.5));
     }
-    // Stretched-skin sheen, balloon only. Keyed off the mutation rather than off
-    // `bellySwell`, because a full creature at the end of a survived shift swells
-    // too and must not borrow the balloon's colour.
-    if (mutation?.ingredient === "balloon") target.taut = active ? 1 : strain * 0.7;
-    if (mutation?.ingredient === "metal") {
-      const grip = active ? 1 : strain;
-      target.magnetism = active ? 1 : strain * 0.45;
-      target.teethAlign = active ? 1 : strain * 0.55;
-      if (warning) target.teethQuiver = grip > 0 ? 1 : 0;
+    if (metal > 0) {
+      target.magnetism = Math.max(target.magnetism, 0.4 + metal * 0.6);
+      target.teethAlign = Math.max(target.teethAlign, 0.5 + metal * 0.5);
+      target.teethLong = Math.max(target.teethLong, metal * 0.55);
+      // A mouth full of cutlery does not close cleanly.
+      if (clog > 0.1) {
+        target.teethQuiver = Math.max(target.teethQuiver, clog);
+        target.jawShift += clog * 0.35;
+      }
     }
     if (ended && enraged) {
       target.rageFlush = 1;
@@ -676,7 +692,8 @@ export class CreatureAnimator {
     const creature = state?.creature;
     if (creature && (playing || ended)) {
       const grow = creature.size - 1;
-      const open = clamp01(creature.aperture);
+      // The gap after the clog: what the rules test is what has to be drawn.
+      const open = clamp01(creature.open ?? creature.aperture);
       target.jawOpen = mix(target.jawOpen, open, playing ? 0.88 : 0.35);
       target.mouthWidth = mix(target.mouthWidth, 0.9 + open * 0.34, playing ? 0.7 : 0.3);
       target.lipPress = mix(target.lipPress, open > 0.1 ? 0.1 : 0.75, playing ? 0.7 : 0.3);
@@ -694,12 +711,31 @@ export class CreatureAnimator {
       // which took the draw from 4.0 ms to 5.6 ms at full size. Rise and lean
       // are the same cost as scale here, so they are kept small too and the
       // growth is spent where it is free.
-      target.squashX *= 1 + grow * 0.085;
-      target.squashY *= 1 + grow * 0.08;
-      target.bodyRise += grow * 34;
-      target.headX -= grow * 26;
-      target.headY -= grow * 30;
-      target.lean += grow * 0.1;
+      // The body carries the growth now, not only the mouth.
+      //
+      // The previous split put most of it on the mouth because the mouth is
+      // drawn rather than warped and costs nothing at any size. That was true
+      // and it was the wrong answer: at full size the mouth is open about a
+      // sixth of the time, so five frames in six showed no growth at all, and
+      // the critic reading those frames said so. Scale is capped further down
+      // at ×1.14 by the warp's texture budget; rise and lean are translations,
+      // which resample nothing, so they take as much of the remaining headroom
+      // as the warp region has.
+      target.squashX *= 1 + grow * 0.115;
+      target.squashY *= 1 + grow * 0.105;
+      target.bodyRise += grow * 46;
+      target.headX -= grow * 30;
+      target.headY -= grow * 42;
+      target.lean += grow * 0.12;
+      // The balloon. The rules move the mouth up by `lift`; the picture has to
+      // move with it or the lit target ring is hanging in the air off the face.
+      // The two channels are in the same proportion the growth rise uses, which
+      // is what `scripts/mouth-calibrate.mjs` measured.
+      const lift = creature.lift ?? 0;
+      if (lift > 0) {
+        target.bodyRise += lift * 1.05;
+        target.headY -= lift * 0.95;
+      }
       target.teethLong = Math.max(target.teethLong, clamp01(grow / 1.4) * 0.55);
       // A shut mouth on a big creature is the thing the player is waiting out,
       // so it tightens rather than simply closing.

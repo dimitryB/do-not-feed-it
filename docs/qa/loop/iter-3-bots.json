@@ -1,0 +1,557 @@
+{
+  "generatedAt": "2026-09-12T04:10:15.733Z",
+  "shifts": 200,
+  "seedBase": 1,
+  "capabilities": {
+    "HAS_POWER": false,
+    "HAS_HATCH": false,
+    "HAS_PROBE": true
+  },
+  "bots": [
+    {
+      "bot": "naive",
+      "shifts": 200,
+      "survival": {
+        "p10": 12.3,
+        "median": 12.3,
+        "p90": 12.3,
+        "max": 12.3
+      },
+      "feeds": {
+        "median": 0
+      },
+      "score": {
+        "median": 73
+      },
+      "size": {
+        "median": 1
+      },
+      "causes": {
+        "kitchen-destroyed": 200
+      },
+      "deathSpread": [
+        {
+          "bucket": "0-30s",
+          "count": 200,
+          "share": 100
+        }
+      ],
+      "worstBucketShare": 100
+    },
+    {
+      "bot": "moderate",
+      "shifts": 200,
+      "survival": {
+        "p10": 77.7,
+        "median": 90.3,
+        "p90": 100.9,
+        "max": 122.7
+      },
+      "feeds": {
+        "median": 19
+      },
+      "score": {
+        "median": 5291
+      },
+      "size": {
+        "median": 2.37
+      },
+      "causes": {
+        "empty-belly": 157,
+        "kitchen-destroyed": 43
+      },
+      "deathSpread": [
+        {
+          "bucket": "60-90s",
+          "count": 94,
+          "share": 47
+        },
+        {
+          "bucket": "90-120s",
+          "count": 105,
+          "share": 52.5
+        },
+        {
+          "bucket": "120-150s",
+          "count": 1,
+          "share": 0.5
+        }
+      ],
+      "worstBucketShare": 52.5
+    },
+    {
+      "bot": "good",
+      "shifts": 200,
+      "survival": {
+        "p10": 94.5,
+        "median": 103.5,
+        "p90": 123.5,
+        "max": 155.3
+      },
+      "feeds": {
+        "median": 22
+      },
+      "score": {
+        "median": 6057
+      },
+      "size": {
+        "median": 2.4
+      },
+      "causes": {
+        "empty-belly": 200
+      },
+      "deathSpread": [
+        {
+          "bucket": "60-90s",
+          "count": 18,
+          "share": 9
+        },
+        {
+          "bucket": "90-120s",
+          "count": 155,
+          "share": 77.5
+        },
+        {
+          "bucket": "120-150s",
+          "count": 26,
+          "share": 13
+        },
+        {
+          "bucket": "150-180s",
+          "count": 1,
+          "share": 0.5
+        }
+      ],
+      "worstBucketShare": 77.5
+    }
+  ],
+  "sampleRun": {
+    "seed": 1,
+    "markers": {
+      "firstMutation": null,
+      "firstStack": null,
+      "end": 5994
+    },
+    "ticks": 5994,
+    "seconds": 99.9,
+    "score": 6369,
+    "feeds": 24,
+    "shots": 79,
+    "size": 2.4,
+    "phase": "lost",
+    "cause": "empty-belly",
+    "commands": [
+      {
+        "tick": 0,
+        "ingredient": "metal",
+        "angle": -35
+      },
+      {
+        "tick": 30,
+        "ingredient": "metal",
+        "angle": -38
+      },
+      {
+        "tick": 360,
+        "ingredient": "metal",
+        "angle": -41
+      },
+      {
+        "tick": 390,
+        "ingredient": "metal",
+        "angle": -40
+      },
+      {
+        "tick": 420,
+        "ingredient": "metal",
+        "angle": -41
+      },
+      {
+        "tick": 1216,
+        "ingredient": "balloon",
+        "angle": -34
+      },
+      {
+        "tick": 1284,
+        "ingredient": "balloon",
+        "angle": -47
+      },
+      {
+        "tick": 1314,
+        "ingredient": "balloon",
+        "angle": -36
+      },
+      {
+        "tick": 1639,
+        "ingredient": "balloon",
+        "angle": -42
+      },
+      {
+        "tick": 1669,
+        "ingredient": "balloon",
+        "angle": -37
+      },
+      {
+        "tick": 2259,
+        "ingredient": "pepper",
+        "angle": -47
+      },
+      {
+        "tick": 2289,
+        "ingredient": "pepper",
+        "angle": -35
+      },
+      {
+        "tick": 2566,
+        "ingredient": "pepper",
+        "angle": -49
+      },
+      {
+        "tick": 2596,
+        "ingredient": "pepper",
+        "angle": -38
+      },
+      {
+        "tick": 2827,
+        "ingredient": "pepper",
+        "angle": -48
+      },
+      {
+        "tick": 2857,
+        "ingredient": "pepper",
+        "angle": -37
+      },
+      {
+        "tick": 3044,
+        "ingredient": "metal",
+        "angle": -50
+      },
+      {
+        "tick": 3111,
+        "ingredient": "balloon",
+        "angle": -44
+      },
+      {
+        "tick": 3141,
+        "ingredient": "metal",
+        "angle": -42
+      },
+      {
+        "tick": 3213,
+        "ingredient": "balloon",
+        "angle": -51
+      },
+      {
+        "tick": 3243,
+        "ingredient": "metal",
+        "angle": -47
+      },
+      {
+        "tick": 3303,
+        "ingredient": "balloon",
+        "angle": -48
+      },
+      {
+        "tick": 3333,
+        "ingredient": "metal",
+        "angle": -49
+      },
+      {
+        "tick": 3414,
+        "ingredient": "balloon",
+        "angle": -65
+      },
+      {
+        "tick": 3444,
+        "ingredient": "balloon",
+        "angle": -65
+      },
+      {
+        "tick": 3474,
+        "ingredient": "metal",
+        "angle": -41
+      },
+      {
+        "tick": 3564,
+        "ingredient": "balloon",
+        "angle": -46
+      },
+      {
+        "tick": 3594,
+        "ingredient": "balloon",
+        "angle": -37
+      },
+      {
+        "tick": 3661,
+        "ingredient": "balloon",
+        "angle": -42
+      },
+      {
+        "tick": 3691,
+        "ingredient": "balloon",
+        "angle": -41
+      },
+      {
+        "tick": 3759,
+        "ingredient": "balloon",
+        "angle": -44
+      },
+      {
+        "tick": 3842,
+        "ingredient": "balloon",
+        "angle": -48
+      },
+      {
+        "tick": 3948,
+        "ingredient": "balloon",
+        "angle": -41
+      },
+      {
+        "tick": 4051,
+        "ingredient": "balloon",
+        "angle": -45
+      },
+      {
+        "tick": 4166,
+        "ingredient": "pepper",
+        "angle": -47
+      },
+      {
+        "tick": 4273,
+        "ingredient": "pepper",
+        "angle": -43
+      },
+      {
+        "tick": 4334,
+        "ingredient": "pepper",
+        "angle": -63
+      },
+      {
+        "tick": 4364,
+        "ingredient": "pepper",
+        "angle": -41
+      },
+      {
+        "tick": 4394,
+        "ingredient": "pepper",
+        "angle": -65
+      },
+      {
+        "tick": 4436,
+        "ingredient": "pepper",
+        "angle": -61
+      },
+      {
+        "tick": 4466,
+        "ingredient": "pepper",
+        "angle": -48
+      },
+      {
+        "tick": 4496,
+        "ingredient": "pepper",
+        "angle": -65
+      },
+      {
+        "tick": 4616,
+        "ingredient": "balloon",
+        "angle": -65
+      },
+      {
+        "tick": 4711,
+        "ingredient": "balloon",
+        "angle": -64
+      },
+      {
+        "tick": 4741,
+        "ingredient": "balloon",
+        "angle": -62
+      },
+      {
+        "tick": 4788,
+        "ingredient": "balloon",
+        "angle": -50
+      },
+      {
+        "tick": 4818,
+        "ingredient": "metal",
+        "angle": -37
+      },
+      {
+        "tick": 4849,
+        "ingredient": "balloon",
+        "angle": -65
+      },
+      {
+        "tick": 4879,
+        "ingredient": "balloon",
+        "angle": -65
+      },
+      {
+        "tick": 4909,
+        "ingredient": "balloon",
+        "angle": -56
+      },
+      {
+        "tick": 4939,
+        "ingredient": "balloon",
+        "angle": -38
+      },
+      {
+        "tick": 4995,
+        "ingredient": "balloon",
+        "angle": -50
+      },
+      {
+        "tick": 5039,
+        "ingredient": "balloon",
+        "angle": -65
+      },
+      {
+        "tick": 5069,
+        "ingredient": "balloon",
+        "angle": -65
+      },
+      {
+        "tick": 5099,
+        "ingredient": "balloon",
+        "angle": -63
+      },
+      {
+        "tick": 5130,
+        "ingredient": "balloon",
+        "angle": -53
+      },
+      {
+        "tick": 5160,
+        "ingredient": "balloon",
+        "angle": -42
+      },
+      {
+        "tick": 5218,
+        "ingredient": "balloon",
+        "angle": -54
+      },
+      {
+        "tick": 5248,
+        "ingredient": "balloon",
+        "angle": -39
+      },
+      {
+        "tick": 5292,
+        "ingredient": "balloon",
+        "angle": -65
+      },
+      {
+        "tick": 5338,
+        "ingredient": "balloon",
+        "angle": -53
+      },
+      {
+        "tick": 5368,
+        "ingredient": "balloon",
+        "angle": -51
+      },
+      {
+        "tick": 5438,
+        "ingredient": "balloon",
+        "angle": -64
+      },
+      {
+        "tick": 5469,
+        "ingredient": "balloon",
+        "angle": -64
+      },
+      {
+        "tick": 5533,
+        "ingredient": "balloon",
+        "angle": -49
+      },
+      {
+        "tick": 5563,
+        "ingredient": "balloon",
+        "angle": -39
+      },
+      {
+        "tick": 5593,
+        "ingredient": "balloon",
+        "angle": -65
+      },
+      {
+        "tick": 5635,
+        "ingredient": "pepper",
+        "angle": -53
+      },
+      {
+        "tick": 5665,
+        "ingredient": "pepper",
+        "angle": -39
+      },
+      {
+        "tick": 5695,
+        "ingredient": "pepper",
+        "angle": -65
+      },
+      {
+        "tick": 5733,
+        "ingredient": "pepper",
+        "angle": -53
+      },
+      {
+        "tick": 5763,
+        "ingredient": "pepper",
+        "angle": -36
+      },
+      {
+        "tick": 5793,
+        "ingredient": "metal",
+        "angle": -65
+      },
+      {
+        "tick": 5831,
+        "ingredient": "metal",
+        "angle": -65
+      },
+      {
+        "tick": 5861,
+        "ingredient": "metal",
+        "angle": -64
+      },
+      {
+        "tick": 5891,
+        "ingredient": "pepper",
+        "angle": -56
+      },
+      {
+        "tick": 5921,
+        "ingredient": "pepper",
+        "angle": -55
+      },
+      {
+        "tick": 5951,
+        "ingredient": "pepper",
+        "angle": -37
+      },
+      {
+        "tick": 5981,
+        "ingredient": "pepper",
+        "angle": -59
+      }
+    ],
+    "density": null
+  },
+  "decisionDensity": {
+    "shifts": 8,
+    "median": 80.97,
+    "min": 51.29,
+    "max": 96.7
+  },
+  "gates": {
+    "naiveMedianAtMost45": true,
+    "moderateMedian90to150": true,
+    "moderateDeathSpread": false,
+    "goodAtLeast2p5xNaive": true,
+    "decisionDensityAtLeast6": true
+  },
+  "gatesPass": false,
+  "elapsedSeconds": 1186.3
+}

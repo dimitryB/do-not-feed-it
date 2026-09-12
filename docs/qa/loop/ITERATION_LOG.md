@@ -419,6 +419,115 @@ costing Readability and Fairness every iteration they stay.
 
 ---
 
+## Iteration 3 — stage 3: mutations as permanent, stacking creature changes
+
+**Changed:** the whole mutation system. `ArcadeMutation` — an eight-second
+weather effect on the kitchen, one at a time, on a fixed count — is gone.
+`state.mutations` is three levels that never fall.
+
+- **Three servings of an ingredient is one level, to a maximum of three, and
+  every level is live for the rest of the shift.** They stack.
+- **Metal — a magnetic mouth.** It pulls metal food, and it drags loose kitchen
+  metal off the shelves into its own teeth, which narrows the gap without
+  changing the rhythm. A metal serving that arrives *flat* is caught by the
+  teeth and clogs it further: metal has to be curved in, which is the one rule
+  in the game that asks for a particular shape of shot rather than a particular
+  moment.
+- **Balloon — it inflates and floats.** The mouth rises off the counter and the
+  pressure builds until it burps, drops, and shoves everything in the air.
+- **Pepper — it spits servings back at the launcher.** A hit jams the launcher
+  for over a second and costs composure. The spit is telegraphed.
+- **One escape per pair, and every escape is a serving of the other
+  ingredient**, so the way out of a problem is always another decision about
+  what to feed it — and taking it deepens the mutation you escaped with:
+  metal is ballast for a floating creature; pepper makes it sneeze a clogged
+  mouth clear; a serving it spits back vents the balloon's pressure.
+- Forces resolve in ingredient order, metal → balloon → pepper, so a stack
+  always resolves the same way.
+- The HUD's single mutation banner became a standing row of trait chips with
+  levels, because the mutations no longer take turns.
+
+### Bots — 200 seeded shifts each
+
+| bot      | n   | p10   | median | p90    | max    | feeds | score | size | worst 30s bucket |
+|----------|-----|-------|--------|--------|--------|-------|-------|------|------------------|
+| naive    | 200 | 12.3s | 12.3s  | 12.3s  | 12.3s  | 0     | 73    | 1.00 | 100%             |
+| moderate | 200 | 77.7s | 90.3s  | 100.9s | 122.7s | 19    | 5291  | 2.37 | 52.5%            |
+| good     | 200 | 94.5s | 103.5s | 123.5s | 155.3s | 22    | 6057  | 2.40 | 77.5%            |
+
+Decision density (moderate): 81.0/min. Four of five gates pass; the death
+spread still does not (52.5 %).
+
+The first cut of stage 3 put the moderate bot at 85.3 s, under the 90-second
+floor — the clog, the jams and the clangs together were more than the loop could
+carry — so the junk interval, the clog per piece, the spit interval and the jam
+were all eased before the run above. The bots cannot use the hatch yet, which is
+stage 6 and is the answer to a spit; some of that pressure should come back when
+they can.
+
+### Critic — iteration 3
+
+| Criterion | iter 2 | iter 3 |
+|---|---|---|
+| Agency | 2 | 3 |
+| Consequence | 7 | **2** |
+| Tension | 3 | 3 |
+| Readability | 4 | 3 |
+| Comedy | 6 | 5 |
+| Fairness | 3 | 3 |
+
+Consequence fell five points, which is over this loop's revert threshold, so it
+was checked against the images rather than taken on faith — and the critic was
+right for a reason that had nothing to do with stage 3.
+
+*"The HUD says ITS SIZE went ×1.19 → ×2.31 but the creature is not bigger."*
+Iteration 2 put most of the growth on the mouth, because the mouth is drawn
+rather than warped and costs nothing at any size. The mouth is also **shut about
+five sixths of the time at full size**, so five frames in six showed a creature
+that had not grown. Iteration 2's critic happened to be handed frames with the
+mouth open and praised the growth; iteration 3's was handed frames with it shut
+and could not find any. Both were reporting what they saw. The measurement was
+right and the thing being measured was only sometimes visible.
+
+## Iteration 4 — growth on the body, and a lift the rig can show
+
+- **Growth moved onto the body.** Scale to the warp's ×1.14 texture ceiling,
+  and rise and lean taking most of the warp region's remaining headroom —
+  translations resample nothing, so they are the cheap half of the effect. At
+  full size the creature now fills the serving hatch with its mouth shut.
+- **The balloon's lift is applied to the picture.** It was moving the rules'
+  mouth up by as much as 142 px while the drawn creature stayed where it was,
+  so the lit target ring floated off the face — the exact fault iteration 2
+  existed to fix, reintroduced by stage 3. The lift is now capped at 46 px,
+  which is what the rig can actually show, and the pose channels that carry it
+  are in the proportion `mouth-calibrate` measured.
+- **The mouth the rig draws narrows with the clog**, because the clogged gap is
+  what the rules test.
+- **Spent snacks are only drawn once they are on the floor.** With the chest a
+  collider they were being drawn where they stopped, which pinned decals on the
+  creature's face and left others hanging in mid-air.
+- **At most three score pills at a time, pushed apart so they cannot overlap.**
+  Five landing together rendered as one unreadable smear
+  (`DROPPED   TOO L  TC  DROPPED`).
+- **Fullness and irritation are drawn on the canvas, under the creature.** They
+  were hairlines in the bottom-left corner, six hundred pixels from where the
+  player is looking, and they are the two numbers the run turns on.
+- **A rejected serving no longer breaks the streak** — it costs one. `STREAK ×0`
+  for a whole shift is a decoration, not a score.
+
+Re-calibrated after the pose change: `risePerSize` 33 → 54.5, and the residual
+of the linear fit is under 2 px at every size.
+
+Render, full-grown, canvas filling 1920×1080: **3.70 ms median / 5.00 ms p95 /
+3.82 ms mean**. Inside budget.
+
+Bots after the change (24 shifts): naive 12.3 s, moderate 94.7 s, good 100.4 s.
+Four of five gates. The good bot is now barely ahead of the moderate one, which
+is the next balance problem: the pressures stage 3 added — clog, jam, clang —
+fall on both equally because neither can answer a spit yet.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s
