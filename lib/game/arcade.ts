@@ -33,12 +33,21 @@ export const ARENA = Object.freeze({
    * the lit target ring is this ellipse, so if the two disagree the player is
    * told a snack went in when it did not, or the reverse.
    */
-  mouth: { x: 840, y: 281, rx: 113, ry: 68 }, floor: 620,
+  mouth: { x: 840, y: 279, rx: 113, ry: 69 }, floor: 620,
   tickRate: 60,
   /** Endless in practice; the cap exists so a replay is bounded. Twelve minutes. */
   maxTicks: 43200,
   minAngle: -65, maxAngle: -5, defaultAngle: -52,
-  cooldownTicks: 30, maxProjectiles: 8,
+  /**
+   * One shot every one and a third seconds.
+   *
+   * It was half a second, which is about three shots per open window, and a
+   * twelve-frame strip of play showed the same snack fired at the same angle
+   * three times — a spectator reading that sees a stream of inputs, not a
+   * decision. At this rate a shot is roughly one attempt per window and has to
+   * be committed to.
+   */
+  cooldownTicks: 80, maxProjectiles: 8,
   /** Launch speed. Holding the key charges from `minPower` to `maxPower`. */
   minPower: 9 as number, maxPower: 16 as number, defaultPower: 13 as number, chargeTicks: 40 as number,
   /** The hatch: how long it stays shut, and how long before it can be used again. */
@@ -123,8 +132,8 @@ export const TUNING = Object.freeze({
    * painted mouth are the same object at every size. Re-run it after any change
    * to the pose's growth channels or to the warp.
    */
-  leanPerSize: 6.5,
-  risePerSize: 54.5,
+  leanPerSize: 5.4,
+  risePerSize: 33.1,
   /**
    * How much the mouth grows, per axis.
    *
@@ -134,8 +143,8 @@ export const TUNING = Object.freeze({
    * what the picture can actually show, because a target ring larger than the
    * mouth under it is a lie the player pays for.
    */
-  mouthGrowX: 0.235,
-  mouthGrowY: 0.447,
+  mouthGrowX: 0.237,
+  mouthGrowY: 0.456,
   /** How much the body itself swells, matching the rig's warp. */
   bodyGrow: 0.085,
 
@@ -178,6 +187,7 @@ export const TUNING = Object.freeze({
   liftPerLevel: 0.011,
   liftMax: 16,
   liftMaxPerLevel: 10,
+  liftCrowding: 0.75,
   pressurePerLevel: 0.00085,
   burpKeeps: 0.28,
   ballastDrops: 20,
@@ -208,6 +218,21 @@ export const TUNING = Object.freeze({
   cravingCombo: 80,
   cravingCalm: 13,
   cravingFeed: 5,
+  /**
+   * What a good decision buys, compounding.
+   *
+   * The growth pause was three seconds flat, which meant skill could only ever
+   * fail more slowly — every run needed about the same number of servings, so
+   * runs of equal quality ended in the same place and the deaths never spread.
+   * Cravings read correctly *in a row* pause the growth for longer, and from
+   * the second onward each one takes something back off the appetite — the only
+   * thing in the game that ever falls. The streak is on cravings rather than on
+   * landed servings because a feed streak of four is rare and a read of two in
+   * a row is a decision a player can actually set out to make.
+   */
+  pausePerStreak: 0.55,
+  appetiteReliefFrom: 2,
+  appetiteRelief: 0.05,
   tantrumRage: 12,
   tantrumJams: 40,
 
@@ -333,6 +358,9 @@ export interface ArcadeState {
   /** The tick a new craving may start; a short gap after one resolves. */
   cravingNextAt: number;
   cravingsMet: number; cravingsMissed: number;
+  /** Cravings satisfied in a row. Reading it right repeatedly is the skill the
+   *  compounding reward pays for; a single landed serving is not. */
+  cravingStreak: number;
   /** The hatch. Shut until `hatchClosedUntil`, unusable until `hatchReadyAt`. */
   hatchClosedUntil: number; hatchReadyAt: number; hatchSaves: number;
   /** Drool on the floor: snacks slide and bounce differently until this tick. */
@@ -526,7 +554,7 @@ export function createArcade(seed: number): ArcadeState {
     mutations: { metal: 0, balloon: 0, pepper: 0 },
     reloadUntil: 0, spitAt: TUNING.spitEvery, junkAt: TUNING.junkEvery,
     beatAt: TUNING.beatEvery, threat: null,
-    craving: null, cravingNextAt: 180, cravingsMet: 0, cravingsMissed: 0,
+    craving: null, cravingNextAt: 180, cravingsMet: 0, cravingsMissed: 0, cravingStreak: 0,
     hatchClosedUntil: 0, hatchReadyAt: 0, hatchSaves: 0,
     slickUntil: 0, vent: null, ending: 0, charge: 0,
     announcement: "It only swallows when the mouth is open. Watch the mouth, not the line.",
@@ -549,7 +577,12 @@ function stepCreature(creature: Creature, seed: number, rage: number, hunger: nu
   // pressure wins and it burps itself back down. The burp itself is handled in
   // `stepArcade`, which owns the events.
   if (levels.balloon > 0) {
-    const ceiling = TUNING.liftMax + TUNING.liftMaxPerLevel * levels.balloon;
+    // The ceiling shrinks as the creature grows, because growth has already
+    // spent most of the rig's vertical headroom: a full-grown creature lifted
+    // another forty pixels has its face above the top of the frame, and the
+    // target ring goes with it.
+    const ceiling = (TUNING.liftMax + TUNING.liftMaxPerLevel * levels.balloon)
+      * (1 - TUNING.liftCrowding * sizeT(creature.size));
     creature.lift = quantize(Math.min(ceiling, creature.lift + TUNING.liftPerLevel * levels.balloon));
     creature.pressure = quantize(Math.min(1, creature.pressure + TUNING.pressurePerLevel * levels.balloon));
   }
@@ -913,9 +946,16 @@ function acceptFood(state: ArcadeState, food: Projectile) {
   if (craving) {
     state.cravingsMet += 1;
     state.craving = null;
-    state.growthPausedUntil = state.tick + TUNING.growthPauseTicks;
+    state.cravingStreak += 1;
+    const pause = Math.round(TUNING.growthPauseTicks * (1 + TUNING.pausePerStreak * (state.cravingStreak - 1)));
+    state.growthPausedUntil = state.tick + pause;
     state.hunger = quantize(Math.min(100, state.hunger + TUNING.cravingFeed));
     state.cravingNextAt = state.tick + TUNING.cravingGap;
+    if (state.cravingStreak >= TUNING.appetiteReliefFrom) {
+      state.appetite = quantize(Math.max(1, state.appetite - TUNING.appetiteRelief));
+      event(state, "sneeze", creature.x, creature.y - creature.ry - 40,
+        `IT EASES OFF  ×${state.cravingStreak}`);
+    }
   }
 
   // The escapes. One per pair, each of them a serving of the other ingredient,
@@ -987,6 +1027,7 @@ export function stepArcade(state: ArcadeState): void {
     state.craving = null;
     state.cravingNextAt = state.tick + TUNING.cravingGap;
     state.cravingsMissed += 1;
+    state.cravingStreak = 0;
     state.rage = Math.min(100, state.rage + TUNING.tantrumRage);
     state.reloadUntil = Math.max(state.reloadUntil, state.tick + TUNING.tantrumJams);
     state.announcement = "It wanted that. It swipes the shelf instead.";
@@ -1185,9 +1226,10 @@ export function stepArcade(state: ArcadeState): void {
   }
 
   // Score is time kept fed plus what you did with it.
-  // A slow drip, not a salary: at six points per second, staying alive is worth
-  // having and a landed serving is still unmistakably the thing that scored.
-  if (state.tick % 10 === 0 && state.hunger > 0) {
+  // Time *kept fed*, which is what the score claims to measure. It used to tick
+  // up regardless, so the biggest number on screen kept climbing through a run
+  // that was visibly falling apart.
+  if (state.tick % 10 === 0 && state.hunger > 30) {
     state.score += 1;
   }
 

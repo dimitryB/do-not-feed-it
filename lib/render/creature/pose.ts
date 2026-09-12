@@ -728,9 +728,13 @@ export class CreatureAnimator {
       // as the warp region has.
       target.squashX *= 1 + grow * 0.115;
       target.squashY *= 1 + grow * 0.105;
-      target.bodyRise += grow * 46;
-      target.headX -= grow * 30;
-      target.headY -= grow * 42;
+      // Trimmed from 46/42. At the previous rise a full-grown creature's eyes
+      // were above the top of the frame and the head read as cut off by a bug
+      // rather than as looming. It still fills the serving hatch; it keeps its
+      // face while doing it.
+      target.bodyRise += grow * 32;
+      target.headX -= grow * 26;
+      target.headY -= grow * 28;
       target.lean += grow * 0.12;
       // The balloon. The rules move the mouth up by `lift`; the picture has to
       // move with it or the lit target ring is hanging in the air off the face.

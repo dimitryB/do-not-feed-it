@@ -30,3 +30,23 @@
 .trait-chip.balloon{border-color:#9be9dfaa}.trait-chip.balloon strong{color:#9be9df}
 @media(max-width:1100px){.trait-chip small{display:none}.trait-chip{max-width:none;padding:5px 9px 5px 5px}}
 @media(max-width:650px){.trait-stack{top:auto;bottom:52px;gap:5px}.trait-chip .item-art{width:22px;height:22px}.trait-chip strong{font-size:11px}}
+
+/* Review pass: the mutations are read off the creature now, so the chips are a
+   compact index rather than the primary signal, and the coach line is legible
+   at stream resolution. */
+.trait-chip small{display:none}
+.trait-chip{padding:5px 10px 5px 5px;gap:7px}
+.trait-chip .item-art{width:26px;height:26px}
+.trait-chip strong{font-size:12px}
+.trait-stack{top:16px;gap:6px}
+.hint{font-size:15px;padding:11px 16px}
+.craving{display:none}
+@media(max-width:650px){.hint{font-size:12px;padding:7px 10px}}
+
+/* The mutation chips were ~8px at stream scale. They are an index for the
+   body cues, but an index nobody can read is not one. */
+.trait-chip strong{font-size:15px;letter-spacing:.01em}
+.trait-chip em{font-size:18px}
+.trait-chip .item-art{width:32px;height:32px}
+.trait-chip{padding:7px 13px 7px 6px}
+@media(max-width:650px){.trait-chip strong{font-size:12px}.trait-chip em{font-size:14px}}

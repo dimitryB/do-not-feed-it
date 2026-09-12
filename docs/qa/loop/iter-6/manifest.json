@@ -1,0 +1,157 @@
+{
+  "iteration": 6,
+  "capturedAt": "2026-09-12T16:43:47.351Z",
+  "seed": 20260911,
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "bot": {
+    "name": "moderate",
+    "ticks": 4361,
+    "seconds": 72.68333333333334,
+    "feeds": 22,
+    "score": 5886,
+    "cause": "empty-belly",
+    "markers": {
+      "firstMutation": 112,
+      "firstStack": 2125,
+      "end": 4361
+    }
+  },
+  "browserFinal": {
+    "tick": 4361,
+    "phase": "lost",
+    "failureReason": "empty-belly",
+    "hunger": 0,
+    "rage": 65.17,
+    "score": 5886,
+    "combo": 0,
+    "wanted": "metal",
+    "servings": {
+      "metal": 5,
+      "balloon": 11,
+      "pepper": 6
+    },
+    "mutations": {
+      "metal": 1,
+      "balloon": 3,
+      "pepper": 2
+    },
+    "threat": {
+      "kind": "spit",
+      "tick": 4394,
+      "x": 775.2186,
+      "y": 267.8522
+    },
+    "craving": null,
+    "creature": {
+      "size": 2.2153,
+      "x": 833.4374,
+      "y": 279.3418,
+      "rx": 145.5469,
+      "ry": 107.2382,
+      "bx": 834.0624,
+      "by": 366.9074,
+      "brx": 260.3789,
+      "bry": 165.4951,
+      "aperture": 0,
+      "untilOpen": 74,
+      "track": 44.5906,
+      "lift": 4.0224,
+      "pressure": 0.9613,
+      "clog": 0,
+      "open": 0,
+      "cycle": 38,
+      "cycleTick": 33,
+      "openTicks": 14,
+      "shutTicks": 78
+    },
+    "size": 2.2153,
+    "appetite": 1.31,
+    "snubs": 30,
+    "misses": 48,
+    "totalFeeds": 22,
+    "hatchClosedUntil": 3941,
+    "hatchReadyAt": 4067,
+    "reloadUntil": 4369,
+    "vent": {
+      "since": 2724
+    },
+    "ending": 2,
+    "projectiles": 6,
+    "events": [
+      {
+        "tick": 4272,
+        "type": "bounce",
+        "label": "VENT DEFLECTION",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 4286,
+        "type": "launch",
+        "label": "balloon",
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 4297,
+        "type": "miss",
+        "label": "ON THE FLOOR",
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 4316,
+        "type": "launch",
+        "label": "metal",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 4329,
+        "type": "tantrum",
+        "label": "TANTRUM — SNACKS EVERYWHERE",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 4338,
+        "type": "spit",
+        "label": "INCOMING",
+        "ingredient": "pepper"
+      },
+      {
+        "tick": 4350,
+        "type": "miss",
+        "label": "DROPPED",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 4361,
+        "type": "end",
+        "label": "Empty belly. It has eaten the kitchen.",
+        "ingredient": null
+      }
+    ]
+  },
+  "groups": [
+    "clip-first-mutation",
+    "strip-0020",
+    "hud-0020",
+    "clip-first-stack",
+    "strip-0040",
+    "hud-0040",
+    "clip-ending",
+    "strip-0100",
+    "hud-0100"
+  ],
+  "renderTiming": {
+    "samples": 43,
+    "average": 4.395348837198473,
+    "median": 4.100000000093132,
+    "p95": 5.7000000001862645,
+    "max": 10.799999999813735,
+    "last": 3.6000000000931323,
+    "canvas": {
+      "width": 1920,
+      "height": 1080
+    }
+  }
+}
