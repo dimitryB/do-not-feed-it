@@ -23,13 +23,18 @@ export const WARP_REGION = { x: 470, y: 6, width: 674, height: 508 };
 // Denser than it needs to be for the displacement itself: each cell is drawn
 // under one affine transform, and a coarse grid makes that approximation
 // visible as tile edges wherever the field compresses hard.
-// Reduced from 38x30 when the region was widened so the creature could loom.
+// Put back to 38x30 after a critic found hard-edged rectangular tearing on an
+// inflated belly at 34x27: the draw is priced per cell, so a wider region at the
+// same count was free, but a *smaller* count is not free where the field's
+// gradient is steep, and the balloon's swell is the steepest thing in it.
+// Previously reduced from 38x30 when the region was widened so the creature
+// could loom.
 // The draw cost is per cell, so a wider region at the same count is free and a
 // smaller count is a saving; what a coarser grid costs is fidelity where the
 // field's gradient is steep, which is the balloon inflation and the jaw. Both
 // were checked at full size for tile edges and streaking after this change.
-const CELLS_X = 34;
-const CELLS_Y = 27;
+const CELLS_X = 35;
+const CELLS_Y = 28;
 /** Sub-pixel displacement a cell may have and still be left as the base drew it. */
 const SKIP = 0.34;
 /** How far the chin travels between a wide-open and a closed mouth. */

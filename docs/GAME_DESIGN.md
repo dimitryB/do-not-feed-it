@@ -278,7 +278,149 @@ mutation and changes their next action because of it. An observer understands
 the resulting success or failure. If that does not happen, change the mechanic
 or presentation before adding a chain layer or more ingredients.
 
-## September 9 playable local implementation
+## The loop that now exists — `feat/creature-loop`, GAME_VERSION 2
+
+This section describes the game as implemented, not as planned. Everything above
+it is the original brief and some of it has been superseded; where the two
+disagree, this section and `docs/DECISION_REGISTER.md` are correct. The evidence
+for every number is in `docs/qa/loop/ITERATION_LOG.md`.
+
+### The loop
+
+**Feed it → it changes → adapt.** You must feed the creature to survive, and
+every serving makes it more dangerous. The shift is endless and the creature
+always wins; the score is how long you kept it fed and what you did with the
+time.
+
+### The creature is the difficulty curve
+
+Every accepted serving grows it, front-loaded, to a ×2.4 asymptote: a bigger
+mouth, a shorter window to put something in it, a faster-emptying belly, and a
+head that ends up filling the serving hatch. Growth pauses briefly when a craving
+is satisfied, which is the only brake in the game.
+
+Size plateaus; **appetite does not**. Every serving also raises a permanent
+multiplier on how fast the belly empties, so there is no size at which a player
+with perfect aim is safe. (A cap on both was tried and let a good player survive
+indefinitely.)
+
+**Feeding a creature that is not hungry is the bad decision the title is named
+after.** Above 82 % fullness a serving returns 8 % of its nourishment and grows
+the creature four times as fast. This single rule is what separates a player who
+rations from one who fires on cooldown.
+
+### The mouth is a rhythm and a slot
+
+The mouth opens and closes on a rhythm drawn from the seed, and food is only
+accepted while it is at least half open. An open mouth is a *slot* — as wide as
+the face, only as tall as the mouth is open — so a shot that arrives early meets
+a gap too narrow to fit through. Aim and timing are therefore one skill, not two.
+
+Anything inside the face but outside the gap is **snubbed**: it bounces off, costs
+a little composure once, and can still be banked back in through the next window.
+Anything that falls short hits the **chest** and drops. The creature is a solid
+object.
+
+One seeded **temperament** per shift decides how generous the mouth is, so a seed
+has a character and two equally good shifts last different lengths. About one
+cycle in five it simply is not interested and holds the mouth shut far longer
+than the rhythm has trained you to expect.
+
+### Mutations are permanent, and they stack
+
+Three servings of an ingredient is one level, three levels is the cap, and
+nothing ever wears off.
+
+- **Metal — a magnetic mouth.** It pulls metal food, and it drags loose kitchen
+  metal off the shelves into its own teeth, which narrows the gap without
+  changing the rhythm. A metal serving arriving *flat* is caught by the teeth and
+  clogs it further: metal has to be curved in.
+- **Balloon — it inflates and floats.** The mouth rises off the counter and the
+  pressure builds until it burps, drops, and shoves everything in the air.
+- **Pepper — it spits servings back at the launcher.** A hit jams the launcher
+  and costs composure. The spit is telegraphed.
+
+**One escape per pair, and every escape is a serving of the other ingredient**,
+so the way out of a problem is always another decision about what to feed it —
+and taking it deepens the mutation you escaped with. Metal is ballast for a
+floating creature; pepper makes it sneeze a clogged mouth clear; a serving it
+spits back vents the balloon's pressure. Forces resolve in ingredient order,
+metal → balloon → pepper.
+
+### Cravings are dilemmas
+
+A seeded craving with a visible shrinking timer. Satisfied in time: a large
+bonus, it calms, and growth pauses. Ignored: composure and a tantrum that knocks
+the bench about and costs launcher time. Off-menu food is eaten anyway and still
+counts toward that ingredient's mutation — which is the temptation. It wants
+pepper, pepper is worth three hundred right now, and pepper is what makes it
+spit.
+
+### Two inputs and one reaction
+
+- **Aim and charge.** Hold Space (or the Launch button) to charge the launch
+  speed from 9 to 16. At a single fixed charge only two or three angles land, so
+  the arc and the charge together are the aim.
+- **Slam the hatch** (S, or Down). It shuts the serving hatch for 1.4 seconds.
+  Nothing can be launched while it is shut — that is the cost, and it is a real
+  one when the belly is low — and in exchange a serving it spits back bounces off
+  the hatch instead of your launcher, and a lunge is stopped before it takes the
+  vent off the wall. Pressing it on nothing still costs the lockout.
+
+The trajectory guide is a first-shift aid: a full arc for fifteen seconds of a
+player's first shift, a stub for the rest of it, a shorter stub on the second,
+and nothing after that. What stays is the barrel's own aim stub and the charge
+drawn along it.
+
+### What it does on its own
+
+A seeded beat roughly every eight seconds, more often as it grows:
+
+- a **sneeze** that scatters whatever is in the air and costs bench time;
+- a **lunge**, telegraphed, that takes the extractor vent off the wall if nobody
+  slams the hatch — after which the vent is a permanent moving hazard, because it
+  is damage rather than a schedule;
+- **drool**, which makes the floor slick for eleven seconds: snacks keep more of
+  their speed and get a second bounce, so the bank shot gets better.
+
+### How a shift ends
+
+Never by a clock. An empty belly, or a kitchen destroyed by accumulated
+irritation, or — at twelve minutes, which nobody has reached — outgrowing the
+door. Which of four endings you get is decided by **how big you let it become**:
+
+> Shift over. It has eaten the employee handbook.
+> Shift over. It has eaten the shift supervisor.
+> Shift over. It has eaten the kitchen.
+> Shift over. It no longer fits through the door. It has been promoted.
+
+**STILL EMPLOYED** is kept for a run that beats the player's own best time.
+
+### Determinism
+
+`lib/game/arcade.ts` is the whole rule set. Fixed 1/60-second tick, no wall
+clock, no `Math.random`, every value quantized to four decimals. The seed drives
+the mouth's rhythm, the temperament, the cravings, the spits, the loose metal and
+the beats, through a counter-based hash with one stream per subsystem — so adding
+a draw in one place cannot shift the sequence in another. A command trace of
+launches (ingredient, angle, power) and hatches replays to a byte-identical final
+state; three bot traces are frozen in `tests/fixtures/loop-traces.json` and the
+test suite fails loudly whenever a rule changes without them being regenerated.
+
+### The numbers
+
+All tuning lives in one `TUNING` object at the top of `arcade.ts`, so an
+iteration changes a rule rather than hunting a constant. The collision mouth is
+not chosen but measured: `scripts/mouth-calibrate.mjs` reads the mouth the rig
+actually draws at five sizes and fits `ARENA.mouth` and the growth constants to
+it, so the lit target ring and the painted mouth are the same object to within
+two pixels at every size. Re-run it after any change to the pose's growth
+channels or to the warp.
+
+## September 9 playable local implementation (superseded)
+
+The section below describes the V1 scaffold that the loop redesign replaced. It
+is kept as a record of what the contest entry looked like before the rewrite.
 
 The new physical game is in `lib/game/arcade.ts`; the V0 matching harness remains
 as a historical test fixture. The actual local rules now accept every ingredient

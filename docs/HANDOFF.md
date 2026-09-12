@@ -72,6 +72,44 @@ in the device shell. `npm run test:contract` was **not** run: Hardhat downloads
 the Solidity compiler from a host this session's egress policy blocks. No
 Solidity file is touched on this branch.
 
+## Current state — branch `feat/creature-loop`
+
+The feeding loop was rebuilt. `lib/game/arcade.ts` is no longer the clicker
+described in `docs/dnfi-loop-redesign.md`: the shift is endless, the creature is
+the difficulty curve, food is only accepted through a mouth that opens and closes
+on a seeded rhythm, mutations are permanent and stack, cravings are timed
+dilemmas, the launch has a charge, and there is one reaction verb. What exists is
+described in `docs/GAME_DESIGN.md` under "The loop that now exists"; why each
+choice was made is in `docs/DECISION_REGISTER.md` (D36–D53); the evidence is in
+`docs/qa/loop/ITERATION_LOG.md`, whose final report is the first thing to read.
+
+**Read the final report before changing anything.** It states what passed, what
+did not, and the next step in order. The short version: four of five numeric
+gates pass, the naive "press Space on cooldown" strategy went from surviving
+119.2 s of a 120 s shift to dying in 12.4 s, and the standing failures are the
+death-spread gate and the critic's Readability score — the mutations are named in
+HUD chips rather than in the creature's body.
+
+Do not merge this branch. Nothing in `contracts/`, `worker/` or `db/` was
+touched.
+
+### How to measure a change
+
+- `node --experimental-strip-types scripts/loop-bots.mjs --shifts 200
+  --density-shifts 8 --json docs/qa/loop/iter-N-bots.json
+  --fixtures tests/fixtures/loop-traces.json`
+- `node --experimental-strip-types scripts/loop-shots.mjs --iter N`
+- `node --experimental-strip-types scripts/mouth-calibrate.mjs` after **any**
+  change to the pose's growth channels or to the warp — otherwise the lit target
+  ring stops being the mouth the player can see.
+- `npm run typecheck && npm run lint && npm test && npm run build`.
+- Then a fresh-context critic that sees only the bot table, the decision-density
+  number, the images and the rubric.
+
+**Never edit anything under `lib/` or `app/` while a capture is running.** The
+dev server reloads on write and silently corrupts the whole set; it cost one
+iteration's captures.
+
 ## Current user request
 
 The user asked to implement and heavily polish the selected game on a new branch,

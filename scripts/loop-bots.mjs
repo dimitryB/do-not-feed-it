@@ -113,6 +113,8 @@ function probe(state, ingredient, angle, power) {
 function viewOf(state) {
   if (!HAS_PROBE) return structuredClone(state);
   return {
+    hatchReadyAt: state.hatchReadyAt, slickUntil: state.slickUntil, vent: state.vent,
+    charge: state.charge, cravingNextAt: state.cravingNextAt,
     seed: state.seed, tick: state.tick, phase: state.phase,
     hunger: state.hunger, rage: state.rage, wanted: state.wanted,
     size: state.size, creature: { ...state.creature },
@@ -143,8 +145,11 @@ function ingredientOrder(view) {
 function bestAction(view, feedBelow = 68) {
   if (view.phase !== "playing") return null;
   if (wantsHatch(view)) return { verb: "hatch" };
-  // Holding fire on a full creature is a decision, not idleness.
-  if (view.hunger > feedBelow) return { verb: "wait" };
+  // A craving about to run out is worth breaking the rationing rule for: the
+  // bonus and the growth pause are the biggest single reward in the game, and
+  // the tantrum is the biggest avoidable loss.
+  const urgent = view.craving && view.craving.endsAt - view.tick < 150;
+  if (view.hunger > feedBelow && !urgent) return { verb: "wait" };
   let best = null;
   for (const ingredient of ingredientOrder(view)) {
     const craved = ingredient === view.wanted;
@@ -204,10 +209,14 @@ function canLaunch(view) {
  */
 function wantsHatch(view) {
   if (!HAS_HATCH || view.phase !== "playing") return false;
-  if (view.hatchClosedUntil > view.tick) return false;
+  if ((view.hatchReadyAt ?? 0) > view.tick) return false;
   const threat = view.threat;
   if (!threat) return false;
-  return threat.tick - view.tick <= 24 && threat.tick > view.tick;
+  // Close it late enough that the lockout still covers the arrival, and never
+  // on nothing: the lockout is the cost and spending it blind is how a bot
+  // stops resembling a player.
+  const lead = threat.kind === "lunge" ? 30 : 22;
+  return threat.tick > view.tick && threat.tick - view.tick <= lead;
 }
 
 /* ------------------------------------------------------------------ *

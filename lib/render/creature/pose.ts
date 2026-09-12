@@ -652,7 +652,12 @@ export class CreatureAnimator {
     // builds toward the burp.
     if (balloon > 0) {
       target.taut = Math.max(target.taut, 0.35 + balloon * 0.65);
-      target.bellySwell = Math.max(target.bellySwell, balloon * (0.4 + pressure * 0.5));
+      // Halved. Folded into the uniform scale, a large swell on top of a
+      // full-grown creature slams into the warp's ×1.14 ceiling, and the grid
+      // clamp that stops a cell inverting then shows up as hard-edged
+      // rectangular tearing across the belly. The lift and the sheen carry the
+      // balloon; the swell only has to support them.
+      target.bellySwell = Math.max(target.bellySwell, balloon * (0.2 + pressure * 0.28));
     }
     if (metal > 0) {
       target.magnetism = Math.max(target.magnetism, 0.4 + metal * 0.6);

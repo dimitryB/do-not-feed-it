@@ -4,10 +4,10 @@ import { ARENA, type ArcadeState, type Ingredient } from "../../lib/game/arcade"
 import { createScene } from "../../lib/render/scene";
 import { DEV_HOOKS, devHookBag, devRender, drawCostSummary, recordDrawCost, resetDrawCost } from "../../lib/dev/hook";
 
-export function GameCanvas({runRef,angle,selected,playing,reduced,onAim}:{runRef:RefObject<ArcadeState|null>;angle:number;selected:Ingredient;playing:boolean;reduced:boolean;onAim:(angle:number)=>void}) {
+export function GameCanvas({runRef,angle,selected,playing,reduced,guideSteps,onAim}:{runRef:RefObject<ArcadeState|null>;angle:number;selected:Ingredient;playing:boolean;reduced:boolean;guideSteps:number;onAim:(angle:number)=>void}) {
   const canvasRef=useRef<HTMLCanvasElement>(null);
-  const propsRef=useRef({angle,selected,playing,reduced});
-  useEffect(()=>{propsRef.current={angle,selected,playing,reduced};},[angle,selected,playing,reduced]);
+  const propsRef=useRef({angle,selected,playing,reduced,guideSteps});
+  useEffect(()=>{propsRef.current={angle,selected,playing,reduced,guideSteps};},[angle,selected,playing,reduced,guideSteps]);
   useEffect(()=>{
     const canvas=canvasRef.current;if(!canvas)return;
     const context=canvas.getContext('2d');if(!context)return;
@@ -25,7 +25,7 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,onAim}:{runRef
         if(pose){state=pose.state;aim=pose.angle;food=pose.selected;live=pose.playing;}
       }
       const started=performance.now();
-      scene.draw(context,canvas.width,canvas.height,state,aim,food,live,motion,time);
+      scene.draw(context,canvas.width,canvas.height,state,aim,food,live,motion,time,p.guideSteps);
       if(DEV_HOOKS)recordDrawCost(performance.now()-started);
       frame=requestAnimationFrame(draw);
     };

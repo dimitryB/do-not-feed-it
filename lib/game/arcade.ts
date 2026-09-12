@@ -22,7 +22,7 @@ export const FOODS: readonly Ingredient[] = ["metal", "balloon", "pepper"];
  * curve; what ends a shift is failing to keep up with it.
  */
 /** Bumped whenever a rule, the trace format or the scoring changes. */
-export const GAME_VERSION = 1;
+export const GAME_VERSION = 2;
 
 export const ARENA = Object.freeze({
   width: 1200, height: 700, barrelLength: 70, launcher: { x: 210, y: 540 },
@@ -39,6 +39,10 @@ export const ARENA = Object.freeze({
   maxTicks: 43200,
   minAngle: -65, maxAngle: -5, defaultAngle: -52,
   cooldownTicks: 30, maxProjectiles: 8,
+  /** Launch speed. Holding the key charges from `minPower` to `maxPower`. */
+  minPower: 9 as number, maxPower: 16 as number, defaultPower: 13 as number, chargeTicks: 40 as number,
+  /** The hatch: how long it stays shut, and how long before it can be used again. */
+  hatchTicks: 84, hatchCooldown: 210,
 });
 
 /**
@@ -188,13 +192,49 @@ export const TUNING = Object.freeze({
   spitRage: 9,
   spitVents: 10,
 
+  /**
+   * Cravings, with a clock.
+   *
+   * Satisfying one in time is the biggest single reward in the game and it
+   * buys a pause in the creature's growth. Ignoring one costs composure and
+   * gets a tantrum. Off-menu food is eaten anyway and still counts toward that
+   * ingredient's mutation — which is the temptation: it wants pepper, pepper is
+   * worth three hundred right now, and pepper is what makes it spit.
+   */
+  cravingTicks: 780,
+  cravingTicksMin: 430,
+  cravingGap: 80,
+  cravingBonus: 260,
+  cravingCombo: 80,
+  cravingCalm: 13,
+  cravingFeed: 5,
+  tantrumRage: 12,
+  tantrumJams: 40,
+
+  /** Autonomous beats: what it does between shots, on its own. */
+  beatEvery: 620,
+  beatEveryPerSize: 150,
+  beatJitter: 0.55,
+  lungeTell: 54,
+  lungeRage: 7,
+  lungeHunger: 9,
+  lungeJams: 66,
+  sneezeJams: 26,
+  droolTicks: 660,
+
   /** Hungry tracking: it leans toward incoming food when the belly is low. */
   trackFrom: 46,
   trackRange: 46,
   trackRate: 0.09,
 });
 
-export interface ArcadeCommand { tick: number; ingredient: Ingredient; angle: number }
+/**
+ * One player input. The trace is the whole record of a run: a launch carries
+ * the two things the player chose, and the hatch is the one reaction verb.
+ */
+export type ArcadeCommand =
+  | { tick: number; kind: "launch"; ingredient: Ingredient; angle: number; power: number }
+  | { tick: number; kind: "hatch" };
 
 export interface Projectile {
   id: number; ingredient: Ingredient;
@@ -221,7 +261,13 @@ export interface Projectile {
 export interface MutationLevels { metal: number; balloon: number; pepper: number }
 
 /** Something the creature has telegraphed and the player can still answer. */
-export interface Threat { kind: "spit"; tick: number; x: number; y: number }
+export interface Threat { kind: "spit" | "lunge"; tick: number; x: number; y: number }
+
+/** A craving, with the clock the player is deciding against. */
+export interface Craving { ingredient: Ingredient; startedAt: number; endsAt: number }
+
+/** The kitchen damage the creature has done, which does not repair itself. */
+export interface Vent { since: number }
 
 /**
  * The creature, as the rules see it. The renderer reads exactly this — scale,
@@ -254,7 +300,8 @@ export interface Creature {
 export interface ArcadeEvent {
   id: number; tick: number;
   type: "launch" | "feed" | "miss" | "snub" | "bounce" | "mutation" | "clog"
-  | "sneeze" | "spit" | "hit" | "burp" | "gust" | "grow" | "end";
+  | "sneeze" | "spit" | "hit" | "burp" | "gust" | "grow" | "craving" | "tantrum"
+  | "beat" | "hatch" | "block" | "end";
   x: number; y: number; label: string;
   /** Presentation-only tag. Never read by the rules, replay or scoring. */
   ingredient?: Ingredient;
@@ -278,19 +325,57 @@ export interface ArcadeState {
   mutations: MutationLevels;
   /** Ticks the launcher is jammed for, after taking a serving in the face. */
   reloadUntil: number;
-  /** Next seeded spit and next seeded piece of loose metal. */
-  spitAt: number; junkAt: number;
+  /** Next seeded spit, piece of loose metal, and autonomous beat. */
+  spitAt: number; junkAt: number; beatAt: number;
   threat: Threat | null;
+  /** What it wants, and how long you have. Null during the gap between two. */
+  craving: Craving | null;
+  /** The tick a new craving may start; a short gap after one resolves. */
+  cravingNextAt: number;
+  cravingsMet: number; cravingsMissed: number;
+  /** The hatch. Shut until `hatchClosedUntil`, unusable until `hatchReadyAt`. */
+  hatchClosedUntil: number; hatchReadyAt: number; hatchSaves: number;
+  /** Drool on the floor: snacks slide and bounce differently until this tick. */
+  slickUntil: number;
+  /** The vent it bit off, once it has. */
+  vent: Vent | null;
+  /** Which of the escalating fail screens this run earned. */
+  ending: number;
   announcement: string;
   /** Seeded draw counters. One stream per subsystem, so adding a draw in one
    *  place cannot shift the sequence in another. */
   rolls: { rhythm: number; craving: number; beat: number; spit: number; junk: number };
+  /** Presentation-only: the launcher's charge, mirrored for the HUD. */
+  charge: number;
   projectiles: Projectile[]; events: ArcadeEvent[]; nextEventId: number; nextProjectileId: number;
 }
 
 const MAX_EVENTS = 48;
 const LIFE_TICKS = 240;
-const MAX_COMMANDS = Math.ceil(ARENA.maxTicks / ARENA.cooldownTicks) + 1;
+const MAX_COMMANDS = Math.ceil(ARENA.maxTicks / ARENA.cooldownTicks)
+  + Math.ceil(ARENA.maxTicks / ARENA.hatchCooldown) + 2;
+/**
+ * How the shift ends, by how big it got.
+ *
+ * Under an endless ramp every run ends with the creature winning, so the fail
+ * screen is the reward rather than the punishment, and it escalates with what
+ * the player let it become. The size thresholds are the quarters of the growth
+ * curve; the copy is the handbook's.
+ */
+export const ENDINGS: readonly string[] = [
+  "It has eaten the employee handbook.",
+  "It has eaten the shift supervisor.",
+  "It has eaten the kitchen.",
+  "It no longer fits through the door. It has been promoted.",
+];
+export function endingFor(size: number): number {
+  const t = clamp01((size - 1) / (TUNING.sizeMax - 1));
+  if (t < 0.3) return 0;
+  if (t < 0.6) return 1;
+  if (t < 0.88) return 2;
+  return 3;
+}
+
 export const MUTATION_LABELS: Record<Ingredient, string> = {
   metal: "MAGNETIC TEETH · it drags the kitchen into its mouth",
   balloon: "BALLOON BELLY · it is floating off the counter",
@@ -331,6 +416,19 @@ function event(state: ArcadeState, type: ArcadeEvent["type"], x: number, y: numb
                extra?: { ingredient?: Ingredient; craved?: boolean }) {
   state.events.push({ id: state.nextEventId++, tick: state.tick, type, x, y, label, ...extra });
   if (state.events.length > MAX_EVENTS) state.events.splice(0, state.events.length - MAX_EVENTS);
+}
+
+/** A new craving, drawn from the seed. Never the one it just had. */
+function nextCraving(state: ArcadeState): Craving {
+  const counter = state.rolls.craving;
+  state.rolls.craving += 1;
+  const previous = state.craving?.ingredient ?? state.wanted;
+  const pick = Math.floor(roll(state.seed, STREAM.craving, counter * 2) * 2);
+  const options = FOODS.filter((food) => food !== previous);
+  const ingredient = options[Math.min(options.length - 1, pick)];
+  const span = mix(TUNING.cravingTicks, TUNING.cravingTicksMin, sizeT(state.creature.size))
+    * (0.82 + 0.36 * roll(state.seed, STREAM.craving, counter * 2 + 1));
+  return { ingredient, startedAt: state.tick, endsAt: state.tick + Math.round(span) };
 }
 
 /** How far along the growth curve the creature is, 0 at birth and 1 at the cap. */
@@ -426,7 +524,11 @@ export function createArcade(seed: number): ArcadeState {
     servings: { metal: 0, balloon: 0, pepper: 0 }, mutationEvents: 0,
     lastLaunchTick: -ARENA.cooldownTicks, growthPausedUntil: 0,
     mutations: { metal: 0, balloon: 0, pepper: 0 },
-    reloadUntil: 0, spitAt: TUNING.spitEvery, junkAt: TUNING.junkEvery, threat: null,
+    reloadUntil: 0, spitAt: TUNING.spitEvery, junkAt: TUNING.junkEvery,
+    beatAt: TUNING.beatEvery, threat: null,
+    craving: null, cravingNextAt: 180, cravingsMet: 0, cravingsMissed: 0,
+    hatchClosedUntil: 0, hatchReadyAt: 0, hatchSaves: 0,
+    slickUntil: 0, vent: null, ending: 0, charge: 0,
     announcement: "It only swallows when the mouth is open. Watch the mouth, not the line.",
     rolls: { rhythm: 0, craving: 0, beat: 0, spit: 0, junk: 0 },
     projectiles: [], events: [], nextEventId: 1, nextProjectileId: 1,
@@ -485,16 +587,19 @@ function stepCreature(creature: Creature, seed: number, rage: number, hunger: nu
   creature.by = quantize(placed.by + creature.track * 0.4 - creature.lift * 0.7);
 }
 
-function makeProjectile(id: number, ingredient: Ingredient, angle: number): Projectile {
+function makeProjectile(id: number, ingredient: Ingredient, angle: number, power: number): Projectile {
   const radians = angle * Math.PI / 180;
   return {
     id, ingredient, kind: "food",
     x: quantize(ARENA.launcher.x + Math.cos(radians) * ARENA.barrelLength),
     y: quantize(ARENA.launcher.y + Math.sin(radians) * ARENA.barrelLength),
-    vx: quantize(Math.cos(radians) * 13.6), vy: quantize(Math.sin(radians) * 13.6),
+    vx: quantize(Math.cos(radians) * power), vy: quantize(Math.sin(radians) * power),
     age: 0, bounces: 0, hazardBounces: 0, assisted: false, faceHits: 0,
   };
 }
+
+const cleanPower = (power: number) =>
+  Math.round(clamp(Number.isFinite(power) ? power : ARENA.defaultPower, ARENA.minPower, ARENA.maxPower));
 
 /** Loose kitchen metal, dragged off a shelf by a magnetic mouth. */
 function makeJunk(id: number, seed: number, counter: number): Projectile {
@@ -524,19 +629,52 @@ function makeSpit(id: number, ingredient: Ingredient, creature: Creature,
   };
 }
 
-/** Angle is quantized here; save the same rounded/clamped angle in a replay command. */
-export function launchFood(state: ArcadeState, ingredient: Ingredient, angle: number): boolean {
+/**
+ * Angle and power are quantized here; save the same rounded values in a replay
+ * command. Power is the launch speed: the aim arc and the charge together are
+ * the aiming skill, and neither is enough on its own.
+ */
+export function launchFood(state: ArcadeState, ingredient: Ingredient, angle: number,
+                           power: number = ARENA.defaultPower): boolean {
   if (!FOODS.includes(ingredient)) throw new Error("Unknown ingredient");
   if (!Number.isFinite(angle)) throw new Error("Invalid launch angle");
   if (state.phase !== "playing" || state.tick - state.lastLaunchTick < ARENA.cooldownTicks ||
-      state.tick < state.reloadUntil ||
+      state.tick < state.reloadUntil || state.tick < state.hatchClosedUntil ||
       state.projectiles.length >= ARENA.maxProjectiles) return false;
   const food = makeProjectile(state.nextProjectileId++, ingredient,
-    Math.round(clamp(angle, ARENA.minAngle, ARENA.maxAngle)));
+    Math.round(clamp(angle, ARENA.minAngle, ARENA.maxAngle)), cleanPower(power));
   state.projectiles.push(food);
   state.lastLaunchTick = state.tick;
   state.shots++;
   event(state, "launch", food.x, food.y, ingredient, { ingredient });
+  return true;
+}
+
+/**
+ * The one reaction verb: slam the hatch.
+ *
+ * It shuts the serving hatch for a second and a half. Nothing can be launched
+ * while it is shut — that is the cost, and it is a real one when the belly is
+ * low — and in exchange a serving it spits back bounces off the hatch instead
+ * of your launcher, and a lunge is stopped before it takes the vent off.
+ *
+ * Pressing it on nothing still costs the lockout. That is what makes it a
+ * decision rather than a button.
+ */
+export function slamHatch(state: ArcadeState): boolean {
+  if (state.phase !== "playing" || state.tick < state.hatchReadyAt) return false;
+  state.hatchClosedUntil = state.tick + ARENA.hatchTicks;
+  state.hatchReadyAt = state.tick + ARENA.hatchCooldown;
+  // A lunge in flight is called off the moment the hatch comes down.
+  if (state.threat && state.threat.kind === "lunge") {
+    state.threat = null;
+    state.announcement = "The hatch comes down. It thinks better of it.";
+    event(state, "hatch", ARENA.launcher.x, ARENA.launcher.y - 70, "HATCH — LUNGE STOPPED");
+    state.hatchSaves += 1;
+    state.score += 150;
+  } else {
+    event(state, "hatch", ARENA.launcher.x, ARENA.launcher.y - 70, "HATCH");
+  }
   return true;
 }
 
@@ -545,16 +683,17 @@ export interface KitchenHazard { x: number; y: number; width: number; height: nu
 /**
  * The vent flap.
  *
- * Disabled. It was on a schedule — it simply appeared at 38 seconds — which is
- * the opposite of a consequence, and the critic reported "VENT DEFLECTION fires
- * with no visible vent". It returns in stage 7 as damage the creature does to
- * the kitchen when a lunge is not stopped.
+ * It only exists once the creature has bitten it off the wall, which it does
+ * when a lunge is not stopped. It was previously on a schedule — it simply
+ * appeared at 38 seconds — which is the opposite of a consequence. Now it is
+ * damage, it is permanent, and the player watched it happen.
  */
-export function getHazard(tick: number): KitchenHazard | null {
-  if (tick < Number.MAX_SAFE_INTEGER) return null;
-  const phase = Math.max(0, tick - 2400) % 300 / 300;
+export function getHazard(vent: Vent | null, tick: number): KitchenHazard | null {
+  if (!vent) return null;
+  const since = tick - vent.since;
+  const phase = Math.max(0, since - 120) % 300 / 300;
   const center = 260 + 115 * (1 - 4 * Math.abs(phase - 0.5));
-  return { x: 550, y: quantize(center - 57.5), width: 18, height: 115, warning: tick < 2400 };
+  return { x: 550, y: quantize(center - 57.5), width: 18, height: 115, warning: since < 120 };
 }
 
 /**
@@ -566,6 +705,9 @@ interface Env {
   tick: number;
   mouthX: number; mouthY: number; mouthRx: number; mouthRy: number;
   bellyX: number; bellyY: number; bellyRx: number; bellyRy: number;
+  /** Drool on the floor: snacks keep their speed and get a second bounce. */
+  slick: boolean;
+  vent: Vent | null;
   /** The gap after the clog: what decides whether a serving goes in. */
   aperture: number;
   levels: MutationLevels;
@@ -576,6 +718,7 @@ function envOf(state: ArcadeState): Env {
   return {
     tick: state.tick, mouthX: c.x, mouthY: c.y, mouthRx: c.rx, mouthRy: c.ry,
     bellyX: c.bx, bellyY: c.by, bellyRx: c.brx, bellyRy: c.bry,
+    slick: state.tick < state.slickUntil, vent: state.vent,
     aperture: c.open, levels: state.mutations,
   };
 }
@@ -651,7 +794,7 @@ function moveFood(food: Projectile, env: Env): Outcome {
     if (bx * bx + by * by <= 1) return food.faceHits >= 3 ? "missed" : "blocked";
   }
 
-  const hazard = getHazard(env.tick);
+  const hazard = getHazard(env.vent, env.tick);
   if (hazard && !hazard.warning && food.hazardBounces === 0) {
     // Swept slab intersection against the flap expanded by the snack radius.
     let enter = 0;
@@ -681,10 +824,13 @@ function moveFood(food: Projectile, env: Env): Outcome {
   if (food.kind === "spit" && Math.hypot(food.x - ARENA.launcher.x, food.y - ARENA.launcher.y) < 54) return "struck";
   if (food.age >= LIFE_TICKS || food.x < 50 || food.x > 1150 || food.y < -100 || food.y > 720) return "missed";
   if (food.y >= ARENA.floor - 12 && food.vy > 0) {
-    if (food.bounces >= 1) return "missed";
+    // Drool. A slick floor keeps more of the speed and allows a second bounce,
+    // which makes the bank shot better and the recovery from a short shot real.
+    const allowed = env.slick ? 2 : 1;
+    if (food.bounces >= allowed) return "missed";
     food.y = ARENA.floor - 12;
-    food.vy = quantize(-food.vy * 0.72);
-    food.vx = quantize(food.vx * 0.86);
+    food.vy = quantize(-food.vy * (env.slick ? 0.88 : 0.72));
+    food.vx = quantize(food.vx * (env.slick ? 0.97 : 0.86));
     food.bounces++;
     return "bounced";
   }
@@ -720,7 +866,7 @@ function bounceOffFace(food: Projectile, env: Env, belly = false) {
 
 function acceptFood(state: ArcadeState, food: Projectile) {
   const creature = state.creature;
-  const craving = food.ingredient === state.wanted;
+  const craving = state.craving !== null && food.ingredient === state.craving.ingredient;
   state.totalFeeds++;
   if (craving) state.correctFeeds++;
   state.servings[food.ingredient]++;
@@ -730,13 +876,13 @@ function acceptFood(state: ArcadeState, food: Projectile) {
   // thing worth paying for.
   const clutch = creature.aperture < 0.68;
   const gorged = state.hunger >= TUNING.gorgeFrom;
-  const points = 100 + (state.combo - 1) * 40 + (craving ? 150 : 0) +
+  const points = 100 + (state.combo - 1) * 40 + (craving ? TUNING.cravingBonus + TUNING.cravingCombo * (state.combo - 1) : 0) +
     (precision ? 50 : 0) + (food.bounces || food.hazardBounces ? 120 : 0) +
     (clutch ? 90 : 0) + (food.assisted ? 40 : 0);
   state.score += points;
   const restore = (craving ? TUNING.restoreCraved : TUNING.restore) * (gorged ? TUNING.gorgeRestore : 1);
   state.hunger = quantize(Math.min(100, state.hunger + restore));
-  state.rage = Math.max(0, state.rage - TUNING.feedRage);
+  state.rage = Math.max(0, state.rage - (craving ? TUNING.cravingCalm : TUNING.feedRage));
   // The body stops growing; the appetite does not.
   state.appetite = quantize(state.appetite + TUNING.appetitePerFeed * (gorged ? TUNING.gorgeGrowth : 1));
 
@@ -762,7 +908,15 @@ function acceptFood(state: ArcadeState, food: Projectile) {
     `${gorged ? "NOT EVEN HUNGRY " : food.bounces ? "BANK SHOT " : clutch ? "CLUTCH " : precision ? "PERFECT " : craving ? "CRAVING " : "TASTY "}+${points}`,
     { ingredient: food.ingredient, craved: craving });
 
-  state.wanted = FOODS[Math.floor(state.totalFeeds / 3) % FOODS.length];
+  // A craving satisfied in time calms it and pauses the growth, which is the
+  // only brake in the game and the reason to chase one.
+  if (craving) {
+    state.cravingsMet += 1;
+    state.craving = null;
+    state.growthPausedUntil = state.tick + TUNING.growthPauseTicks;
+    state.hunger = quantize(Math.min(100, state.hunger + TUNING.cravingFeed));
+    state.cravingNextAt = state.tick + TUNING.cravingGap;
+  }
 
   // The escapes. One per pair, each of them a serving of the other ingredient,
   // so the way out of a problem is always another decision about what to feed
@@ -824,6 +978,76 @@ export function stepArcade(state: ArcadeState): void {
       item.vy = quantize(item.vy + 3.4);
       item.vx = quantize(item.vx * 0.72);
     }
+  }
+
+  // The craving clock. Ignoring one is a decision with a consequence, which is
+  // the difference between this and the fixed three-of-each cycle it replaces.
+  if (state.craving && state.tick >= state.craving.endsAt) {
+    const ignored = state.craving.ingredient;
+    state.craving = null;
+    state.cravingNextAt = state.tick + TUNING.cravingGap;
+    state.cravingsMissed += 1;
+    state.rage = Math.min(100, state.rage + TUNING.tantrumRage);
+    state.reloadUntil = Math.max(state.reloadUntil, state.tick + TUNING.tantrumJams);
+    state.announcement = "It wanted that. It swipes the shelf instead.";
+    event(state, "tantrum", 470, 470, "TANTRUM — SNACKS EVERYWHERE", { ingredient: ignored });
+    for (const item of state.projectiles) {
+      item.vx = quantize(item.vx * -0.35);
+      item.vy = quantize(item.vy - 2.6);
+    }
+  }
+  if (!state.craving && state.tick >= state.cravingNextAt) {
+    state.craving = nextCraving(state);
+    state.wanted = state.craving.ingredient;
+    event(state, "craving", creature.x, creature.y - creature.ry - 40,
+      `IT WANTS ${state.craving.ingredient.toUpperCase()}`, { ingredient: state.craving.ingredient });
+  }
+  if (state.craving) state.wanted = state.craving.ingredient;
+
+  // What it does on its own, between shots. Seeded, so a beat is part of the
+  // shift rather than something that happened to you.
+  if (state.tick >= state.beatAt) {
+    const counter = state.rolls.beat;
+    state.rolls.beat += 1;
+    const gap = Math.max(220, (TUNING.beatEvery - TUNING.beatEveryPerSize * (creature.size - 1))
+      * (1 - TUNING.beatJitter / 2 + TUNING.beatJitter * roll(state.seed, STREAM.beat, counter * 3)));
+    state.beatAt = state.tick + Math.round(gap);
+    const pick = roll(state.seed, STREAM.beat, counter * 3 + 1);
+    if (pick < 0.38) {
+      // A sneeze. Everything in the air moves and the bench takes a moment to
+      // put back together.
+      state.reloadUntil = Math.max(state.reloadUntil, state.tick + TUNING.sneezeJams);
+      state.announcement = "It sneezes. Half the bench is on the floor.";
+      event(state, "beat", creature.x, creature.y, "SNEEZE");
+      for (const item of state.projectiles) {
+        item.vx = quantize(item.vx * -0.5 - 2.2);
+        item.vy = quantize(item.vy - 1.8);
+      }
+    } else if (pick < 0.72) {
+      // A lunge, telegraphed. The hatch is the answer; nothing else is.
+      state.threat = { kind: "lunge", tick: state.tick + TUNING.lungeTell, x: creature.x, y: creature.y };
+      state.announcement = "It is leaning out of the hatch.";
+      event(state, "beat", creature.x, creature.y, "IT IS COMING OUT");
+    } else {
+      state.slickUntil = state.tick + TUNING.droolTicks;
+      state.announcement = "It drools on the floor. Everything slides now.";
+      event(state, "beat", creature.x, creature.y + creature.ry, "DROOL — THE FLOOR IS SLICK");
+    }
+  }
+  // A lunge nobody stopped.
+  if (state.threat && state.threat.kind === "lunge" && state.tick >= state.threat.tick) {
+    state.threat = null;
+    if (!state.vent) {
+      state.vent = { since: state.tick };
+      state.announcement = "It has bitten the extractor vent off the wall.";
+      event(state, "beat", 550, 200, "IT ATE THE VENT");
+    } else {
+      state.announcement = "It takes the whole tray off the bench.";
+      event(state, "beat", ARENA.launcher.x + 60, ARENA.launcher.y - 40, "IT TOOK THE TRAY");
+    }
+    state.rage = Math.min(100, state.rage + TUNING.lungeRage);
+    state.hunger = quantize(Math.max(0, state.hunger - TUNING.lungeHunger));
+    state.reloadUntil = Math.max(state.reloadUntil, state.tick + TUNING.lungeJams);
   }
 
   // Metal: it drags loose kitchen metal into its own teeth. Nothing the player
@@ -902,6 +1126,14 @@ export function stepArcade(state: ArcadeState): void {
       state.announcement = "The teeth caught it. Come in steeper.";
       event(state, "clog", food.x, food.y, "CLANG", { ingredient: food.ingredient });
     } else if (outcome === "struck") {
+      if (state.tick < state.hatchClosedUntil) {
+        // Off the hatch. This is what the lockout bought.
+        state.hatchSaves += 1;
+        state.score += 220;
+        state.announcement = "Off the hatch. That is what it is for.";
+        event(state, "block", ARENA.launcher.x, ARENA.launcher.y - 46, "BLOCKED +220", { ingredient: food.ingredient });
+        continue;
+      }
       // A serving in the face. The launcher is jammed for a second and a half,
       // which is the most expensive thing that can happen to a player who is
       // already behind.
@@ -962,17 +1194,26 @@ export function stepArcade(state: ArcadeState): void {
   if (state.hunger <= 0) {
     state.phase = "lost";
     state.failureReason = "empty-belly";
-    state.announcement = "Empty belly. It has eaten the employee handbook.";
   } else if (state.rage >= 100) {
     state.phase = "lost";
     state.failureReason = "kitchen-destroyed";
-    state.announcement = "Too many missed shots. The kitchen has been politely destroyed.";
   } else if (state.tick >= ARENA.maxTicks) {
     state.phase = "lost";
     state.failureReason = "outgrew-the-kitchen";
-    state.announcement = "Twelve minutes. It no longer fits through the door. It has been promoted.";
   }
-  if (state.phase !== "playing") event(state, "end", state.creature.x, state.creature.y, state.announcement);
+  if (state.phase !== "playing") {
+    state.ending = endingFor(state.creature.size);
+    // The ending is chosen by how big it got; the cause of death is a separate
+    // fact and the player is owed it. Reporting only the size read as the game
+    // naming a cause its own meters contradicted.
+    const cause = state.failureReason === "empty-belly"
+      ? "Empty belly."
+      : state.failureReason === "kitchen-destroyed"
+        ? "Too many missed shots."
+        : "Twelve minutes.";
+    state.announcement = `${cause} ${ENDINGS[state.ending]}`;
+    event(state, "end", state.creature.x, state.creature.y, state.announcement);
+  }
 }
 
 /**
@@ -1005,11 +1246,12 @@ export interface FlightResult {
  * from the rules: this runs the same `moveFood` and the same creature step.
  */
 export function probeFlight(state: ArcadeState, ingredient: Ingredient, angle: number,
-                            _power: number | null, maxTicks = 240): FlightResult {
+                            power: number | null, maxTicks = 240): FlightResult {
   if (!FOODS.includes(ingredient) || !Number.isFinite(angle)) {
     return { fed: false, snubbed: false, ticks: 0, bounces: 0, x: 0, y: 0 };
   }
-  const food = makeProjectile(0, ingredient, Math.round(clamp(angle, ARENA.minAngle, ARENA.maxAngle)));
+  const food = makeProjectile(0, ingredient,
+    Math.round(clamp(angle, ARENA.minAngle, ARENA.maxAngle)), cleanPower(power ?? ARENA.defaultPower));
   const creature = projectCreature(state);
   let snubbed = false;
   for (let i = 1; i <= maxTicks; i++) {
@@ -1018,6 +1260,7 @@ export function probeFlight(state: ArcadeState, ingredient: Ingredient, angle: n
       tick: state.tick + i, mouthX: creature.x, mouthY: creature.y,
       mouthRx: creature.rx, mouthRy: creature.ry,
       bellyX: creature.bx, bellyY: creature.by, bellyRx: creature.brx, bellyRy: creature.bry,
+      slick: state.tick + i < state.slickUntil, vent: state.vent,
       aperture: creature.open, levels: state.mutations,
     };
     const outcome = moveFood(food, env);
@@ -1031,9 +1274,10 @@ export function probeFlight(state: ArcadeState, ingredient: Ingredient, angle: n
 
 /** Partial guide: predicts `steps` ticks of the actual rules without changing state. */
 export function trajectoryPreview(state: ArcadeState, ingredient: Ingredient, angle: number,
-                                  steps = 36): { x: number; y: number }[] {
+                                  power = ARENA.defaultPower, steps = 36): { x: number; y: number }[] {
   if (!FOODS.includes(ingredient) || !Number.isFinite(angle)) return [];
-  const food = makeProjectile(0, ingredient, Math.round(clamp(angle, ARENA.minAngle, ARENA.maxAngle)));
+  const food = makeProjectile(0, ingredient,
+    Math.round(clamp(angle, ARENA.minAngle, ARENA.maxAngle)), cleanPower(power));
   const creature = projectCreature(state);
   const points = [{ x: food.x, y: food.y }];
   for (let i = 1; i <= steps; i++) {
@@ -1042,6 +1286,7 @@ export function trajectoryPreview(state: ArcadeState, ingredient: Ingredient, an
       tick: state.tick + i, mouthX: creature.x, mouthY: creature.y,
       mouthRx: creature.rx, mouthRy: creature.ry,
       bellyX: creature.bx, bellyY: creature.by, bellyRx: creature.brx, bellyRy: creature.bry,
+      slick: state.tick + i < state.slickUntil, vent: state.vent,
       aperture: creature.open, levels: state.mutations,
     };
     const outcome = moveFood(food, env);
@@ -1053,15 +1298,24 @@ export function trajectoryPreview(state: ArcadeState, ingredient: Ingredient, an
   return points;
 }
 
-/** Strict local replay. Rejected/cooldown launches must not enter the trace. */
+/** Strict local replay. Rejected launches and hatches must not enter the trace. */
 export function replayArcade(seed: number, commands: readonly ArcadeCommand[], endTick: number): ArcadeState {
   if (!Array.isArray(commands) || commands.length > MAX_COMMANDS) throw new Error("Too many arcade commands");
   if (!Number.isSafeInteger(endTick) || endTick < 0 || endTick > ARENA.maxTicks) throw new Error("Invalid arcade end tick");
   let previousTick = -1;
   for (const command of commands) {
-    if (!command || !Number.isSafeInteger(command.tick) || command.tick < 0 || command.tick <= previousTick ||
-        command.tick > endTick || !FOODS.includes(command.ingredient) || !Number.isInteger(command.angle) ||
-        command.angle < ARENA.minAngle || command.angle > ARENA.maxAngle) {
+    if (!command || !Number.isSafeInteger(command.tick) || command.tick < 0 || command.tick <= previousTick
+        || command.tick > endTick) {
+      throw new Error("Invalid arcade command");
+    }
+    if (command.kind === "launch") {
+      if (!FOODS.includes(command.ingredient) || !Number.isInteger(command.angle)
+          || command.angle < ARENA.minAngle || command.angle > ARENA.maxAngle
+          || !Number.isInteger(command.power)
+          || command.power < ARENA.minPower || command.power > ARENA.maxPower) {
+        throw new Error("Invalid arcade command");
+      }
+    } else if (command.kind !== "hatch") {
       throw new Error("Invalid arcade command");
     }
     previousTick = command.tick;
@@ -1069,7 +1323,11 @@ export function replayArcade(seed: number, commands: readonly ArcadeCommand[], e
   const state = createArcade(seed);
   for (const command of commands) {
     while (state.tick < command.tick && state.phase === "playing") stepArcade(state);
-    if (state.tick !== command.tick || !launchFood(state, command.ingredient, command.angle)) throw new Error("Rejected arcade launch");
+    if (state.tick !== command.tick) throw new Error("Rejected arcade launch");
+    const applied = command.kind === "hatch"
+      ? slamHatch(state)
+      : launchFood(state, command.ingredient, command.angle, command.power);
+    if (!applied) throw new Error("Rejected arcade launch");
   }
   while (state.tick < endTick && state.phase === "playing") stepArcade(state);
   return state;

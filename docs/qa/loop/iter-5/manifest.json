@@ -1,0 +1,159 @@
+{
+  "iteration": 5,
+  "capturedAt": "2026-09-12T06:20:56.405Z",
+  "seed": 20260911,
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "bot": {
+    "name": "moderate",
+    "ticks": 4180,
+    "seconds": 69.66666666666667,
+    "feeds": 15,
+    "score": 5277,
+    "cause": "empty-belly",
+    "markers": {
+      "firstMutation": 112,
+      "firstStack": 1997,
+      "end": 4180
+    }
+  },
+  "browserFinal": {
+    "tick": 4180,
+    "phase": "lost",
+    "failureReason": "empty-belly",
+    "hunger": 0,
+    "rage": 52.86,
+    "score": 5277,
+    "combo": 0,
+    "wanted": "pepper",
+    "servings": {
+      "metal": 6,
+      "balloon": 4,
+      "pepper": 5
+    },
+    "mutations": {
+      "metal": 2,
+      "balloon": 1,
+      "pepper": 1
+    },
+    "threat": {
+      "kind": "spit",
+      "tick": 4202,
+      "x": 774.9813,
+      "y": 253.3074
+    },
+    "craving": {
+      "ingredient": "pepper",
+      "startedAt": 4106,
+      "endsAt": 4515
+    },
+    "creature": {
+      "size": 2.1575,
+      "x": 832.4763,
+      "y": 247.2888,
+      "rx": 143.7374,
+      "ry": 103.1834,
+      "bx": 833.4858,
+      "by": 352.0718,
+      "brx": 259.2195,
+      "bry": 164.7581,
+      "aperture": 0,
+      "untilOpen": 56,
+      "track": 29.8235,
+      "lift": 0.451,
+      "pressure": 0.9472,
+      "clog": 0.18,
+      "open": 0,
+      "cycle": 36,
+      "cycleTick": 41,
+      "openTicks": 18,
+      "shutTicks": 64
+    },
+    "size": 2.1575,
+    "appetite": 1.18,
+    "snubs": 33,
+    "misses": 41,
+    "totalFeeds": 15,
+    "hatchClosedUntil": 3743,
+    "hatchReadyAt": 3869,
+    "reloadUntil": 4083,
+    "vent": null,
+    "ending": 2,
+    "projectiles": 7,
+    "events": [
+      {
+        "tick": 4143,
+        "type": "launch",
+        "label": "pepper",
+        "ingredient": "pepper"
+      },
+      {
+        "tick": 4163,
+        "type": "bounce",
+        "label": "ONE MORE CHANCE",
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 4165,
+        "type": "clog",
+        "label": "CLANG",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 4167,
+        "type": "snub",
+        "label": "TOO LATE",
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 4174,
+        "type": "launch",
+        "label": "pepper",
+        "ingredient": "pepper"
+      },
+      {
+        "tick": 4177,
+        "type": "bounce",
+        "label": "ONE MORE CHANCE",
+        "ingredient": "pepper"
+      },
+      {
+        "tick": 4180,
+        "type": "snub",
+        "label": "TOO LATE",
+        "ingredient": "pepper"
+      },
+      {
+        "tick": 4180,
+        "type": "end",
+        "label": "Shift over. It has eaten the kitchen.",
+        "ingredient": null
+      }
+    ]
+  },
+  "groups": [
+    "clip-first-mutation",
+    "strip-0020",
+    "hud-0020",
+    "clip-first-stack",
+    "clip-ending",
+    "strip-0040",
+    "hud-0040",
+    "strip-0100",
+    "hud-0100"
+  ],
+  "renderTiming": {
+    "samples": 43,
+    "average": 4.025581395210222,
+    "median": 3.800000000745058,
+    "p95": 5.600000001490116,
+    "max": 6,
+    "last": 3.5,
+    "canvas": {
+      "width": 1920,
+      "height": 1080
+    }
+  }
+}

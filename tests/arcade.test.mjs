@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  ARENA, FOODS, TUNING, GAME_VERSION, createArcade, getHazard, launchFood,
-  probeFlight, replayArcade, stepArcade, trajectoryPreview,
+  ARENA, FOODS, TUNING, GAME_VERSION, createArcade, endingFor, getHazard, launchFood,
+  probeFlight, replayArcade, slamHatch, stepArcade, trajectoryPreview,
 } from "../lib/game/arcade.ts";
 
 function advance(state, tick) {
@@ -32,9 +32,13 @@ function waitForShut(state, limit = 600) {
  * is not also a test of whether some hard-coded angle still happens to work.
  */
 function landingShot(state) {
+  // Angle *and* power: at a single fixed power only a couple of angles land,
+  // which is the point of the charge.
   for (let angle = ARENA.maxAngle; angle >= ARENA.minAngle; angle -= 1) {
-    const result = probeFlight(state, state.wanted, angle, null, 240);
-    if (result.fed) return { angle, ticks: result.ticks };
+    for (let power = ARENA.minPower; power <= ARENA.maxPower; power += 1) {
+      const result = probeFlight(state, state.wanted, angle, power, 240);
+      if (result.fed) return { angle, power, ticks: result.ticks };
+    }
   }
   return null;
 }
@@ -50,7 +54,7 @@ function feedOnce(state, patience = 900) {
     if (state.tick - state.lastLaunchTick >= ARENA.cooldownTicks) {
       const shot = landingShot(state);
       if (shot) {
-        assert.equal(launchFood(state, state.wanted, shot.angle), true);
+        assert.equal(launchFood(state, state.wanted, shot.angle, shot.power), true);
         for (let j = 0; j < 260 && state.totalFeeds === before && state.phase === "playing"; j += 1) stepArcade(state);
         return state.totalFeeds > before;
       }
@@ -135,8 +139,11 @@ test("every accepted serving grows the creature, and growth moves the target", (
   assert.ok(fed >= 5, `expected a probe-aimed player to land several shots, landed ${fed}`);
   assert.ok(state.creature.size > start.size + 0.1, "the creature did not grow");
   assert.ok(state.creature.rx > start.rx, "a bigger creature has a bigger mouth");
-  assert.ok(state.creature.x < start.x, "it leans in as it grows");
-  assert.ok(state.creature.y < start.y, "it rises as it grows");
+  assert.ok(state.creature.x <= start.x, "it leans in as it grows");
+  // The resting height, with the balloon's lift and the hungry lean taken out:
+  // both move the mouth on their own and neither is growth.
+  const restY = (size) => ARENA.mouth.y - (size - 1) * TUNING.risePerSize;
+  assert.ok(restY(state.creature.size) < restY(start.size) - 20, "it rises over the counter as it grows");
 });
 
 test("growth shortens the open window and lengthens the wait", () => {
@@ -194,9 +201,10 @@ test("a shift that is never fed ends on an empty belly, not on a clock", () => {
 function play(seed, feedBelow, untilTick = ARENA.maxTicks) {
   const state = createArcade(seed);
   while (state.phase === "playing" && state.tick < untilTick) {
-    if (state.hunger <= feedBelow && state.tick - state.lastLaunchTick >= ARENA.cooldownTicks) {
+    if (state.hunger <= feedBelow && state.tick - state.lastLaunchTick >= ARENA.cooldownTicks
+        && state.tick >= state.reloadUntil && state.tick >= state.hatchClosedUntil) {
       const shot = landingShot(state);
-      if (shot) launchFood(state, state.wanted, shot.angle);
+      if (shot) launchFood(state, state.wanted, shot.angle, shot.power);
     }
     stepArcade(state);
   }
@@ -325,7 +333,10 @@ test("a real trace replays bit-for-bit, including the creature", () => {
   for (let i = 0; i < 60 && state.phase === "playing"; i += 1) {
     const shot = landingShot(state) ?? { angle: -40 };
     const ingredient = FOODS[i % 3];
-    if (launchFood(state, ingredient, shot.angle)) commands.push({ tick: state.tick, ingredient, angle: shot.angle });
+    const power = shot.power ?? 13;
+    if (launchFood(state, ingredient, shot.angle, power)) {
+      commands.push({ tick: state.tick, kind: "launch", ingredient, angle: shot.angle, power });
+    }
     advance(state, state.tick + 34);
   }
   const endTick = state.tick;
@@ -334,11 +345,13 @@ test("a real trace replays bit-for-bit, including the creature", () => {
 });
 
 test("replay validates the entire trace and rejects impossible or malformed commands", () => {
-  const valid = { tick: 0, ingredient: "metal", angle: -40 };
+  const valid = { tick: 0, kind: "launch", ingredient: "metal", angle: -40, power: 13 };
   for (const commands of [
     [null], [{ ...valid, tick: -1 }], [{ ...valid, tick: 1.5 }],
     [{ ...valid, ingredient: "unknown" }], [{ ...valid, angle: NaN }],
     [{ ...valid, angle: -40.5 }], [{ ...valid, angle: -66 }],
+    [{ ...valid, power: 8 }], [{ ...valid, power: 17 }], [{ ...valid, power: 12.5 }],
+    [{ ...valid, kind: "wiggle" }],
     [valid, { ...valid, tick: 1 }], [valid, valid],
     [{ ...valid, tick: 100 }, valid], [{ ...valid, tick: 201 }],
   ]) assert.throws(() => replayArcade(1, commands, 200));
@@ -347,28 +360,119 @@ test("replay validates the entire trace and rejects impossible or malformed comm
   assert.throws(() => createArcade(NaN));
 });
 
-test("the scheduled vent flap is gone", () => {
-  // It appeared at 38 seconds on a timer, which is the opposite of a
-  // consequence, and it deflected shots with nothing on screen to deflect off.
-  // Stage 7 brings it back as damage the creature does when a lunge is not
-  // stopped. Until then it must not exist at all.
-  for (const tick of [0, 1000, 2280, 2400, 5000, 40000]) assert.equal(getHazard(tick), null);
+test("the vent only exists once the creature has bitten it off", () => {
+  for (const tick of [0, 1000, 2280, 5000, 40000]) assert.equal(getHazard(null, tick), null);
+  const vent = { since: 1000 };
+  assert.equal(getHazard(vent, 1000).warning, true, "it is not solid the instant it is torn off");
+  assert.equal(getHazard(vent, 1119).warning, true);
+  assert.equal(getHazard(vent, 1120).warning, false);
+  for (let tick = 1120; tick < 4000; tick += 1) {
+    const hazard = getHazard(vent, tick);
+    assert.ok(hazard.y >= 87.5 && hazard.y <= 317.5);
+    assert.deepEqual(getHazard(vent, tick + 300), hazard);
+  }
 });
 
-test("craving reward beats an equally precise off-menu shot", () => {
-  const wanted = createArcade(1);
-  const other = createArcade(1);
-  assert.ok(waitForOpen(wanted));
-  assert.ok(waitForOpen(other));
-  assert.equal(wanted.tick, other.tick);
-  for (const [state, food] of [[wanted, wanted.wanted], [other, FOODS.find((item) => item !== other.wanted)]]) {
-    state.projectiles.push({
-      id: 1, ingredient: food, x: state.creature.x, y: state.creature.y, vx: 4, vy: 0,
+test("a craving satisfied in time pays, calms it and pauses the growth", () => {
+  const state = createArcade(1);
+  // Cravings start after a short gap; run to the first one.
+  for (let i = 0; i < 600 && !state.craving; i += 1) stepArcade(state);
+  assert.ok(state.craving, "no craving ever appeared");
+  const wanted = state.craving.ingredient;
+  const other = FOODS.find((food) => food !== wanted);
+  assert.ok(waitForOpen(state));
+
+  const place = (target, ingredient) => {
+    target.projectiles.push({
+      id: 1, ingredient, kind: "food", x: target.creature.x, y: target.creature.y, vx: 4, vy: 3,
       age: 0, bounces: 0, hazardBounces: 0, assisted: false, faceHits: 0,
     });
-    stepArcade(state);
+    stepArcade(target);
+  };
+  const onMenu = structuredClone(state);
+  const offMenu = structuredClone(state);
+  place(onMenu, wanted);
+  place(offMenu, other);
+  assert.equal(onMenu.totalFeeds, 1);
+  assert.equal(offMenu.totalFeeds, 1);
+  assert.ok(onMenu.score - offMenu.score >= TUNING.cravingBonus,
+    `craving paid ${onMenu.score - offMenu.score}`);
+  assert.equal(onMenu.cravingsMet, 1);
+  assert.ok(onMenu.growthPausedUntil > onMenu.tick, "satisfying a craving must pause the growth");
+  // Off-menu is eaten anyway, and it still counts toward that mutation.
+  assert.equal(offMenu.servings[other], 1);
+  assert.ok(offMenu.craving, "an off-menu serving does not answer the craving");
+});
+
+test("an ignored craving costs composure and knocks the bench about", () => {
+  const state = createArcade(4);
+  for (let i = 0; i < 600 && !state.craving; i += 1) stepArcade(state);
+  assert.ok(state.craving);
+  const rageBefore = state.rage;
+  while (state.craving && state.phase === "playing") stepArcade(state);
+  assert.equal(state.cravingsMissed, 1);
+  assert.ok(state.rage > rageBefore, "ignoring it has to cost something");
+  assert.ok(state.events.some((item) => item.type === "tantrum"));
+  assert.ok(state.reloadUntil > state.tick, "the tantrum should cost launcher time");
+});
+
+test("power is half the aim: an angle that lands at one charge misses at another", () => {
+  const state = createArcade(9);
+  advance(state, 30);
+  const bands = new Map();
+  for (let power = ARENA.minPower; power <= ARENA.maxPower; power += 1) {
+    const lands = [];
+    for (let angle = ARENA.minAngle; angle <= ARENA.maxAngle; angle += 1) {
+      if (probeFlight(state, "metal", angle, power, 240).fed) lands.push(angle);
+    }
+    bands.set(power, lands);
   }
-  assert.equal(wanted.totalFeeds, 1);
-  assert.equal(other.totalFeeds, 1);
-  assert.equal(wanted.score - other.score, 150);
+  const shapes = new Set([...bands.values()].map((band) => band.join(",")));
+  assert.ok(shapes.size >= 3, "the charge barely changes where a shot lands");
+  // And no single charge is the answer to everything.
+  for (const [power, band] of bands) {
+    assert.ok(band.length < (ARENA.maxAngle - ARENA.minAngle), `power ${power} lands at every angle`);
+  }
+});
+
+test("the hatch blocks a serving coming back, and costs launcher time to use", () => {
+  const state = createArcade(12);
+  advance(state, 60);
+  assert.equal(slamHatch(state), true);
+  assert.ok(state.hatchClosedUntil > state.tick);
+  // While it is down, nothing can be fired. That is the cost.
+  assert.equal(launchFood(state, "metal", -40, 13), false);
+  // And it cannot be spammed.
+  assert.equal(slamHatch(state), false);
+
+  const blocked = createArcade(12);
+  advance(blocked, 60);
+  slamHatch(blocked);
+  blocked.projectiles.push({
+    id: 9, ingredient: "pepper", kind: "spit",
+    x: ARENA.launcher.x + 30, y: ARENA.launcher.y, vx: -8, vy: 0,
+    age: 0, bounces: 0, hazardBounces: 0, assisted: true, faceHits: 0,
+  });
+  const jammedBefore = blocked.reloadUntil;
+  stepArcade(blocked);
+  assert.equal(blocked.reloadUntil, jammedBefore, "a blocked spit must not jam the launcher");
+  assert.equal(blocked.hatchSaves, 1);
+});
+
+test("an unstopped lunge takes the vent off the wall, permanently", () => {
+  const state = createArcade(21);
+  let guard = 0;
+  while (!state.vent && state.phase === "playing" && guard++ < 40000) stepArcade(state);
+  assert.ok(state.vent, "no lunge ever landed");
+  assert.ok(getHazard(state.vent, state.tick + 400), "the vent should now be a hazard");
+  const at = state.vent.since;
+  advance(state, state.tick + 600);
+  assert.equal(state.vent.since, at, "kitchen damage does not repair itself");
+});
+
+test("the ending escalates with how big it got", () => {
+  assert.equal(endingFor(1), 0);
+  assert.equal(endingFor(TUNING.sizeMax), 3);
+  const seen = new Set([endingFor(1), endingFor(1.5), endingFor(2), endingFor(TUNING.sizeMax)]);
+  assert.ok(seen.size >= 3, "the four endings must not collapse into one");
 });

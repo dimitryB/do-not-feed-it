@@ -6,6 +6,7 @@ import { DEV_HOOKS, devRender } from '../dev/hook';
 
 const COLORS:Record<Ingredient,string>={metal:'#ddea9c',balloon:'#9be9df',pepper:'#f6a074'};
 const clampAlpha=(v:number)=>v<0?0:v>1?1:v;
+const HATCH_TOP=ARENA.launcher.y-46;
 
 export function createScene(){
   const kitchen=new Image();kitchen.src='/art/kitchen.png';
@@ -27,7 +28,8 @@ export function createScene(){
     if(items.complete&&items.naturalWidth){const w=items.naturalWidth/3;ctx.shadowColor='#0008';ctx.shadowBlur=3;ctx.drawImage(masked(items)??items,w*FOODS.indexOf(ingredient),0,w,items.naturalHeight,-size/2,-size/2,size,size);}
     else{ctx.fillStyle=COLORS[ingredient];ctx.beginPath();ctx.arc(0,0,size*.2,0,Math.PI*2);ctx.fill();}ctx.restore();
   }
-  function draw(ctx:CanvasRenderingContext2D,width:number,height:number,state:ArcadeState|null,angle:number,selected:Ingredient,playing:boolean,reduced:boolean,time:number){
+  function draw(ctx:CanvasRenderingContext2D,width:number,height:number,state:ArcadeState|null,angle:number,selected:Ingredient,playing:boolean,reduced:boolean,time:number,guideSteps=0){
+    const charge=state?.charge??0;const power=ARENA.minPower+(ARENA.maxPower-ARENA.minPower)*charge;
     ctx.setTransform(width/1200,0,0,height/700,0,0);ctx.clearRect(0,0,1200,700);
     const delta=lastTime<0?1/60:Math.min(0.05,Math.max(0.0005,time-lastTime));lastTime=time;
     const tick=state?.tick??0;const levels=playing?state?.mutations:null;const creature=playing?state?.creature:null;
@@ -45,7 +47,7 @@ export function createScene(){
     const shade=ctx.createLinearGradient(0,0,800,0);shade.addColorStop(0,playing?'#06121255':'#061212bb');shade.addColorStop(1,'#06121200');ctx.fillStyle=shade;ctx.fillRect(0,0,1200,700);
     if(!reduced){ctx.save();for(let i=0;i<22;i++){const x=(i*131.3+time*(3+i%4))%1200;const y=110+(i*79.7-time*(4+i%3))%510;ctx.fillStyle=i%3===0?'#f4c88c35':'#d6ecd21b';ctx.beginPath();ctx.arc(x,y,1+i%2,0,Math.PI*2);ctx.fill();}ctx.restore();}
     if(playing&&state&&!(DEV_HOOKS&&devRender.hideAim)){
-      const key=`${Math.floor(tick/6)}-${angle}-${selected}`;if(key!==previewKey){guide=trajectoryPreview(state,selected,angle);previewKey=key;}
+      const key=`${Math.floor(tick/6)}-${angle}-${selected}-${power}-${guideSteps}`;if(key!==previewKey){guide=guideSteps>0?trajectoryPreview(state,selected,angle,power,guideSteps):[];previewKey=key;}
       guide.forEach((p,i)=>{ctx.fillStyle=`rgba(224,244,190,${.85-i/guide.length*.55})`;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(1.3,3-i*.12),0,Math.PI*2);ctx.fill();});
     }
     // The target ring is the collision ellipse, drawn where it actually is: it
@@ -66,7 +68,7 @@ export function createScene(){
       ctx.beginPath();ctx.ellipse(c.x,c.y,c.rx,c.ry*gap,0,0,Math.PI*2);ctx.stroke();
       ctx.restore();
     }
-    const hazard=playing?getHazard(tick):null;
+    const hazard=playing&&state?getHazard(state.vent,tick):null;
     if(hazard){ctx.save();const {x,y,width:w,height:h,warning}=hazard;const cx=x+w/2;const t=reduced?0:time;ctx.save();ctx.filter='blur(12px)';const col=ctx.createLinearGradient(x-16,0,x+w+16,0);col.addColorStop(0,'rgba(196,222,224,0)');col.addColorStop(.5,`rgba(214,236,238,${warning?.09:.26})`);col.addColorStop(1,'rgba(196,222,224,0)');ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(cx,y+h/2,w*.8,h*.62,0,0,Math.PI*2);ctx.fill();ctx.restore();const rolls=warning?4:9;const speed=warning?26:74;for(let i=0;i<rolls;i++){const f=((t*speed+i*(h+60)/rolls)%(h+60))/(h+60);const yy=y+h+30-f*(h+60);const r=(warning?13:20)+f*(warning?16:34);const a=(warning?.16:.42)*Math.sin(Math.PI*Math.min(1,f*1.15));const puff=ctx.createRadialGradient(cx+Math.sin(f*7+i)*11,yy,1,cx+Math.sin(f*7+i)*11,yy,r);puff.addColorStop(0,`rgba(236,250,250,${a})`);puff.addColorStop(.55,`rgba(196,226,230,${a*.5})`);puff.addColorStop(1,'rgba(180,210,216,0)');ctx.fillStyle=puff;ctx.beginPath();ctx.ellipse(cx+Math.sin(f*7+i)*11,yy,r,r*.82,0,0,Math.PI*2);ctx.fill();}ctx.fillStyle='#0b1414';ctx.fillRect(x-4,y+h+22,w+8,9);ctx.strokeStyle='#46564e';ctx.lineWidth=1;ctx.strokeRect(x-3.5,y+h+22.5,w+7,8);ctx.fillStyle='#050a0a';for(let i=0;i<5;i++)ctx.fillRect(x-1+i*(w+4)/5,y+h+24,3,5);if(!warning){ctx.globalCompositeOperation='screen';ctx.globalAlpha=.5+(reduced?0:.2*Math.sin(t*7));const lead=ctx.createLinearGradient(0,y+h+22,0,y+h-30);lead.addColorStop(0,'rgba(226,248,244,.75)');lead.addColorStop(1,'rgba(200,232,232,0)');ctx.fillStyle=lead;ctx.fillRect(x-10,y+h-30,w+20,52);}ctx.restore();}
     if(levels&&creature){
       // Effects support the rule; the creature carries it. Each of these is
@@ -130,8 +132,40 @@ export function createScene(){
       ctx.fillStyle='#b6c980';for(let i=0;i<4;i++)ctx.fillRect(-35+i*18,34,9,3);
       const pivot=ctx.createRadialGradient(-5,8,2,0,13,25);pivot.addColorStop(0,'#8b9275');pivot.addColorStop(.3,'#4e6353');pivot.addColorStop(1,'#0c211e');ctx.fillStyle=pivot;ctx.beginPath();ctx.arc(0,13,24,0,Math.PI*2);ctx.fill();ctx.fillStyle='#b5aa76';ctx.beginPath();ctx.arc(0,13,5,0,Math.PI*2);ctx.fill();
       ctx.rotate(angle*Math.PI/180);ctx.translate(-recoil,0);
-      if(cannon.complete&&cannon.naturalWidth){ctx.drawImage(masked(cannon)??cannon,90,360,1100,480,-64,-40,140,70);}ctx.restore();
+      if(cannon.complete&&cannon.naturalWidth){ctx.drawImage(masked(cannon)??cannon,90,360,1100,480,-64,-40,140,70);}
+      // The charge, drawn along the barrel. Power is half of the aim and it has
+      // to be visible on the launcher, not only in the corner.
+      if(charge>0.01){const len=54+charge*86;
+        ctx.save();ctx.globalCompositeOperation='screen';
+        ctx.strokeStyle=charge>0.92?'#fff0a8':'#dded92';ctx.lineWidth=5;ctx.lineCap='round';
+        ctx.globalAlpha=.35+charge*.5;ctx.beginPath();ctx.moveTo(64,0);ctx.lineTo(64+len,0);ctx.stroke();
+        ctx.lineWidth=2;ctx.globalAlpha=.9;ctx.beginPath();ctx.arc(64+len,0,5+charge*4,0,Math.PI*2);ctx.stroke();
+        ctx.restore();}
+      ctx.restore();
+      // Aim, always: a short stub of barrel direction so a spectator can see
+      // where the player is pointing even once the full guide is gone.
+      ctx.save();ctx.translate(x,y);ctx.rotate(angle*Math.PI/180);
+      ctx.globalAlpha=.5;ctx.strokeStyle='#e0f4be';ctx.lineWidth=2;ctx.setLineDash([3,9]);
+      ctx.beginPath();ctx.moveTo(74,0);ctx.lineTo(150,0);ctx.stroke();ctx.restore();
+      ctx.save();
       if(!state||tick-state.lastLaunchTick>=ARENA.cooldownTicks)item(ctx,selected,x,y,47,angle*Math.PI/180);
+    }
+    if(playing&&state&&state.tick<state.hatchClosedUntil){
+      // The hatch, down over the serving window. It was an unlabelled striped
+      // panel floating above the launcher and read as a rendering bug; it is
+      // now bolted to the counter, lit, and it says what it is.
+      ctx.save();const hx=ARENA.launcher.x;const t=Math.min(1,(state.hatchClosedUntil-state.tick)/10);
+      const h=Math.max(0,116*t);const top=HATCH_TOP-h;
+      ctx.fillStyle='#0b1414';ctx.strokeStyle='#9db08a';ctx.lineWidth=3;
+      ctx.beginPath();ctx.roundRect(hx-104,top,208,h,5);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#1d2a24';for(let i=0;i<6;i++)ctx.fillRect(hx-94+i*33,top+8,24,Math.max(0,h-16));
+      ctx.strokeStyle='#59685288';ctx.lineWidth=1;for(let i=0;i<6;i++)ctx.strokeRect(hx-94.5+i*33,top+7.5,25,Math.max(0,h-15));
+      if(h>34){ctx.fillStyle='#dded92';ctx.font="700 15px 'Helvetica Neue',sans-serif";ctx.textAlign='center';
+        ctx.fillText('HATCH SHUT',hx,top+h/2+5);}
+      ctx.globalCompositeOperation='screen';ctx.globalAlpha=.4;
+      const glow=ctx.createLinearGradient(0,top,0,top+h);glow.addColorStop(0,'#dded9255');glow.addColorStop(1,'#dded9200');
+      ctx.fillStyle=glow;ctx.fillRect(hx-104,top,208,h);
+      ctx.restore();
     }
     if(playing)state?.projectiles.forEach(p=>{
       if(p.kind==='junk'){
@@ -198,14 +232,16 @@ export function createScene(){
     }
     // The two meters that decide the run, drawn where the player is looking.
     if(playing&&state){
-      const c=state.creature;const w=210;const x=c.x-w/2;const y=Math.min(452,c.y+c.ry+34);
+      const c=state.creature;const w=228;const x=c.x-w/2;const y=Math.min(450,c.y+c.ry+40);
       ctx.save();
       for(const [i,bar] of ([['FULLNESS',state.hunger/100,state.hunger<25?'#eea66d':'#dded92'],['IRRITATION',state.rage/100,state.rage>=70?'#e4674f':'#de9770']] as const).entries()){
-        const by=y+i*17;
+        const by=y+i*21;
         ctx.globalAlpha=.8;ctx.fillStyle='#050d0cc0';ctx.beginPath();ctx.roundRect(x-4,by-6,w+8,12,6);ctx.fill();
         ctx.globalAlpha=1;ctx.fillStyle='#2c382f';ctx.fillRect(x,by-2,w,4);
         ctx.fillStyle=bar[2];ctx.fillRect(x,by-2,Math.max(2,w*Math.min(1,Math.max(0,bar[1]))),4);
-        ctx.font="600 9px ui-monospace,monospace";ctx.textAlign='left';ctx.fillStyle='#9daaa2';ctx.fillText(bar[0],x,by-8);
+        ctx.font="700 10px ui-monospace,monospace";ctx.textAlign='left';ctx.fillStyle='#e6efdc';
+        ctx.fillText(bar[0],x,by-9);ctx.textAlign='right';ctx.fillStyle=bar[2];
+        ctx.fillText(`${Math.round(bar[1]*100)}%`,x+w,by-9);ctx.textAlign='left';
       }
       ctx.restore();
     }
