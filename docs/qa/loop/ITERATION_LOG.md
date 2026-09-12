@@ -97,13 +97,192 @@ on seed 20260911 (105 feeds, survived). Render cost is recorded in
 
 ### Critic — iteration 0 baseline
 
-Recorded below when the baseline critic returns.
+| Criterion | Score |
+|---|---|
+| Agency | 2 |
+| Consequence | 2 |
+| Tension | 2 |
+| Readability | 2 |
+| Comedy | 4 |
+| Fairness | 1 |
+
+Lowest: Fairness — but that score is **not** a judgement of the build. The dev
+server hot-reloaded partway through the capture because `lib/game/arcade.ts` was
+edited while the harness was running, so from 60.6 s onward every frame in this
+set is a black screen with a stack trace. The critic reported that faithfully
+and it dominates the Fairness and Tension scores. The other four criteria were
+scored off the frames before the crash and are usable; Fairness and Tension for
+iteration 0 are not, and are not compared against later iterations.
+
+Usable findings from the pre-crash frames, all of which are about the build
+rather than the accident:
+
+- "All twelve frames of `strip-0040` are the same hot pepper fired from a
+  pixel-identical barrel angle" — the Agency criterion's explicit fail case.
+- "The creature at 60 s is the same silhouette, size and colour as at 0 s."
+- "naive reaches 119.2 s against good's 120.0 s — aiming buys 0.8 s of survival."
+- FULLNESS pinned at 99–100 % for the whole run; the meter never says anything.
+- IRRITATION has a label and a number but no bar drawn.
+- Projectiles are the same size and colour as the ambient dust particles.
+
+**Process change:** nothing under `lib/` or `app/` is edited while a capture is
+running. The dev server reloads on write and silently corrupts the set.
 
 ### Next decision
 
 Stage 1 and stage 2 together, as the brief's first checkpoint requires: growth,
 mouth rhythm, hunger scaling with size, endless shift. Nothing else changes in
 the same iteration, so the checkpoint note is about the foundation alone.
+
+---
+
+## Iteration 1 — stages 1 and 2: growth, mouth rhythm, appetite, endless
+
+**Changed:** `lib/game/arcade.ts` rewritten around a creature with a size, a
+seeded mouth rhythm and an appetite. Renderer, HUD, dev hooks and tests moved
+with it. `GAME_VERSION = 1`.
+
+- **Endless.** No round, no clock to run out; `ARENA.maxTicks` is a twelve-minute
+  replay bound. Score is time kept fed plus feeds plus style (D36).
+- **Growth.** Every accepted serving grows the creature, front-loaded, to a ×2.4
+  asymptote. Ending the shift at the cap was tried first and inverted the skill
+  ordering — a better player reached it sooner and scored *less* — so the cap is
+  now a plateau, not a finish line (D38).
+- **Appetite.** Size alone was not enough: with a size cap, a player with
+  perfect aim plateaus and survives forever. Every serving therefore also raises
+  a permanent appetite multiplier that never stops rising (D40 in the register's
+  new section).
+- **Mouth rhythm.** The mouth opens and closes on a seeded rhythm; food is only
+  accepted while it is at least half open, and an open mouth is a *slot* — as
+  wide as the face but only as tall as the mouth is open — so a shot that
+  arrives early meets a gap too narrow to fit through. Anything inside the face
+  but outside the gap is snubbed: it bounces off, costs a little composure once,
+  and can still be banked back in.
+- **Over-feeding is the bad decision.** Above 82 fullness a serving returns 8 %
+  of its nourishment and grows the creature four times as fast.
+- **The seed is used.** Rhythm, cycle jitter, the "not interested" long shut, and
+  one per-shift temperament all come from it. Two seeds are two shifts.
+- **Bug found and fixed:** irritation was cooled at the *bottom* of the tick,
+  after a miss had raised it. A miss pushed the meter to exactly 100 and the
+  same tick shaved it to 99.99 before the check ran, so the "kitchen destroyed"
+  ending was unreachable and a player who never landed a shot starved instead.
+
+### Bots — 200 seeded shifts each
+
+| bot      | n   | p10    | median | p90    | max    | feeds | score | size | worst 30s bucket |
+|----------|-----|--------|--------|--------|--------|-------|-------|------|------------------|
+| naive    | 200 | 12.3s  | 12.3s  | 12.3s  | 12.3s  | 0     | 738   | 1.00 | 100%             |
+| moderate | 200 | 75.7s  | 90.5s  | 101.2s | 122.9s | 19    | 12296 | 2.37 | 51.5%            |
+| good     | 200 | 100.4s | 119.9s | 151.9s | 192.7s | 29    | 18645 | 2.40 | 50.5%            |
+
+- naive: `kitchen-destroyed` ×200. It fires the default angle on cooldown, and
+  the default angle is deliberately no longer a landing angle, so it lands
+  nothing and is destroyed by its own missed shots.
+- moderate: `empty-belly` ×151, `kitchen-destroyed` ×49.
+- good: `empty-belly` ×198, `kitchen-destroyed` ×2.
+
+Decision density (moderate): **55.8/min**, range 45.7–68.1 over 8 shifts.
+
+| gate | target | iteration 0 | iteration 1 |
+|---|---|---|---|
+| naive median survival | ≤ 45 s | 119.2 s FAIL | **12.3 s PASS** |
+| moderate median survival | 90–150 s | 120 s pass | **90.5 s PASS** |
+| moderate death spread | no bucket > 40 % | 99 % FAIL | **51.5 % FAIL** |
+| good vs naive | ≥ 2.5× | 1.01× FAIL | **9.7× PASS** |
+| decision density | ≥ 6/min | 67/min pass | **55.8/min PASS** |
+| replay fixtures | exact | pass | pass |
+
+Four of five. The death spread still fails, and it is expected to: the only
+per-run variance in the game so far is the seeded rhythm and the one-per-shift
+temperament, so two shifts of equal quality end at nearly the same place.
+Cravings with timers (stage 4), spit and clogging (stage 3) and the autonomous
+beats (stage 7) are what put variance inside a run.
+
+### Render
+
+Measured on a full-grown creature with the canvas filling 1920×1080:
+**4.10 ms median / 5.10 ms p95 / 4.19 ms mean**, against a 4 ms average budget.
+At size 1 it is 3.95 ms mean. The manifest's figure for this iteration (4.60 /
+10.50 / 5.37) was taken immediately after sixty screenshots and measures the
+harness, not the draw; the measurement has been moved to before the capture run
+for later iterations.
+
+Growth first cost 5.62 ms mean, because a creature that is displaced for the
+whole shift means every warp cell in the body kernel has to be redrawn on every
+frame — where before it only happened during a mutation. Most of the growth was
+therefore moved onto the mouth, which is drawn procedurally and costs nothing at
+any size. That decision is the direct cause of the critic's lowest score below.
+
+### Critic — iteration 1
+
+| Criterion | Score | iteration 0 |
+|---|---|---|
+| Agency | 3 | 2 |
+| Consequence | **1** | 2 |
+| Tension | 3 | (unusable) |
+| Readability | 2 | 2 |
+| Comedy | 6 | 4 |
+| Fairness | 3 | (unusable) |
+
+Lowest: **Consequence**. Single change asked for: *"Actually scale the creature
+sprite with the `ITS SIZE` value and stack visible mutation art on it, so that by
+90 s it has outgrown the serving hatch and crowds the launcher."*
+
+The faults worth acting on, in the critic's words:
+
+- "`×1.00` and `FINAL SIZE ×2.40` render the creature at essentially the same
+  pixel size — same shoulder width, same hatch clearance, same paw positions.
+  The headline mechanic is invisible." **This is correct and it is the direct
+  result of trading growth away for render budget.**
+- "Three to five tin cans are drawn on top of the creature's belly and chin with
+  a thin white trajectory line continuing past them. The body is not a collider;
+  shots pass through the creature and keep flying." **Correct — only the mouth
+  ellipse collides.**
+- "`VENT DEFLECTION` fires with no visible vent." The scheduled vent flap is
+  legacy and is supposed to become a consequence of a lunge in stage 7.
+- "IRRITATION has no bar — just a number to two decimals."
+- "`IT IS BIGGER NOW` is rendered inside the creature's open mouth, on the dark
+  throat, where it reads as a texture glitch."
+- "The file named `clip-ending` contains no ending — it stops at 93.8 s
+  mid-play." A harness bug: the ending clip's last frame lands one interval
+  short of the end.
+- "Score climbs +6 every 100 ms with `STREAK ×0` and no shot fired… a spectator
+  cannot tell a good shot from waiting."
+
+### CHECKPOINT — is this already more interesting than the current build?
+
+**Yes, but only in the rules, and that is not the same as yes.** The measurements
+say the change is real: the strategy that won the old game — hold the default
+angle and press Space on cooldown — now dies in twelve seconds out of two hundred
+shifts, where before it reached 119 seconds of a 120-second shift. A skilled bot
+outlives an unskilled one by nearly ten times rather than by one percent. Deaths
+are caused by something the player did: an empty belly from rationing badly, or a
+destroyed kitchen from missing. The mouth's rhythm gives the shot a *when* as
+well as a *where*, and the slot geometry makes those the same skill rather than
+two — a shot that arrives early now meets a gap too narrow to pass through
+instead of being waved away by a flag. Feeding a creature that is not hungry is
+now the worst move in the game, which is the first time the title has described
+a rule. Every one of those is a property the old build did not have at any
+difficulty, and none of them is a number I tuned into existence: the bots found
+the first three and the fourth was the fix for them.
+
+**But the picture has not caught up with the rules, and on a shared stream the
+picture is the game.** The critic, seeing only the captures, scored Consequence
+1 out of 10 — "the growth exists only as a number" — and it is right. I traded
+the visible part of growth away to stay inside the 4 ms render budget: the warp
+that deforms the painting has to redraw every cell it touches, and a creature
+that is growing all shift touches all of them all the time, which took the draw
+from 4.0 ms to 5.6 ms. I moved the growth onto the procedurally drawn mouth,
+which is free at any size, and the result is a creature whose mouth is half again
+as large at 90 seconds and whose body is within a few percent of where it
+started. A judge watching this stream would see a number in the corner change.
+That is not the brief. Before stage 3 I am going to spend an iteration making
+growth physical — widening the region of the painting the warp is allowed to
+touch so the creature can actually loom over the counter, calibrating the target
+ring against the mouth the rig really draws rather than against constants I
+chose, and making the creature's body a collider so a snack can no longer fly
+through its chest. The rules are worth keeping. The next iteration is about
+putting them on screen.
 
 ---
 

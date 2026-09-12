@@ -22,6 +22,7 @@ export interface CreaturePose {
   squashX: number; squashY: number;
   bodyRise: number; bellySwell: number; breath: number;
   jawOpen: number; mouthWidth: number; cornerLift: number; lipPress: number; jawShift: number;
+  mouthScaleX: number; mouthScaleY: number;
   lidLeft: number; lidRight: number; lowerLid: number; blink: number;
   browAngry: number; browSad: number; browRaise: number; browAsym: number;
   pupilX: number; pupilY: number; pupilScale: number;
@@ -37,7 +38,7 @@ export interface CreaturePose {
 
 const FIELDS: (keyof CreaturePose)[] = [
   "headX", "headY", "headTilt", "lean", "squashX", "squashY", "bodyRise", "bellySwell", "breath",
-  "jawOpen", "mouthWidth", "cornerLift", "lipPress", "jawShift",
+  "jawOpen", "mouthWidth", "cornerLift", "lipPress", "jawShift", "mouthScaleX", "mouthScaleY",
   "lidLeft", "lidRight", "lowerLid", "blink",
   "browAngry", "browSad", "browRaise", "browAsym",
   "pupilX", "pupilY", "pupilScale", "tongueOut", "drool",
@@ -65,6 +66,7 @@ const RATES: Partial<Record<keyof CreaturePose, [number, number]>> = {
   headX: [110, 13], headY: [110, 13], headTilt: [90, 12], lean: [80, 12],
   squashX: [220, 15], squashY: [220, 15],
   jawOpen: [260, 17], mouthWidth: [150, 16], cornerLift: [130, 15], lipPress: [180, 18],
+  mouthScaleX: [60, 12], mouthScaleY: [60, 12],
   jawShift: [140, 16],
   lidLeft: [300, 24], lidRight: [300, 24], lowerLid: [200, 20], blink: [420, 30],
   browAngry: [150, 17], browSad: [150, 17], browRaise: [170, 18], browAsym: [150, 17],
@@ -81,6 +83,7 @@ type Expression = Partial<Record<keyof CreaturePose, number>>;
 /** Everything a face channel does when nothing is happening. */
 const REST: Expression = {
   jawOpen: 0.06, mouthWidth: 1, cornerLift: 0.3, lipPress: 0.3, jawShift: 0,
+  mouthScaleX: 1, mouthScaleY: 1,
   lidLeft: 0.06, lidRight: 0.06, lowerLid: 0.08,
   browAngry: 0, browSad: 0, browRaise: 0.1, browAsym: 0,
   tongueOut: 0, drool: 0, teethBare: 0, teethLong: 0,
@@ -536,7 +539,8 @@ export class CreatureAnimator {
     let nearest = flight.length ? flight[0] : null;
     if (playing && nearest) {
       for (const item of flight) if (item.x > nearest.x) nearest = item;
-      const distance = Math.hypot(nearest.x - ARENA.mouth.x, nearest.y - ARENA.mouth.y);
+      const mouth = state?.creature ?? { x: ARENA.mouth.x, y: ARENA.mouth.y };
+      const distance = Math.hypot(nearest.x - mouth.x, nearest.y - mouth.y);
       const closeness = 1 - clamp01((distance - 70) / 460);
       this.wear("trackFar", 0.75);
       this.wear("trackNear", closeness * closeness);
@@ -550,9 +554,13 @@ export class CreatureAnimator {
     if (feed && (!miss || feed.age <= miss.age)) gaze = this.applyGulp(target, feed, reduced) ?? gaze;
     else if (miss) this.applyFlinch(target, miss, reduced);
 
-    // 7. The whistle.
+    // 7. The whistle. There is no surviving the shift any more — the run ends
+    //    when the creature wins — so the smug look belongs to the ending where
+    //    it simply outgrew the kitchen and got promoted.
+    const promoted = state?.failureReason === "outgrew-the-kitchen";
+    const enraged = state?.failureReason === "kitchen-destroyed";
     if (ended && state) {
-      if (state.phase === "survived") this.wear("smug", 1);
+      if (promoted) this.wear("smug", 1);
       else if (state.failureReason === "empty-belly") this.wear("collapse", 1);
       else this.wear("rageEnd", 1);
     }
@@ -589,8 +597,9 @@ export class CreatureAnimator {
     if (playing && nearest) {
       target.pupilX = clamp(-1, 1, (nearest.x - 838) / 340);
       target.pupilY = clamp(-1, 1, (nearest.y - 250) / 240);
-      target.headTilt += clamp(-9, 9, (nearest.x - ARENA.mouth.x) * 0.022);
-      target.headX += clamp(-16, 16, (nearest.x - ARENA.mouth.x) * 0.03);
+      const at = state?.creature ?? ARENA.mouth;
+      target.headTilt += clamp(-9, 9, (nearest.x - at.x) * 0.022);
+      target.headX += clamp(-16, 16, (nearest.x - at.x) * 0.03);
     }
     if (miss && miss.age > 0.06) {
       const look = clamp01((miss.age - 0.06) / 0.2);
@@ -602,7 +611,7 @@ export class CreatureAnimator {
       target.pupilY = mix(target.pupilY, gaze.y, gaze.weight);
     }
     if (step2 > 0.2) target.pupilY = mix(target.pupilY, -0.25, step2);
-    if (ended && state?.phase === "survived") { target.pupilX = -0.35; target.pupilY = -0.15; }
+    if (ended && promoted) { target.pupilX = -0.35; target.pupilY = -0.15; }
     // Down, but not so far down that the lids and the gaze between them push
     // the pupil out of the socket: a drained eye with no pupil in it reads as a
     // missing texture, and this is the frame the results screen holds.
@@ -639,23 +648,63 @@ export class CreatureAnimator {
       target.teethAlign = active ? 1 : strain * 0.55;
       if (warning) target.teethQuiver = grip > 0 ? 1 : 0;
     }
-    if (ended && state?.failureReason === "too-many-missed-shots") {
+    if (ended && enraged) {
       target.rageFlush = 1;
       target.sweat = 0.8;
     }
     if (ended && state?.failureReason === "empty-belly") target.pallor = 1;
-    if (ended && state?.phase === "survived") { target.pallor = 0; target.flush = 0; target.rageFlush = 0; }
+    if (ended && promoted) { target.pallor = 0; target.flush = 0; target.rageFlush = 0; }
 
     // Tremors.
     target.antennaShake = Math.max(target.antennaShake, step3);
     if (!reduced) target.shake = step3 * 0.7;
-    if (ended && state?.failureReason === "too-many-missed-shots") {
+    if (ended && enraged) {
       target.antennaShake = 1;
       target.shake = reduced ? 0 : 0.6;
     }
 
     // The reaction beats add their own skin on top.
     if (feed) this.gulpSkin(target, feed, reduced);
+
+    // --- the body is a mechanic, not a mood ---
+    //
+    // Growth, lean and the mouth's aperture come straight out of `ArcadeState`.
+    // No new faces were authored for any of this: the rules move the same
+    // channels the expressions use, and win where they disagree, because the
+    // aperture on screen is the aperture the collision is using. If the picture
+    // and the rule disagree the player is being lied to.
+    const creature = state?.creature;
+    if (creature && (playing || ended)) {
+      const grow = creature.size - 1;
+      const open = clamp01(creature.aperture);
+      target.jawOpen = mix(target.jawOpen, open, playing ? 0.88 : 0.35);
+      target.mouthWidth = mix(target.mouthWidth, 0.9 + open * 0.34, playing ? 0.7 : 0.3);
+      target.lipPress = mix(target.lipPress, open > 0.1 ? 0.1 : 0.75, playing ? 0.7 : 0.3);
+      if (open > 0.5) target.teethBare = Math.max(target.teethBare, 0.4);
+      // The mouth carries most of the growth, because the mouth is drawn rather
+      // than warped: it costs nothing, it stays crisp at any size, and it is
+      // the part the rules actually measure. These two follow `mouthGrowX` and
+      // `mouthGrowY` in the rules exactly, so the lit target ring is always the
+      // mouth the player can see.
+      target.mouthScaleX = 1 + grow * 0.2;
+      target.mouthScaleY = 1 + grow * 0.3;
+      // The body scale is deliberately small. Every warp cell the body kernel
+      // touches has to be redrawn once it is displaced at all, and the creature
+      // is now displaced for the whole shift rather than during a mutation —
+      // which took the draw from 4.0 ms to 5.6 ms at full size. Rise and lean
+      // are the same cost as scale here, so they are kept small too and the
+      // growth is spent where it is free.
+      target.squashX *= 1 + grow * 0.05;
+      target.squashY *= 1 + grow * 0.045;
+      target.bodyRise += grow * 19;
+      target.headX -= grow * 12;
+      target.headY -= grow * 6;
+      target.lean += grow * 0.04;
+      target.teethLong = Math.max(target.teethLong, clamp01(grow / 1.4) * 0.55);
+      // A shut mouth on a big creature is the thing the player is waiting out,
+      // so it tightens rather than simply closing.
+      if (open < 0.05) target.cornerLift = mix(target.cornerLift, -0.35, 0.4 * clamp01(grow / 0.7));
+    }
 
     // Inflation rides the uniform body scale rather than a deformer of its own:
     // a local kernel big enough to read is also steep enough to tear the paint.

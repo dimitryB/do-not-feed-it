@@ -183,14 +183,18 @@ export async function buildContactSheet(page, dir, outFile, suffix = "-stream.pn
 }
 
 /** Average/median/p95 draw cost over a few seconds of live play. */
-export async function measureRenderCost(page, seed = 4242, seconds = 4) {
+export async function measureRenderCost(page, seed = 4242, seconds = 4, prepare = null) {
   await page.evaluate((value) => {
     window.__dnfi.clearPose?.();
     window.__dnfi.clock(null);
     window.__dnfi.play.start(value);
     window.__dnfi.play.manual(false);
-    window.__dnfi.resetTiming();
   }, seed);
+  if (prepare) await prepare(page);
+  // Reset after preparing, so the first frames after a state change — which
+  // include one JIT spike that is not a frame cost — are not counted.
+  await wait(600);
+  await page.evaluate(() => window.__dnfi.resetTiming());
   await wait(seconds * 1000);
   const timing = await page.evaluate(() => {
     const value = window.__dnfi.timing();

@@ -16,6 +16,8 @@ export const WARP_REGION = { x: 512, y: 52, width: 632, height: 462 };
 // visible as tile edges wherever the field compresses hard.
 const CELLS_X = 38;
 const CELLS_Y = 30;
+/** Sub-pixel displacement a cell may have and still be left as the base drew it. */
+const SKIP = 0.34;
 /** How far the chin travels between a wide-open and a closed mouth. */
 // Smaller than it was, over a wider kernel. The lift is applied in almost every
 // state — the painting's mouth is open and the rig rebuilt it shut, so a closed
@@ -272,15 +274,22 @@ export function drawWarped(context: CanvasRenderingContext2D, source: HTMLCanvas
       const vy = gridY[below] - gridY[at];
       const det = ux * vy - uy * vx;
       if (det <= 0) continue;
-      // An undisplaced cell would redraw the base layer exactly as it already
-      // is. Most of the region is undisplaced most of the time.
+      // A cell that would land within a third of a pixel of where the base
+      // layer already drew it is not worth redrawing.
+      //
+      // The threshold used to be a twentieth of a pixel, which was effectively
+      // "exactly undisplaced". That was free while the body only moved during a
+      // mutation; once the creature grows continuously, the body kernel touches
+      // most of the region for the whole shift and nothing was being skipped.
+      // A third of a pixel is below what a resample can show and skips the
+      // wide, nearly-still margin around every kernel.
       const opposite0 = below + 1;
-      if (Math.abs(gridX[at] - (region.x + column * stepX)) < 0.06 &&
-          Math.abs(gridY[at] - (region.y + row * stepY)) < 0.06 &&
-          Math.abs(ux - stepX) < 0.06 && Math.abs(vy - stepY) < 0.06 &&
-          Math.abs(uy) < 0.06 && Math.abs(vx) < 0.06 &&
-          Math.abs(gridX[opposite0] - (region.x + (column + 1) * stepX)) < 0.06 &&
-          Math.abs(gridY[opposite0] - (region.y + (row + 1) * stepY)) < 0.06) continue;
+      if (Math.abs(gridX[at] - (region.x + column * stepX)) < SKIP &&
+          Math.abs(gridY[at] - (region.y + row * stepY)) < SKIP &&
+          Math.abs(ux - stepX) < SKIP && Math.abs(vy - stepY) < SKIP &&
+          Math.abs(uy) < SKIP && Math.abs(vx) < SKIP &&
+          Math.abs(gridX[opposite0] - (region.x + (column + 1) * stepX)) < SKIP &&
+          Math.abs(gridY[opposite0] - (region.y + (row + 1) * stepY)) < SKIP) continue;
       const m11 = stepX * vy / det;
       const m21 = -stepX * vx / det;
       const m12 = -stepY * uy / det;

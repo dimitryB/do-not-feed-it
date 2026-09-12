@@ -102,6 +102,27 @@ function probe(state, ingredient, angle, power) {
   return { fed: false, ticks: 240, bounces: 0 };
 }
 
+/**
+ * The delayed snapshot a bot decides from.
+ *
+ * `structuredClone` of the whole state, once per tick, was by far the most
+ * expensive thing in this harness — several times the cost of the flight
+ * probes it exists to feed. Once the rules expose `probeFlight`, a decision
+ * only ever reads these fields, so only these are copied.
+ */
+function viewOf(state) {
+  if (!HAS_PROBE) return structuredClone(state);
+  return {
+    seed: state.seed, tick: state.tick, phase: state.phase,
+    hunger: state.hunger, rage: state.rage, wanted: state.wanted,
+    size: state.size, creature: { ...state.creature },
+    mutation: state.mutation ? { ...state.mutation } : null,
+    mutations: state.mutations, craving: state.craving, threat: state.threat,
+    lastLaunchTick: state.lastLaunchTick, projectiles: state.projectiles,
+    hatchClosedUntil: state.hatchClosedUntil, reloadUntil: state.reloadUntil,
+  };
+}
+
 /** Which of `FOODS` the bot would rather be holding, before aiming at all. */
 function ingredientOrder(view) {
   const wanted = view.wanted;
@@ -119,9 +140,11 @@ function ingredientOrder(view) {
  * "wait" is returned only when no shot on the grid would land, which is a real
  * choice to hold fire because the mouth is shut or out of reach.
  */
-function bestAction(view) {
+function bestAction(view, feedBelow = 68) {
   if (view.phase !== "playing") return null;
   if (wantsHatch(view)) return { verb: "hatch" };
+  // Holding fire on a full creature is a decision, not idleness.
+  if (view.hunger > feedBelow) return { verb: "wait" };
   let best = null;
   for (const ingredient of ingredientOrder(view)) {
     const craved = ingredient === view.wanted;
@@ -190,10 +213,16 @@ function wantsHatch(view) {
 /* ------------------------------------------------------------------ *
  * The bots.
  * ------------------------------------------------------------------ */
+/**
+ * `feedBelow` is the rationing threshold, and it is the title's dilemma as a
+ * number: every serving keeps you alive and makes the creature worse, so a
+ * better player feeds later. The naive bot has no threshold — it fires whenever
+ * the launcher is ready, which is what winning looked like before this rewrite.
+ */
 const BOTS = {
-  naive: { latency: 0, noise: 0, blind: true },
-  moderate: { latency: Math.round(0.25 * TICKS), noise: 4 },
-  good: { latency: Math.round(0.15 * TICKS), noise: 1.5 },
+  naive: { latency: 0, noise: 0, blind: true, feedBelow: 101 },
+  moderate: { latency: Math.round(0.25 * TICKS), noise: 4, feedBelow: 68 },
+  good: { latency: Math.round(0.15 * TICKS), noise: 1.5, feedBelow: 52 },
 };
 
 /** How many mutations are live, across both the old and the rewritten rules. */
@@ -227,12 +256,12 @@ export function playShift(name, seed, { trackDensity = false } = {}) {
   const markers = { firstMutation: null, firstStack: null, end: null };
 
   while (state.phase === "playing" && state.tick < MAX_TICKS) {
-    history.push(structuredClone(state));
+    history.push(viewOf(state));
     if (history.length > depth) history.shift();
     const view = history[0];
 
     if (trackDensity) {
-      const action = bestAction(view);
+      const action = bestAction(view, config.feedBelow);
       ticksObserved += 1;
       if (run.action && !differs(action, run.action)) run.count += 1;
       else run = { action, count: 1 };
@@ -255,7 +284,7 @@ export function playShift(name, seed, { trackDensity = false } = {}) {
       if (wantsHatch(view) && HAS_HATCH && arcade.slamHatch(state)) {
         commands.push({ tick: state.tick, kind: "hatch" });
       } else if (canLaunch(state)) {
-        const action = bestAction(view);
+        const action = bestAction(view, config.feedBelow);
         if (action && action.verb === "launch") {
           const jitter = (noise() * 2 - 1) * config.noise;
           const angle = Math.round(Math.max(ARENA.minAngle, Math.min(ARENA.maxAngle, action.angle + jitter)));

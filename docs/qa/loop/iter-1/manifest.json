@@ -1,0 +1,120 @@
+{
+  "iteration": 1,
+  "capturedAt": "2026-09-12T02:44:06.486Z",
+  "seed": 20260911,
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "bot": {
+    "name": "moderate",
+    "ticks": 5781,
+    "seconds": 96.35,
+    "feeds": 22,
+    "score": 14176,
+    "cause": "empty-belly",
+    "markers": {
+      "firstMutation": 922,
+      "firstStack": null,
+      "end": 5781
+    }
+  },
+  "browserFinal": {
+    "tick": 5781,
+    "phase": "lost",
+    "failureReason": "empty-belly",
+    "hunger": 0,
+    "rage": 56.19,
+    "score": 14176,
+    "combo": 0,
+    "wanted": "balloon",
+    "servings": {
+      "metal": 14,
+      "balloon": 5,
+      "pepper": 3
+    },
+    "mutation": null,
+    "creature": {
+      "size": 2.4,
+      "x": 830.2,
+      "y": 281.4367,
+      "rx": 110.08,
+      "ry": 82.36,
+      "aperture": 0,
+      "untilOpen": 91,
+      "track": 4.4367,
+      "cycle": 52,
+      "cycleTick": 28,
+      "openTicks": 9,
+      "shutTicks": 95
+    },
+    "size": 2.4,
+    "appetite": 1.22,
+    "snubs": 24,
+    "misses": 30,
+    "totalFeeds": 22,
+    "projectiles": 1,
+    "events": [
+      {
+        "tick": 5641,
+        "type": "snub",
+        "label": "TOO LATE",
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 5715,
+        "type": "bounce",
+        "label": "ONE MORE CHANCE",
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 5728,
+        "type": "launch",
+        "label": "balloon",
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 5736,
+        "type": "miss",
+        "label": "SNACK DOWN",
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 5772,
+        "type": "snub",
+        "label": "TOO LATE",
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 5781,
+        "type": "end",
+        "label": "Empty belly. It has eaten the employee handbook.",
+        "ingredient": null
+      }
+    ]
+  },
+  "groups": [
+    "clip-first-mutation",
+    "strip-0020",
+    "hud-0020",
+    "strip-0040",
+    "hud-0040",
+    "strip-0100",
+    "hud-0100",
+    "clip-ending",
+    "strip-0120",
+    "hud-0120"
+  ],
+  "renderTiming": {
+    "samples": 40,
+    "average": 5.372499999962747,
+    "median": 4.600000001490116,
+    "p95": 10.5,
+    "max": 14.199999999254942,
+    "last": 4.699999999254942,
+    "canvas": {
+      "width": 1920,
+      "height": 1080
+    }
+  }
+}

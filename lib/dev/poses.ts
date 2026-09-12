@@ -65,7 +65,7 @@ function add(state: ArcadeState, type: ArcadeEvent["type"], ageTicks: number, la
 function shot(state: ArcadeState, ingredient: Ingredient, x: number, y: number, vx: number, vy: number, age: number) {
   state.projectiles.push({
     id: state.nextProjectileId++, ingredient, x, y, vx, vy,
-    age, bounces: 0, hazardBounces: 0, assisted: false,
+    age, bounces: 0, hazardBounces: 0, assisted: false, faceHits: 0,
   });
 }
 
@@ -259,11 +259,14 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
     }
     case "end-survived": {
       playing = false;
-      state.tick = ARENA.roundTicks;
-      state.phase = "survived";
+      state.tick = 9000;
+      state.phase = "lost";
+      state.failureReason = "outgrew-the-kitchen";
       state.hunger = 71;
       state.score = 12440;
-      state.announcement = "Shift complete. Somehow, you are still on the menu.";
+      state.creature.size = 2.4;
+      state.size = 2.4;
+      state.announcement = "It no longer fits through the door. It has been promoted.";
       add(state, "end", ticks, state.announcement);
       break;
     }
@@ -279,7 +282,7 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
     case "end-enraged": {
       playing = false;
       state.phase = "lost";
-      state.failureReason = "too-many-missed-shots";
+      state.failureReason = "kitchen-destroyed";
       state.rage = 100;
       state.hunger = 38;
       state.announcement = "Too many missed shots. The kitchen has been politely destroyed.";

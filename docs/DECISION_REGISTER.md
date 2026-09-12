@@ -15,10 +15,10 @@ the current task's communication tools and instructions.
 | D06 | React/Vinext/Vite + Workers/D1 + Solidity/viem | Adopted scaffold choice | Existing POP stack and lockfile save setup; reassess only for a concrete need |
 | D07 | npm lockfile retained | Adopted | No gratuitous package-manager migration |
 | D08 | Two-dimensional physical playfield | Proposed | Scope and control clarity; confirm in first physical prototype |
-| D09 | Standard shift lasts 120 seconds | Scaffold default | Short replay cycle; test after projectile travel and food supply exist |
+| D09 | Standard shift lasts 120 seconds | **Superseded by D36** | The fixed round was the reason there was no ramp and no failure; see D36 |
 | D10 | Metal, balloon and pepper initial ingredients | Proposed / harness implemented | Three visibly different consequences; confirm by milestone M1 |
 | D11 | Clock/time echo ingredient deferred | Proposed scope limit | Extra determinism and teaching costs; reconsider after M4 only |
-| D12 | One active mutation first, at most two later | Proposed | Readability before combination complexity; resolve in M2 |
+| D12 | One active mutation first, at most two later | **Superseded by D44** | Mutations that expire and never stack are the reason feeding has no consequence |
 | D13 | Aim + launch final controls; selection buttons only in harness | Proposed / scaffold limitation | Avoid shipping a matching quiz; settle pointer semantics in M1 |
 | D14 | Guest practice before wallet | Adopted product requirement | Strong judging evidence and low friction |
 | D15 | End-of-run player signature, optional sponsored submission | Proposed | Contract supports relayers; budget/abuse policy must precede sponsorship |
@@ -42,6 +42,25 @@ the current task's communication tools and instructions.
 | D33 | MIT license and provenance record | Adopted | Compatible with contest; original copied-code notice retained |
 | D34 | Public source/release at submission time | Contest requirement, future action | User must authorize actual external publication through task scope |
 | D35 | Discord submission channel | Unresolved external detail | Announcement conflicts between `#game-contest-2` and `#game-contest` |
+
+## The feeding-loop redesign (branch `feat/creature-loop`)
+
+Opened by `docs/dnfi-loop-redesign.md`. Every decision here was taken against
+the bot harness and the gameplay critic, and the evidence for each is in
+`docs/qa/loop/ITERATION_LOG.md`.
+
+| ID | Choice | State | Rationale / resolution point |
+| --- | --- | --- | --- |
+| D36 | The shift is endless; the creature always wins | Implemented (iteration 1) | Score is time kept fed, plus feeds, plus style. A fixed 120-second round cannot have a ramp, and the bot table showed every skill level stopping at the clock rather than at a failure. The 12-minute `ARENA.maxTicks` is a replay bound, not a round |
+| D37 | The creature's size is the difficulty curve | Implemented (iteration 1) | Every accepted serving grows it: bigger mouth, shorter open window, faster appetite. Growth is front-loaded so the first servings visibly change it |
+| D38 | Growth asymptotes at ×2.4 and does not end the shift | Implemented (iteration 1) | Ending the run when the creature reached full size was tried first and **inverted the skill ordering** — the better the player, the sooner they hit the cap and the shorter their run. Size is the curve; what ends a shift is failing to keep up with it |
+| D39 | Food is only accepted while the mouth is at least 45 % open | Implemented (iteration 2) | The open window is the timing skill. A shut mouth physically rejects the shot — a "snub" that bounces off the face and can still be banked back in — rather than silently swallowing it |
+| D40 | Feeding a creature that is not hungry is the bad decision | Implemented (iteration 1) | Above 82 fullness a serving returns 15 % of its nourishment and grows the creature three times as fast. This is the title as a rule, and it is what separates a player who rations from one who fires on cooldown: it is the single change that moved the naive bot from 119 s to under 60 s |
+| D41 | Irritation cools at ~0.6/s | Implemented (iteration 1) | Without it the meter is a ratchet and every run ends the same way; with it the meter reads as how you are playing now |
+| D42 | One seeded "temperament" per shift | Implemented (iteration 2) | Sets how generous the mouth is for the whole shift, so a seed has a character worth talking about and two equally good shifts last different lengths |
+| D43 | The warp's ×1.14 scale ceiling is kept | Implemented (iteration 1) | The rig cannot magnify the painting further without dissolving its skin detail. Growth therefore reads through the procedurally drawn mouth (which has no such limit), plus rise and lean, which are translations and cost nothing |
+| D44 | Mutations become permanent, stacking creature changes | Planned (stage 3) | Replaces D12 |
+| D45 | The reaction verb is "slam the hatch" | Planned (stage 6) | One verb, two uses — it cancels a lunge and blocks a spit — rather than two verbs that each do one thing |
 
 ## Decisions that must close before contract V1
 

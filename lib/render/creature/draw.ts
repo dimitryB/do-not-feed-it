@@ -91,11 +91,24 @@ function aperture(pose: CreaturePose): Aperture {
   // upper lip over the nose and one eye, which reads as a broken composite.
   const upperApex = Math.max(MOUTH.upperOpen, centre - gap / 2);
   const lowerApex = upperApex + gap;
+  // Growth. The corners can barely move — they already reach the edges of the
+  // painted face — but the gap can open a long way, which is why the rules
+  // scale the mouth's two axes by different amounts and why this does too.
+  const sx = pose.mouthScaleX || 1;
+  const sy = pose.mouthScaleY || 1;
+  const mid = (upperApex + lowerApex) / 2;
+  const scaledLeftX = MOUTH.center + (leftX - MOUTH.center) * sx;
+  const scaledRightX = MOUTH.center + (rightX - MOUTH.center) * sx;
+  const scaledUpper = Math.max(MOUTH.upperOpen - 14, mid + (upperApex - mid) * sy);
+  const scaledLower = mid + (lowerApex - mid) * sy;
+  const scaledLeftY = Math.max(CORNER_CEILING, mid + (leftY - mid) * sy);
+  const scaledRightY = Math.max(CORNER_CEILING, mid + (rightY - mid) * sy);
   return {
-    leftX, leftY, rightX, rightY, centerX: MOUTH.center,
-    upperApex, lowerApex,
-    upperControl: controlFor(leftY, rightY, upperApex),
-    lowerControl: controlFor(leftY, rightY, lowerApex),
+    leftX: scaledLeftX, leftY: scaledLeftY, rightX: scaledRightX, rightY: scaledRightY,
+    centerX: MOUTH.center,
+    upperApex: scaledUpper, lowerApex: scaledLower,
+    upperControl: controlFor(scaledLeftY, scaledRightY, scaledUpper),
+    lowerControl: controlFor(scaledLeftY, scaledRightY, scaledLower),
   };
 }
 

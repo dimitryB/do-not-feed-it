@@ -211,6 +211,22 @@ async function main() {
     // A fixed clip rectangle rather than an element screenshot: Playwright's
     // element capture re-measures and waits for stability on every call, which
     // on a canvas that never stops moving costs more than the frame is worth.
+    // The budget is stated at 1920x1080 with the canvas filling the frame, so
+    // it is measured that way rather than on the capture layout.
+    const timingContext = await browser.newContext({ viewport: { width: WIDTH, height: HEIGHT }, deviceScaleFactor: 1 });
+    const timingPage = await timingContext.newPage();
+    await timingPage.goto(server.url, { waitUntil: "domcontentloaded" });
+    await timingPage.waitForFunction(() => Boolean(window.__dnfi && window.__dnfi.play), null, { timeout: 60_000 });
+    await waitForScene(timingPage);
+    await timingPage.addStyleTag({ content: STAGE_FILL });
+    await settle(timingPage, 5);
+    // Measured on a full-grown creature: that is when every warp cell is
+    // displaced and the draw costs the most.
+    timing = await measureRenderCost(timingPage, 4242, 8, (page) => page.evaluate(() => {
+      window.__dnfi.play.setSize(2.4);
+    }));
+    await timingPage.close();
+
     const shell = page.locator(".game-shell");
     const box = await shell.boundingBox();
     const clip = {
@@ -291,17 +307,6 @@ async function main() {
     }
     await makeStreamCopies(page, created);
 
-    // The budget is stated at 1920x1080 with the canvas filling the frame, so
-    // it is measured that way rather than on the capture layout.
-    const timingContext = await browser.newContext({ viewport: { width: WIDTH, height: HEIGHT }, deviceScaleFactor: 1 });
-    const timingPage = await timingContext.newPage();
-    await timingPage.goto(server.url, { waitUntil: "domcontentloaded" });
-    await timingPage.waitForFunction(() => Boolean(window.__dnfi && window.__dnfi.play), null, { timeout: 60_000 });
-    await waitForScene(timingPage);
-    await timingPage.addStyleTag({ content: STAGE_FILL });
-    await settle(timingPage, 5);
-    timing = await measureRenderCost(timingPage);
-    await timingPage.close();
     console.log(`[loop-shots] render ${timing.median.toFixed(2)} ms median / ${timing.p95.toFixed(2)} ms p95 / `
       + `${timing.average.toFixed(2)} ms mean / ${timing.max.toFixed(2)} ms max over ${timing.samples} frames`);
 

@@ -46,8 +46,24 @@ export function createScene(){
     if(playing&&state&&!(DEV_HOOKS&&devRender.hideAim)){
       const key=`${Math.floor(tick/6)}-${angle}-${selected}`;if(key!==previewKey){guide=trajectoryPreview(state,selected,angle);previewKey=key;}
       guide.forEach((p,i)=>{ctx.fillStyle=`rgba(224,244,190,${.85-i/guide.length*.55})`;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(1.3,3-i*.12),0,Math.PI*2);ctx.fill();});
-      // A calibrated target is subtle, and always agrees with collision geometry.
-      ctx.save();ctx.strokeStyle='#eff4bd44';ctx.lineWidth=1;ctx.setLineDash([5,12]);ctx.beginPath();ctx.ellipse(ARENA.mouth.x,ARENA.mouth.y,ARENA.mouth.rx,ARENA.mouth.ry,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+    // The target ring is the collision ellipse, drawn where it actually is: it
+    // grows, leans and rises with the creature, and it is only lit while the
+    // mouth is open far enough to accept a serving. This is the visual twin of
+    // the timing rule, not a decoration.
+    if(playing&&state&&!(DEV_HOOKS&&devRender.hideAim)){
+      const c=state.creature;const taking=c.aperture>=0.5;
+      ctx.save();
+      // The face: where a snack will hit something. Always dim, always there.
+      ctx.lineWidth=1;ctx.setLineDash([5,12]);ctx.strokeStyle='#eff4bd2e';
+      ctx.beginPath();ctx.ellipse(c.x,c.y,c.rx,c.ry,0,0,Math.PI*2);ctx.stroke();
+      // The gap: where a snack will actually go in. Lit only while it is open
+      // wide enough to accept one, and exactly the shape the rules test.
+      const gap=Math.max(.3,c.aperture);
+      ctx.setLineDash([]);ctx.lineWidth=taking?2.4:1.2;
+      ctx.strokeStyle=taking?`rgba(216,248,150,${.5+.22*(reduced?0:Math.abs(Math.sin(time*5)))})`:'#eff4bd22';
+      ctx.beginPath();ctx.ellipse(c.x,c.y,c.rx,c.ry*gap,0,0,Math.PI*2);ctx.stroke();
+      ctx.restore();
     }
     const hazard=playing?getHazard(tick):null;
     if(hazard){ctx.save();const {x,y,width:w,height:h,warning}=hazard;const cx=x+w/2;const t=reduced?0:time;ctx.save();ctx.filter='blur(12px)';const col=ctx.createLinearGradient(x-16,0,x+w+16,0);col.addColorStop(0,'rgba(196,222,224,0)');col.addColorStop(.5,`rgba(214,236,238,${warning?.09:.26})`);col.addColorStop(1,'rgba(196,222,224,0)');ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(cx,y+h/2,w*.8,h*.62,0,0,Math.PI*2);ctx.fill();ctx.restore();const rolls=warning?4:9;const speed=warning?26:74;for(let i=0;i<rolls;i++){const f=((t*speed+i*(h+60)/rolls)%(h+60))/(h+60);const yy=y+h+30-f*(h+60);const r=(warning?13:20)+f*(warning?16:34);const a=(warning?.16:.42)*Math.sin(Math.PI*Math.min(1,f*1.15));const puff=ctx.createRadialGradient(cx+Math.sin(f*7+i)*11,yy,1,cx+Math.sin(f*7+i)*11,yy,r);puff.addColorStop(0,`rgba(236,250,250,${a})`);puff.addColorStop(.55,`rgba(196,226,230,${a*.5})`);puff.addColorStop(1,'rgba(180,210,216,0)');ctx.fillStyle=puff;ctx.beginPath();ctx.ellipse(cx+Math.sin(f*7+i)*11,yy,r,r*.82,0,0,Math.PI*2);ctx.fill();}ctx.fillStyle='#0b1414';ctx.fillRect(x-4,y+h+22,w+8,9);ctx.strokeStyle='#46564e';ctx.lineWidth=1;ctx.strokeRect(x-3.5,y+h+22.5,w+7,8);ctx.fillStyle='#050a0a';for(let i=0;i<5;i++)ctx.fillRect(x-1+i*(w+4)/5,y+h+24,3,5);if(!warning){ctx.globalCompositeOperation='screen';ctx.globalAlpha=.5+(reduced?0:.2*Math.sin(t*7));const lead=ctx.createLinearGradient(0,y+h+22,0,y+h-30);lead.addColorStop(0,'rgba(226,248,244,.75)');lead.addColorStop(1,'rgba(200,232,232,0)');ctx.fillStyle=lead;ctx.fillRect(x-10,y+h-30,w+20,52);}ctx.restore();}
@@ -56,9 +72,9 @@ export function createScene(){
       const color=COLORS[m.ingredient];const pulse=reduced?.55:.5+.5*Math.sin(time*6);
       ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.globalAlpha=active?.6:.2+pulse*.3;
       if(m.ingredient==='metal'){
-        if(active){ctx.save();ctx.beginPath();ctx.rect(0,0,ARENA.mouth.x-190,700);ctx.clip();
-          if(!reduced){for(let i=0;i<4;i++){const r=85+((time*35+i*35)%145);ctx.globalAlpha=.32*(1-(r-85)/145);ctx.beginPath();ctx.ellipse(ARENA.mouth.x,ARENA.mouth.y,r,r*.65,0,Math.PI*.63,Math.PI*1.37);ctx.stroke();}}
-          else{ctx.globalAlpha=.28;ctx.beginPath();ctx.ellipse(ARENA.mouth.x,ARENA.mouth.y,150,98,0,Math.PI*.63,Math.PI*1.37);ctx.stroke();}
+        if(active){ctx.save();ctx.beginPath();ctx.rect(0,0,(state?.creature.x??ARENA.mouth.x)-190,700);ctx.clip();
+          if(!reduced){for(let i=0;i<4;i++){const r=85+((time*35+i*35)%145);ctx.globalAlpha=.32*(1-(r-85)/145);ctx.beginPath();ctx.ellipse(state?.creature.x??ARENA.mouth.x,state?.creature.y??ARENA.mouth.y,r,r*.65,0,Math.PI*.63,Math.PI*1.37);ctx.stroke();}}
+          else{ctx.globalAlpha=.28;ctx.beginPath();ctx.ellipse(state?.creature.x??ARENA.mouth.x,state?.creature.y??ARENA.mouth.y,150,98,0,Math.PI*.63,Math.PI*1.37);ctx.stroke();}
           ctx.restore();}
       }else if(m.ingredient==='balloon'){
         // Lift reads on the creature itself; the kitchen only gets a faint
@@ -84,7 +100,7 @@ export function createScene(){
       // bitrate, so it carries its own light.
       ctx.save();const glow=ctx.createRadialGradient(p.x,p.y,2,p.x,p.y,42);const tint=COLORS[p.ingredient];
       glow.addColorStop(0,`${tint}66`);glow.addColorStop(.45,`${tint}22`);glow.addColorStop(1,`${tint}00`);
-      ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,42,0,Math.PI*2);ctx.fill();ctx.restore();if(active&&m.ingredient==='metal'&&p.assisted){ctx.save();ctx.strokeStyle='#d4f7b54a';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.quadraticCurveTo((p.x+ARENA.mouth.x)/2,p.y-45,ARENA.mouth.x,ARENA.mouth.y);ctx.stroke();ctx.restore();}ctx.save();ctx.strokeStyle=COLORS[p.ingredient];ctx.globalAlpha=.55;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(p.x-p.vx*3.2,p.y-p.vy*3.2);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.globalAlpha=.9;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(p.x-p.vx*1.6,p.y-p.vy*1.6);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();item(ctx,p.ingredient,p.x,p.y,48,reduced?0:p.age*.065);});
+      ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,42,0,Math.PI*2);ctx.fill();ctx.restore();if(active&&m.ingredient==='metal'&&p.assisted){ctx.save();ctx.strokeStyle='#d4f7b54a';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.quadraticCurveTo((p.x+(state?.creature.x??ARENA.mouth.x))/2,p.y-45,state?.creature.x??ARENA.mouth.x,state?.creature.y??ARENA.mouth.y);ctx.stroke();ctx.restore();}ctx.save();ctx.strokeStyle=COLORS[p.ingredient];ctx.globalAlpha=.55;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(p.x-p.vx*3.2,p.y-p.vy*3.2);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.globalAlpha=.9;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(p.x-p.vx*1.6,p.y-p.vy*1.6);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();item(ctx,p.ingredient,p.x,p.y,48,reduced?0:p.age*.065);});
     // A missed snack stays on the floor for a moment. Without it, a miss and a
     // catch look the same on a stream: the creature reacts and nothing else
     // changes.
@@ -99,7 +115,7 @@ export function createScene(){
 
     // Score pops are UI, so they read as UI: a pill above the action rather
     // than loose text composited over the creature's body.
-    for(const e of recent){const age=tick-e.tick;if(DEV_HOOKS&&devRender.hideLabels)break;if(e.type==='feed'||e.type==='miss'||e.type==='bounce'){
+    for(const e of recent){const age=tick-e.tick;if(DEV_HOOKS&&devRender.hideLabels)break;if(e.type==='feed'||e.type==='miss'||e.type==='bounce'||e.type==='snub'||e.type==='grow'){
       const good=e.type==='feed';const y=good?Math.max(74,86-(reduced?0:age*.4)):Math.max(70,e.y-46-(reduced?0:age*.55));
       // Hold the pop at full strength for most of its life and fade only at the
       // end: a pill that spends its time half-transparent reads as a draw bug.
