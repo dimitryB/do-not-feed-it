@@ -159,6 +159,13 @@ export const TUNING = Object.freeze({
    *   metal + pepper   — a pepper serving makes it sneeze the clog out.
    *   balloon + pepper — every serving it spits back vents pressure and lowers it.
    */
+  // Three servings a level. Two was measured over two hundred shifts and
+  // rejected: mutation strength IS the difficulty ramp, so making levels arrive
+  // half again as fast cut the moderate median from 128 s to 109 s and bunched
+  // half the deaths into one thirty-second bucket. The complaint it was meant to
+  // answer — that the mutation chips freeze at x1 x1 x1 a minute into a shift
+  // and nothing new arrives afterwards — is real, and the answer to it cannot be
+  // "the same ramp, faster".
   servingsPerLevel: 3,
   maxLevel: 3,
 
@@ -365,6 +372,10 @@ export interface ArcadeState {
   hatchClosedUntil: number; hatchReadyAt: number; hatchSaves: number;
   /** Drain owed from a shut hatch, paid back once the player can serve again. */
   hungerDebt: number;
+  /** Tick the one last serving was granted on, or -1 while it is unspent. */
+  lastServingAt: number;
+  /** Whether the one last serving has already been used this shift. */
+  lastServingSpent: boolean;
   /** Drool on the floor: snacks slide and bounce differently until this tick. */
   slickUntil: number;
   /** The vent it bit off, once it has. */
@@ -563,6 +574,7 @@ export function createArcade(seed: number): ArcadeState {
     beatAt: TUNING.beatEvery, threat: null,
     craving: null, cravingNextAt: 180, cravingsMet: 0, cravingsMissed: 0, cravingStreak: 0,
     hatchClosedUntil: 0, hatchReadyAt: 0, hatchSaves: 0, hungerDebt: 0,
+    lastServingAt: -1, lastServingSpent: false,
     slickUntil: 0, vent: null, ending: 0, charge: 0,
     announcement: "It only swallows when the mouth is open. Watch the mouth, not the line.",
     rolls: { rhythm: 0, craving: 0, beat: 0, spit: 0, junk: 0 },
@@ -1268,7 +1280,33 @@ export function stepArcade(state: ArcadeState): void {
     state.score += 1;
   }
 
-  if (state.hunger <= 0) {
+  // THE LAST SERVING — once a shift, a serving already in the air gets to land.
+  //
+  // The belly emptying while one of the player's shots is still in flight ends
+  // the shift on a tick when the thing that could have saved it has already left
+  // the launcher and nothing the player presses can matter. So the shift waits
+  // for it: the belly sits at zero, the shot flies, and if it feeds, the run
+  // goes on.
+  //
+  // Once. Granting it every time was measured and it quietly rewarded the worst
+  // strategy in the game — a player firing on every cooldown always has
+  // something in the air, so they collected the reprieve on every crossing, and
+  // the property test that says rationing beats gorging fell from 5 seeds of 5
+  // to 3. One serving is a last chance; an unlimited one is a safety net under
+  // spamming.
+  const inFlight = state.projectiles.some((p) => p.kind !== "junk" && p.kind !== "spit");
+  if (state.hunger > 0 && state.lastServingAt >= 0) {
+    state.lastServingAt = -1;
+    state.lastServingSpent = true;
+  }
+  let riding = state.hunger <= 0 && inFlight && state.lastServingAt >= 0;
+  if (state.hunger <= 0 && inFlight && !riding && !state.lastServingSpent) {
+    state.lastServingAt = state.tick;
+    state.announcement = "Everything rides on the one in the air.";
+    event(state, "beat", ARENA.launcher.x + 40, ARENA.launcher.y - 90, "THE LAST SERVING");
+    riding = true;
+  }
+  if (state.hunger <= 0 && !riding) {
     state.phase = "lost";
     state.failureReason = "empty-belly";
   } else if (state.rage >= 100) {

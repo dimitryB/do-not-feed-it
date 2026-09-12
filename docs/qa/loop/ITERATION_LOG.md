@@ -942,6 +942,68 @@ iteration.** `GAME_VERSION` bumped to 3; fixtures regenerated; 36 tests green.
 
 ---
 
+## Iteration 10 — the last serving, and a third act that arrives
+
+**The change.** The iteration-9 critic found no cheap death but flagged two
+things that could become one, and one flat stretch:
+
+- *"The run ended with two of the player's shots still in the air. For the last
+  second or two nothing the player pressed could matter, and a stream audience
+  will read 'it was right there' as a robbery."*
+- *"The stage marker is stuck at 03 / IT NO LONGER FITS"* — because it was keyed
+  to size against a ceiling a shift never reaches, so the fourth act existed in
+  the code and never appeared on screen.
+
+**THE LAST SERVING.** Once a shift, if the belly empties while one of the
+player's servings is still in the air, the shift waits for it: the belly sits at
+zero, the shot flies, and if it lands the run goes on. It is announced on the
+launcher and it is the name the fourth act already had.
+
+**The stage marker now describes the run rather than the clock.** Act four
+arrives when fullness drops under 22 % or irritation passes 72 — when the shift
+is actually in trouble — instead of at a size the medians never reach.
+
+### What was tried first, measured, and reverted
+
+**Two servings per mutation level instead of three**, to answer the critic's
+*"the mutation chips freeze at ×1 ×1 ×1 a minute in and stay there for the
+remaining 60 % of the run"*. Mutation strength *is* the difficulty ramp, so
+making levels arrive half again as fast is not a way to show more escalation —
+it is a way to make the game harder:
+
+| | moderate median | worst bucket |
+|---|---|---|
+| three servings a level | 128.0 s | 35 % |
+| **two servings a level** | **109.3 s** | **50.5 %** |
+
+Reverted. The complaint is real and still open; the answer to it is not "the
+same ramp, faster".
+
+**An unlimited in-flight reprieve.** Letting *every* airborne serving land before
+the shift ends passed all five gates — and broke a property test that has held
+since iteration 1: *feeding whenever you can must be worse than feeding when it
+is hungry*. It fell from 5 seeds of 5 to 3. A player firing on every cooldown
+always has something in the air, so an unlimited reprieve is a safety net under
+spamming, which is the exact strategy this whole redesign exists to kill. One
+serving is a last chance; unlimited is a different game.
+
+### Bots — 200 seeded shifts each
+
+| bot | p10 | median | p90 | worst 30 s bucket | causes |
+|---|---|---|---|---|---|
+| naive | 26.5 s | 28.6 s | 30.6 s | 78.5 % | kitchen destroyed 200 |
+| moderate | 102.2 s | **133.8 s** | 171.7 s | **38 %** | empty belly 99, kitchen destroyed 101 |
+| good | 145.2 s | **183.7 s** | 235.7 s | 31 % | empty belly 142, kitchen destroyed 58 |
+
+Density 127/min. Good ÷ naive = 6.4×. **All five gates pass — fourth consecutive
+iteration.** 36 tests green, the rationing property restored.
+
+The failure mix is now even: half of a moderate shift's deaths are starvation and
+half are rage. Previously starvation was 80 % of them, and the critic had noted
+it had never been shown a kitchen-destroyed ending to judge.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s
