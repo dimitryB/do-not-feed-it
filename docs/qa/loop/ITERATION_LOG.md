@@ -1,16 +1,17 @@
 # Feeding-loop iteration log
 
-## FINAL REPORT — third block, stopped at the cap, exit criteria not met
+## FINAL REPORT — third block, exit criteria not met, and the list is short
 
 **Status: all eight stages implemented and reachable, all five numeric gates
-passing on ten consecutive iterations, the render regression found and mostly
-paid down — and one cheap-death finding reopened on the last iteration of the
-block, by a critic who measured the target ring by hand and found the game
-drawing it somewhere the mouth is not.** The sixteen-iteration cap is reached.
+passing on eleven consecutive iterations, no open cheap-death finding, the render
+regression found and mostly paid down, and the target ring — which five critics
+in a row called the worst thing in the game — measured correct to two pixels at
+every size.** Five of the six critic criteria have been at 7 or above; the sixth,
+Readability, moved off 5 for the first time in six iterations on the last one.
 
 ### The gates
 
-| gate | ceiling / floor | iteration 16 | verdict |
+| gate | ceiling / floor | iteration 17 | verdict |
 |---|---|---|---|
 | naive median survival | ≤ 45 s | 28.6 s | pass |
 | moderate median | 90–150 s | 133.8 s | pass |
@@ -19,8 +20,8 @@ drawing it somewhere the mouth is not.** The sixteen-iteration cap is reached.
 | decision density (moderate) | ≥ 6 changes/min | 127/min | pass |
 | replay fixtures | exact | exact | pass |
 
-Passed on iterations 7 through 16 — **ten consecutive**, against an exit bar of
-two. Iterations 12 to 16 changed no rule at all, and the frozen traces came back
+Iterations 7 through 17 — **eleven consecutive**, against an exit bar of two.
+Iterations 12 to 17 changed no rule at all, and the frozen traces came back
 byte-identical every time, which is the check that proves it.
 
 ### The critic
@@ -29,103 +30,95 @@ byte-identical every time, which is the check that proves it.
 |---|---|---|---|---|---|---|
 | 0 (baseline) | 2 | 2 | 2 | 2 | 4 | 1 |
 | 7 | 5 | 7 | 5 | 3 | 7 | 4 |
-| 11 (end of block two) | 8 | 6 | 7 | 4 | 6 | 7 |
+| 11 | 8 | 6 | 7 | 4 | 6 | 7 |
 | 12 | 8 | 9 | 7 | 5 | 7 | 7 |
 | 13 | 8 | 8 | 8 | 5 | 7 | 7 |
 | 14 | 8 | 9 | 8 | 5 | 7 | 6 |
-| 15 | 8 | 9 | 8 | 5 | **8** | 7 |
-| 16 | 8 | 9 | 7 | 5 | 8 | **4** |
+| 15 | 8 | 9 | 8 | 5 | 8 | 7 |
+| 16 | 8 | 9 | 7 | 5 | 8 | 4 |
+| **17** | **8** | **8** | **7** | **6** | **7** | **6** |
 
-Agency, Consequence, Tension and Comedy are all at or above 7 and have been for
-five iterations. **Readability has been 5 for five straight iterations**, and
-every critic in that run has given the same reason: the lit target ring.
+Nine critics, each a fresh context shown only pictures and numbers. Treat the
+row-to-row wobble as noise and the named faults as signal; the faults are below.
 
 ### What this block did
 
-1. **Found and mostly paid down a render regression nobody had measured**
-   (iteration 12). The capture harness had only ever timed a creature with no
-   mutations, and reported ~4 ms for eleven iterations while a typical mid-shift
-   creature cost 9.6. A new profiler split the frame: the warp grid was flat
-   across every state, and the whole variable was `drawSkin` running four blended
+1. **Found and mostly paid down a render regression nobody had measured.** The
+   capture harness had only ever timed a creature with *no mutations* and
+   reported ~4 ms for eleven iterations while a typical mid-shift creature cost
+   9.6. A new per-frame profiler split the draw: the warp grid was flat across
+   every state, and the whole variable was `drawSkin` running four blended
    full-resolution composites, one per colour grade. One unblended composite over
-   the body's own rectangle, a fifth-resolution scratch, and a slightly coarser
+   the body's own rectangle, a fifth-resolution scratch and a slightly coarser
    grid took the worst state from **9.72 ms to 4.52** and the mutation surcharge
-   from **+5.3 ms to +1.5**. A bare creature is inside the 4 ms budget; a mutated
-   one is 13–25 % over, and the remainder is the warp's own floor, which predates
-   every mutation and cannot be cut further without the belly tearing.
-2. **Stopped five text objects competing in one frame** (iteration 13), moved the
-   mutation banner off the creature's mouth, suppressed a toast that promised a
-   second chance at zero fullness, and made the stat row readable at 960 px.
-3. **Chased the target ring through three iterations** (14, 15, 16) with a
-   calibration script that was extended to measure the states a shift actually
-   reaches rather than only a bare creature. That found and fixed: a balloon
-   inflation that lifted the painted mouth 84 px the rules knew nothing about, a
-   lift channel over-scaled 3.4×, and two mutation expressions carrying 30 px of
-   head lift each. Measured against that instrument the error fell from **84 px
-   to 34 px worst case, and from 29 px to under 2 px for the lift**.
-4. **Made the opens-in telegraph stop dressing as the target** (iteration 15): it
-   was a lime arc around the whole face, the same colour and shape as the accept
-   ring, and three critics in a row measured it as a badly-placed hitbox. It is
-   now amber brackets that converge on the gap.
-5. **Made the loss card lead with the loss** (iteration 15).
-6. **Fixed a harness bug that had been corrupting every render measurement in the
-   session**: `stopServer` sent SIGTERM and returned, the dev server's workerd
-   child ignored it, and seven stale server pairs had accumulated holding five
+   from **+5.3 ms to +1.5**.
+2. **Made the target ring true.** Five critics called it the worst thing in the
+   game. It took four iterations and the instrument had to be rebuilt twice: the
+   calibration script measured only a bare creature, so it was blind to the
+   mutation channels; then it had no projectile in its probes, so it was blind to
+   the creature's *tracking*, which is the largest divergence of all and applies
+   on most of the frames a player aims on. Found and fixed along the way: a
+   belly inflation that lifted the painted mouth 84 px the rules knew nothing
+   about, a lift channel over-scaled 3.4×, two mutation expressions carrying 30 px
+   of head lift each, and a tracking channel the picture followed at a quarter
+   strength. The ninth critic measured the result at **dx = +2 px at x1.28 and
+   +2 px at x1.82**.
+3. **Stopped the HUD talking over itself**: five competing text objects in one
+   frame became one, the mutation banner moved off the creature's mouth, a toast
+   that promised a second chance at zero fullness was suppressed, the telegraph
+   stopped wearing the target's colour and shape, the stat row and the loss card
+   became readable at 960 px, and `IRRITATION` — which ends every naive run —
+   finally got a line explaining what it is.
+4. **Fixed a harness bug that had been corrupting every render measurement in the
+   session.** `stopServer` sent SIGTERM and returned; the dev server's workerd
+   child ignores it. Seven stale server pairs had accumulated, holding five
    gigabytes.
 
-### What did not pass, and what to do about it
+### What is left, in the order I would do it
 
-**1. The cheap death is open again, and the two instruments disagree.** This is
-the thing to fix first and it is not a tuning problem.
+**1. The ring's shape, which is the last of the ring.** The rules' acceptance
+test is an axis-aligned ellipse; the painted mouth is a rotated wedge. The ring
+is now in the right place and still claims 109 px of cheek at x1.28 and misses a
+387 px band of open gullet at x1.82. Closing it means changing one of the two —
+give the collision the mouth's axis and taper (a rule change, gates to
+re-measure), or redraw the painted mouth rounder (a rig change). Either is a real
+iteration; nothing else on this list is worth more.
 
-The iteration-16 critic traced the painted mouth by hand at five sizes and
-measured the ring 162 px below it at ×1.82, 69 % disjoint. The calibration script
-says the same states agree within 34 px. Both cannot be right — and the critic's
-own numbers independently confirm the ring is exactly the rules' ellipse, to the
-pixel, at every size. So the disagreement is about **where the mouth is**:
-`mouthBox()` reports the aperture the rig draws lip to lip, and the critic traced
-the dark cavity between the teeth. On a wide-open mouth those are different
-objects, and the player aims at the hole they can see.
+**2. The render is still 13–25 % over budget with mutations on.** 4.52 ms worst
+case against 4 ms, measured with `scripts/render-budget.mjs` — never with the
+capture harness — on a machine with no GPU. The remaining cost is ~470
+transformed `drawImage` calls for the warp grid. A coarser grid fits the budget
+and tears an inflated belly; that was measured and rejected.
 
-**Fix `mouthBox()` to report the cavity, re-run the calibration, re-fit the rule
-constants.** Everything measured in iterations 14 and 16 stands and was worth
-doing — it was measured against the wrong reference, and the reference is one
-function.
+**3. The creature does not act.** Every critic in three blocks has said the same
+thing: the comedy and the feedback are both entirely in the typography. It
+opens, it shuts, it blushes, and it never reacts to being fed, missed or
+clanged. This is the largest single upside left and it is presentation-only.
 
-**2. Readability has been 5 for five iterations.** Once the ring is honest, the
-remaining named faults are small and cheap: give the ring a dark outer stroke so
-it survives pale mutated skin and the 960 px downscale; explain `IRRITATION`
-somewhere, since it ends 100 % of naive runs and 29 % of expert ones and appears
-in zero coaching lines while `FULLNESS` has four.
+**4. The last third of a run has nothing new in it.** Moderate and good bots both
+finish at exactly ×1.96 with identical score rates — 60.8 against 61.1 points a
+second — so the fifty extra seconds an expert earns is the fourth act repeating.
+Note that the one obvious lever, making mutation levels arrive faster, was tried
+in iteration 10 and broke the death-spread gate: mutation strength *is* the
+difficulty ramp. The answer has to be something that escalates without being
+harder.
 
-**3. The render is still 13–25 % over budget with mutations on.** 4.52 ms worst
-case against 4 ms, measured with `scripts/render-budget.mjs` on a machine with no
-GPU. The remaining cost is ~470 transformed `drawImage` calls per frame for the
-warp grid; a coarser grid fits the budget and tears an inflated belly, which was
-measured and rejected.
-
-**4. Half the death space has never been filmed.** Three critics have now said
+**5. Half the death space has never been filmed.** Four critics have now said
 they cannot judge the fairness of "kitchen destroyed", which is 100 % of naive
 deaths and half of a moderate shift's. The capture harness films one fixed seed
-and that seed starves. It should film one of each ending.
-
-**5. The creature still does not act.** Every critic in both blocks has said the
-comedy is in the typography: it opens, it shuts, it blushes, and it never
-reacts to being fed, missed or clanged. This is the largest single upside left
-and it is presentation-only work.
+and that seed starves; it should film one of each ending.
 
 **6. `npm run test:contract` still cannot run** — `binaries.soliditylang.org` is
-blocked by this environment's egress policy. No chain code was touched.
+blocked by this environment's egress policy. No chain code was touched on this
+branch.
 
 ### Recommended next step
 
-One iteration, in this order, and it is small: make `mouthBox()` report the dark
-cavity rather than the lip-to-lip box; re-run `scripts/mouth-calibrate.mjs`;
-re-fit `ARENA.mouth`, `leanPerSize`, `risePerSize`, `mouthGrowX` and
-`mouthGrowY` to what it then says; put a dark stroke under the ring; and add one
-coaching line for `IRRITATION`. Then film a kitchen-destroyed shift. That is the
-whole of the open Readability and Fairness list, and nothing else in this log is
-close to it in value.
+Take the ring's shape. Decide it as a design question first, because the two
+answers are not equivalent: an axis-aligned ellipse is a rule a player can learn
+and a wedge is a shape they can see, and the game currently asks them to believe
+both. Then re-measure the gates if the rule moved, and film a kitchen-destroyed
+shift while the harness is open.
 
 ---
 

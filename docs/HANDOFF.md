@@ -84,21 +84,22 @@ choice was made is in `docs/DECISION_REGISTER.md` (D36–D53); the evidence is i
 `docs/qa/loop/ITERATION_LOG.md`, whose final report is the first thing to read.
 
 **Read the final report before changing anything.** It states what passed, what
-did not, and the next step in order. After three blocks of work: **all five
-numeric gates pass and have passed on ten consecutive iterations**, four of the
-six critic criteria sit at 7 or above, and the naive "press Space on cooldown"
-strategy went from surviving 119.2 s of a 120 s shift to dying in 28.6 s of an
-endless one.
+did not, and the next step in order. After three blocks: **all five numeric gates
+pass and have passed on eleven consecutive iterations**, there is no open
+cheap-death finding, and the lit target ring — which five critics running called
+the worst thing in the game — now sits on the mouth to within two pixels at every
+size. The naive "press Space on cooldown" strategy went from surviving 119.2 s of
+a 120 s shift to dying in 28.6 s of an endless one.
 
-Two things are open and the first is small and specific. **The lit target ring is
-the rules' collision ellipse, drawn exactly — and the painted mouth is not where
-`scripts/mouth-calibrate.mjs` thinks it is.** That script measures the aperture
-the rig draws lip to lip; a critic tracing the dark cavity between the teeth
-measured the ring 162 px below it at full size. Fix `mouthBox()` to report the
-cavity, re-run the calibration, re-fit the five rule constants it prints. Until
-that is done no further tuning of the ring means anything. Second, the draw is
-13-25 % over its 4 ms budget once the creature carries two mutations — measure
-that with `scripts/render-budget.mjs`, never with the capture harness.
+The open list is short and the first item is a design decision, not a bug: **the
+rules accept food inside an axis-aligned ellipse and the painted mouth is a
+rotated wedge**, so the ring is truthful about the rules and still claims some
+cheek and misses some gullet. Give the collision the mouth's axis and taper, or
+redraw the mouth rounder — the first moves a rule and needs the gates
+re-measured. After that: the draw is 13-25 % over its 4 ms budget once the
+creature carries two mutations (measure with `scripts/render-budget.mjs`, never
+with the capture harness), and the creature still never reacts to anything, which
+every critic in three blocks has named as the largest upside left.
 
 Do not merge this branch. Nothing in `contracts/`, `worker/` or `db/` was
 touched.
