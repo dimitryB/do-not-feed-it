@@ -11,7 +11,7 @@ Readability, moved off 5 for the first time in six iterations on the last one.
 
 ### The gates
 
-| gate | ceiling / floor | iteration 17 | verdict |
+| gate | ceiling / floor | iteration 19 | verdict |
 |---|---|---|---|
 | naive median survival | ≤ 45 s | 28.6 s | pass |
 | moderate median | 90–150 s | 133.8 s | pass |
@@ -20,8 +20,8 @@ Readability, moved off 5 for the first time in six iterations on the last one.
 | decision density (moderate) | ≥ 6 changes/min | 127/min | pass |
 | replay fixtures | exact | exact | pass |
 
-Iterations 7 through 17 — **eleven consecutive**, against an exit bar of two.
-Iterations 12 to 17 changed no rule at all, and the frozen traces came back
+Iterations 7 through 19 — **twelve consecutive**, against an exit bar of two.
+Iterations 12 to 19 changed no rule at all, and the frozen traces came back
 byte-identical every time, which is the check that proves it.
 
 ### The critic
@@ -123,11 +123,17 @@ branch.
 
 ### Recommended next step
 
-Take the ring's shape. Decide it as a design question first, because the two
-answers are not equivalent: an axis-aligned ellipse is a rule a player can learn
-and a wedge is a shape they can see, and the game currently asks them to believe
-both. Then re-measure the gates if the rule moved, and film a kitchen-destroyed
-shift while the harness is open.
+**Give the creature a temper.** It is the one thing every critic across three
+blocks has asked for, in different words each time, and the iteration-18 review
+finally made it concrete: irritation ends every naive run and half of the
+competent ones, and the creature wears the same placid smile at 8 % as at 93 %.
+A bared-teeth, red-eyed, hatch-rattling escalation would move Readability,
+Comedy and Fairness at once, it is presentation-only, and the pose rig already
+has the channels for it (`rageFlush`, `teethBare`, `browAngry`, `teethQuiver`).
+
+Then the ring's shape, which is a design decision before it is any work: an
+axis-aligned ellipse is a rule a player can learn and a wedge is a shape they can
+see, and the game currently asks them to believe both.
 
 ---
 
