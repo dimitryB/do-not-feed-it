@@ -258,15 +258,18 @@ const EXPRESSIONS = {
     // up, which is what it was.
     jawOpen: 0.1, mouthWidth: 0.78, cornerLift: -1.1, lipPress: 1, teethBare: 0.4,
     lidLeft: 0.08, lidRight: 0.08, lowerLid: 0.7, browAngry: 0.95,
-    headX: 16, headY: -13, headTilt: -3, lean: 0.05,
-    squashX: 1.08, squashY: 0.95, antennaDroop: -0.6, antennaTwist: -0.15,
+    // No headY or squashY: irritation is a face and a lean, not a change of
+    // head height, and the lit target ring is drawn where the rules put the
+    // mouth. Leaning in is `headX` and `lean`, which cost the ring nothing.
+    headX: 16, headTilt: -3, lean: 0.05,
+    squashX: 1.08, antennaDroop: -0.6, antennaTwist: -0.15,
     pupilScale: 0.78,
   },
   /** Step three: teeth out, whole body forward. */
   annoy3: {
     jawOpen: 0.2, mouthWidth: 1.02, cornerLift: -1.45, lipPress: 0, teethBare: 1,
     lidLeft: 0.05, lidRight: 0.05, lowerLid: 0.82, browAngry: 1,
-    headX: 25, headY: -15, lean: 0.075, squashX: 1.06, squashY: 0.96,
+    headX: 25, lean: 0.075, squashX: 1.06,
     antennaDroop: -1, antennaTwist: 0.4, pupilScale: 0.62,
   },
   /** Metal building: teeth pushing through, eyes wide. */
@@ -515,6 +518,20 @@ export class CreatureAnimator {
     this.wear("annoy2", step2);
     this.wear("annoy3", step3);
 
+    // 3b. Irritation outranks what it has become.
+    //
+    // The three shapes above are worn before the mutations, and a blend is won
+    // by whoever wears last, so a creature three misses from wrecking the
+    // kitchen was showing a balloon's placid smile. A critic shown the
+    // kitchen-destroyed ending for the first time put it plainly: the same face
+    // at 8 % irritation and at 93 %, so the meter that ends every unskilled run
+    // has no presence outside the HUD. It is re-worn after the mutations, and
+    // from step two it wins.
+    //
+    // Deliberately after the mutation block and deliberately before tracking and
+    // the one-shot reactions: a snack in the air and a serving landing should
+    // still read, because those are the player's own doing.
+    //
     // 4. What it has become.
     //
     // Three permanent levels that stack, so the expressions are blended by
@@ -524,6 +541,8 @@ export class CreatureAnimator {
     this.wear("activeMetal", metal * 0.9);
     this.wear("activeBalloon", balloon * 0.9);
     this.wear("holdPepper", pepper * 0.9);
+    if (step3 > 0.01) this.wear("annoy3", step3);
+    else if (step2 > 0.01) this.wear("annoy2", step2 * 0.8);
     // The pressure that is about to become a burp, and the spit that is about
     // to leave, are the two moments worth anticipating.
     const spitting = latest(state, ["spit"], 0.55);
@@ -577,6 +596,17 @@ export class CreatureAnimator {
     if (recovery) gaze = this.applyRecovery(recovery);
     if (feed && (!miss || feed.age <= miss.age)) gaze = this.applyGulp(target, feed, reduced) ?? gaze;
     else if (miss) this.applyFlinch(target, miss, reduced);
+
+    // 6b. And above the top step, nothing outranks the temper.
+    //
+    // A one-shot reaction is allowed to win a blend, because a reaction is the
+    // player's own doing and it is the feedback they need. But a creature at
+    // ninety per cent irritation that a burp turns back into a smiling frog is
+    // the exact failure a critic named: the meter that ends every unskilled run
+    // having no presence on the animal. Above step three this goes on last, at
+    // a weight that blends under the reaction rather than replacing it, so the
+    // snarl is still there underneath the burp.
+    if (step3 > 0.35) this.wear("annoy3", (step3 - 0.35) * 1.1);
 
     // 7. The whistle. There is no surviving the shift any more — the run ends
     //    when the creature wins — so the smug look belongs to the ending where

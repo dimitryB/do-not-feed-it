@@ -1,0 +1,162 @@
+{
+  "iteration": 20,
+  "capturedAt": "2026-09-13T09:21:22.875Z",
+  "seed": 20268830,
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "bot": {
+    "name": "moderate",
+    "ticks": 8392,
+    "seconds": 139.86666666666667,
+    "feeds": 21,
+    "score": 7910,
+    "cause": "kitchen-destroyed",
+    "markers": {
+      "firstMutation": 1708,
+      "firstStack": 3375,
+      "end": 8392
+    }
+  },
+  "browserFinal": {
+    "tick": 8392,
+    "phase": "lost",
+    "failureReason": "kitchen-destroyed",
+    "hunger": 8.3601,
+    "rage": 100,
+    "score": 7910,
+    "combo": 0,
+    "wanted": "balloon",
+    "servings": {
+      "metal": 6,
+      "balloon": 8,
+      "pepper": 7
+    },
+    "mutations": {
+      "metal": 2,
+      "balloon": 2,
+      "pepper": 2
+    },
+    "threat": null,
+    "craving": {
+      "ingredient": "balloon",
+      "startedAt": 8172,
+      "endsAt": 8854
+    },
+    "creature": {
+      "size": 1.7529,
+      "x": 835.9343,
+      "y": 285.3695,
+      "rx": 133.1634,
+      "ry": 92.6892,
+      "bx": 835.5606,
+      "by": 370.3397,
+      "brx": 251.1032,
+      "bry": 159.5995,
+      "aperture": 0,
+      "untilOpen": 48,
+      "track": 37.0105,
+      "lift": 5.72,
+      "pressure": 0.5287,
+      "clog": 0.18,
+      "open": 0,
+      "cycle": 82,
+      "cycleTick": 31,
+      "openTicks": 17,
+      "shutTicks": 47
+    },
+    "size": 1.7529,
+    "appetite": 1.06,
+    "snubs": 22,
+    "misses": 63,
+    "totalFeeds": 21,
+    "hatchClosedUntil": 8266,
+    "hatchReadyAt": 8392,
+    "reloadUntil": 8239,
+    "vent": {
+      "since": 7381
+    },
+    "ending": 1,
+    "projectiles": 0,
+    "events": [
+      {
+        "tick": 8296,
+        "type": "bounce",
+        "label": "ONE MORE CHANCE",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 8305,
+        "type": "miss",
+        "label": "ON THE FLOOR",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 8315,
+        "type": "launch",
+        "label": "metal",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 8368,
+        "type": "bounce",
+        "label": "ONE MORE CHANCE",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 8372,
+        "type": "miss",
+        "label": "DROPPED",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 8378,
+        "type": "clog",
+        "label": "CLANG",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 8392,
+        "type": "miss",
+        "label": "ON THE FLOOR",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 8392,
+        "type": "end",
+        "label": "Too many missed shots. It has eaten the shift supervisor.",
+        "ingredient": null
+      }
+    ]
+  },
+  "groups": [
+    "strip-0020",
+    "hud-0020",
+    "clip-first-mutation",
+    "strip-0040",
+    "hud-0040",
+    "clip-first-stack",
+    "strip-0100",
+    "hud-0100",
+    "strip-0120",
+    "hud-0120",
+    "strip-0140",
+    "hud-0140",
+    "clip-ending",
+    "strip-0200",
+    "hud-0200"
+  ],
+  "renderTiming": {
+    "samples": 33,
+    "average": 5.7878787879916755,
+    "median": 5.300000000745058,
+    "p95": 7.800000000745058,
+    "max": 8.199999999254942,
+    "last": 4.600000001490116,
+    "canvas": {
+      "width": 1920,
+      "height": 1080
+    }
+  }
+}

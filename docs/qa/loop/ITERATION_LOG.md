@@ -11,7 +11,7 @@ Readability, moved off 5 for the first time in six iterations on the last one.
 
 ### The gates
 
-| gate | ceiling / floor | iteration 19 | verdict |
+| gate | ceiling / floor | iteration 20 | verdict |
 |---|---|---|---|
 | naive median survival | ≤ 45 s | 28.6 s | pass |
 | moderate median | 90–150 s | 133.8 s | pass |
@@ -20,8 +20,8 @@ Readability, moved off 5 for the first time in six iterations on the last one.
 | decision density (moderate) | ≥ 6 changes/min | 127/min | pass |
 | replay fixtures | exact | exact | pass |
 
-Iterations 7 through 19 — **twelve consecutive**, against an exit bar of two.
-Iterations 12 to 19 changed no rule at all, and the frozen traces came back
+Iterations 7 through 20 — **thirteen consecutive**, against an exit bar of two.
+Iterations 12 to 20 changed no rule at all, and the frozen traces came back
 byte-identical every time, which is the check that proves it.
 
 ### The critic
@@ -123,13 +123,14 @@ branch.
 
 ### Recommended next step
 
-**Give the creature a temper.** It is the one thing every critic across three
-blocks has asked for, in different words each time, and the iteration-18 review
-finally made it concrete: irritation ends every naive run and half of the
-competent ones, and the creature wears the same placid smile at 8 % as at 93 %.
-A bared-teeth, red-eyed, hatch-rattling escalation would move Readability,
-Comedy and Fairness at once, it is presentation-only, and the pose rig already
-has the channels for it (`rageFlush`, `teethBare`, `browAngry`, `teethQuiver`).
+**Finish the temper.** Iteration 20 got the brow and the eyes: at 87 %
+irritation the creature now has heavy lids and brows down over its eyes where it
+used to have raised ones. Its mouth is still smiling, because the one-shot
+reactions own `cornerLift` and `mouthWidth` outright and irritation blends
+underneath them. Let irritation take those two channels above the top step, or
+author snarling variants of the recovery reactions. Small, presentation-only, and
+it closes the fault every critic across three blocks has named in different
+words.
 
 Then the ring's shape, which is a design decision before it is any work: an
 axis-aligned ellipse is a rule a player can learn and a wedge is a shape they can
@@ -1608,6 +1609,51 @@ by eye at 960 px; not yet put to a critic.
 Still open from the iteration-18 review, and both are real: the creature does not
 show irritation at all, and the report card contradicts its own sentence by
 drawing an undamaged kitchen.
+
+---
+
+## Iteration 20 — irritation on the face, and how far that got
+
+The iteration-18 review's sharpest line was that the creature wears the same
+placid smile at 8 % irritation and at 93 %, so the meter that ends every unskilled
+run has no presence outside the HUD. The expressions for it already existed —
+`annoy1`, `annoy2`, `annoy3`, with bared teeth, an angry brow and narrowed eyes —
+and the reason they were not on screen is the order they are worn in.
+
+A pose is a blend and the last wearer wins. Irritation was worn at step 3 of the
+stack, before the mutations at step 4, before tracking at step 5 and the one-shot
+reactions at step 6. So a creature three misses from wrecking the kitchen was
+showing a balloon's smile, and a burp turned it back into a happy frog.
+
+- **Irritation is re-worn after the mutations**, and from step two it wins.
+- **Above the top step it is re-worn after the reactions too**, at a weight that
+  blends under them rather than replacing them — a reaction is the player's own
+  doing and is the feedback they need, but it should not be able to make a
+  creature at ninety per cent look delighted.
+- **`annoy2` and `annoy3` lost their `headY` and `squashY`.** They carried 13 and
+  15 px of head lift, which at the top of the meter is 15 px of the lit ring
+  drifting off the mouth — the fault iterations 14 to 17 spent four rounds
+  removing. Irritation leans in with `headX` and `lean`, which cost the ring
+  nothing.
+
+**All five gates pass — thirteenth consecutive iteration**, fixtures
+byte-identical, 36 tests green.
+
+### What it actually looks like, honestly
+
+Partly solved. In the same frame the iteration-18 critic called out —
+`clip-ending/frame-09`, 87 % irritation, mid-burp — **the brow and the eyes now
+read as angry**: heavy lids, brows down over the eyes, where before they were
+raised and open. **The mouth is still a smile**, because the burp reaction owns
+`cornerLift` and `mouthWidth` outright and a half-weight blend underneath it does
+not invert a grin.
+
+So: the face has a temper now, the mouth does not. Finishing it means either
+letting irritation take `cornerLift` and `mouthWidth` outright above the top step
+— at the cost of a reaction reading less clearly on the one frame it fires — or
+authoring a snarling variant of the recovery reactions. That is the next
+iteration and it is small. This one was not put to a critic; there was no block
+time left to run one.
 
 ---
 
