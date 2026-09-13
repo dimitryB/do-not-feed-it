@@ -69,11 +69,19 @@ function drawMutations(ctx:CanvasRenderingContext2D,state:ArcadeState,time:numbe
     ctx.fillStyle='#e0fbf3';ctx.beginPath();ctx.ellipse(-6*swell,-3*swell,4.6*swell,3*swell,0,0,Math.PI*2);ctx.fill();
     // How close the burp is, drawn around the valve rather than floating above
     // the head where it read as a stray line.
+    // A gauge, not a ring. A ring in an ingredient's own colour is the grammar
+    // a serving in flight uses — "yours, live, in the air" — and putting one on
+    // the creature's own body spent it: a critic found the player's air puff and
+    // this valve drawn as the same teal blob inside the same thin teal ring.
     if(c.pressure>0.25){
       ctx.rotate(0.62);
-      ctx.globalAlpha=.45+c.pressure*.5;ctx.strokeStyle=c.pressure>0.85?'#ffd7ad':'#bdf3e6';
-      ctx.lineWidth=4;ctx.lineCap='round';
-      ctx.beginPath();ctx.arc(0,0,24*swell,-Math.PI/2,-Math.PI/2+Math.PI*2*c.pressure);ctx.stroke();
+      const h=34;
+      ctx.globalAlpha=.8;ctx.fillStyle='#08201ccc';
+      ctx.beginPath();ctx.roundRect(24,-h/2,9,h,4);ctx.fill();
+      ctx.globalAlpha=.5+c.pressure*.5;ctx.fillStyle=c.pressure>0.85?'#ffd7ad':'#8fd8cc';
+      ctx.beginPath();ctx.roundRect(24,h/2-h*c.pressure,9,h*c.pressure,4);ctx.fill();
+      ctx.globalAlpha=.9;ctx.strokeStyle='#22403c';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.roundRect(24,-h/2,9,h,4);ctx.stroke();
     }
     ctx.restore();
     // Strain marks along the top of the swell, inside the silhouette.
@@ -575,7 +583,10 @@ export function createScene(){
         // The belly stops emptying whenever the launcher is taken away. The
         // rule is only fair if it is visible, so the bar says so while it holds.
         if(i===0&&(held||state.hungerDebt>0.01)){
-          const label=held?'HELD':'CATCHING UP';const lw=ctx.measureText(label).width+16;
+          // "CATCHING UP" sat on a bar that was falling faster than usual,
+          // because catching up is the debt being repaid. A reassuring word next
+          // to a collapsing number is the only place the HUD actively misled.
+          const label=held?'HELD':'PAYING IT BACK';const lw=ctx.measureText(label).width+16;
           ctx.fillStyle='#0c1a16';ctx.beginPath();ctx.roundRect(x+w/2-lw/2,by-23,lw,17,8);ctx.fill();
           ctx.strokeStyle=held?'#9bd7c4':'#eea66d';ctx.lineWidth=1;ctx.stroke();
           ctx.textAlign='center';ctx.fillStyle=held?'#9bd7c4':'#eea66d';ctx.fillText(label,x+w/2,by-11);

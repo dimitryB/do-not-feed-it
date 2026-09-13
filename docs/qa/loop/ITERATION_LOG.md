@@ -11,7 +11,7 @@ Readability, moved off 5 for the first time in six iterations on the last one.
 
 ### The gates
 
-| gate | ceiling / floor | iteration 23 | verdict |
+| gate | ceiling / floor | iteration 25 | verdict |
 |---|---|---|---|
 | naive median survival | ≤ 45 s | 28.6 s | pass |
 | moderate median | 90–150 s | 133.8 s | pass |
@@ -20,7 +20,7 @@ Readability, moved off 5 for the first time in six iterations on the last one.
 | decision density (moderate) | ≥ 6 changes/min | 127/min | pass |
 | replay fixtures | exact | exact | pass |
 
-Iterations 7 through 23 — **sixteen consecutive**, against an exit bar of two.
+Iterations 7 through 25 — **eighteen consecutive**, against an exit bar of two.
 Iterations 12 to 21 changed no rule at all, and the frozen traces came back
 byte-identical every time, which is the check that proves it.
 
@@ -1809,6 +1809,66 @@ the answer has to be an aid rather than a difficulty change. The flat opening is
 a tuning question: the drain is real from the grace tick onward, it is simply
 slower than a serving restores, so a competent player sits at a plateau until
 the appetite catches up.
+
+---
+
+## Iteration 24 — the opening gets a stake, and the dead slot earns its place
+
+Two critics had measured the same flat opening — *"FULLNESS reads 65 % at 00:20,
+00:32, 00:40 and 00:47; four samples spanning 27 seconds and the needle does not
+move"* — and the same dead HUD slot: `STREAK` read x0 in eleven of twelve sampled
+frames, because at 28 % accuracy it always will.
+
+The stake in the first forty-five seconds was never missing; it was invisible.
+It is the **first mutation**, three servings out, shown only as three small pips
+in a corner chip. The `STREAK` slot now reads **NEXT CHANGE** — the ingredient
+the creature is closest to changing on, and how many servings away — so the
+opening has a number that moves and a promise that lands. Presentation only; the
+data was already in the state.
+
+### Critic — iteration 24
+
+| | Agency | Consequence | Tension | Readability | Comedy | Fairness |
+|---|---|---|---|---|---|---|
+| iteration 22 | 6 | 8 | 6 | 5 | 7 | 7 |
+| **iteration 24** | **7** | 8 | **8** | **6** | 7 | 7 |
+
+**No cheap death.** Tension went 6 to 8 and Readability 5 to 6. On the three
+things that were asked for, the verdicts were "half landed", "landed as
+information, failed as a distinct signal" and "not landed" — each with a reason
+precise enough to act on, which is the next iteration.
+
+---
+
+## Iteration 25 — three faults, two of them mine
+
+**The ring grammar was spent the same iteration it was bought.** Iteration 23
+gave a serving in flight a ring so it could not be confused with the kitchen's
+cutlery, and it worked — *"eleven white matte forks, none of them ringed... the
+player's tin can carries an opaque lime ring. A stranger gets this in one
+frame."* And then: *"the player's air puff is a teal bag inside a thin teal ring;
+the creature's balloon-belly valve is a teal blob inside a thin teal ring — same
+hue, same ring weight, same diameter. You spent the whole iteration teaching
+'ring = your snack' and then put a ring on a body part."* The valve's pressure
+readout is now a **gauge** — a vertical bar on a dark plate — which is a shape
+nothing in flight uses.
+
+**The pay rate stalled in silence.** *"Between 01:54 and 02:01 the multiplier has
+frozen because the belly dropped under the danger line, and nothing marks it.
+Same weight, same colour, same position. The one moment where SHIFT PAY could
+have said 'you are losing something right now' passes in silence."* It now reads
+`SHIFT PAY · STALLED` in red with the figure struck through, and it is on the
+report card, which had been grading a 121-second run without mentioning the
+number that run had spent 121 seconds compounding.
+
+**A reassuring word on a falling bar.** *"A pill reading CATCHING UP sits inside
+the FULLNESS row while the number falls 60 % to 55 %... it is the only place in
+the build where the HUD actively misinforms a stranger."* Correct — catching up
+is the hatch debt being repaid, which means the bar is falling *faster* than
+usual. It reads `PAYING IT BACK` now.
+
+**All five gates pass — eighteenth consecutive iteration**, fixtures
+byte-identical, 36 tests green.
 
 ---
 
