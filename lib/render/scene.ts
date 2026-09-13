@@ -382,7 +382,24 @@ export function createScene(){
       // bitrate, so it carries its own light.
       ctx.save();const glow=ctx.createRadialGradient(p.x,p.y,2,p.x,p.y,42);const tint=COLORS[p.ingredient];
       glow.addColorStop(0,`${tint}66`);glow.addColorStop(.45,`${tint}22`);glow.addColorStop(1,`${tint}00`);
-      ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,42,0,Math.PI*2);ctx.fill();ctx.restore();if(levels&&levels.metal>0&&p.ingredient==='metal'&&p.assisted&&p.kind!=='spit'){ctx.save();ctx.strokeStyle='#d4f7b54a';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.quadraticCurveTo((p.x+(creature?.x??ARENA.mouth.x))/2,p.y-45,creature?.x??ARENA.mouth.x,creature?.y??ARENA.mouth.y);ctx.stroke();ctx.restore();}ctx.save();ctx.strokeStyle=COLORS[p.ingredient];ctx.globalAlpha=.55;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(p.x-p.vx*3.2,p.y-p.vy*3.2);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.globalAlpha=.9;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(p.x-p.vx*1.6,p.y-p.vy*1.6);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();item(ctx,p.ingredient,p.x,p.y,48,reduced?0:p.age*.065);});
+      ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,42,0,Math.PI*2);ctx.fill();ctx.restore();if(levels&&levels.metal>0&&p.ingredient==='metal'&&p.assisted&&p.kind!=='spit'){ctx.save();ctx.strokeStyle='#d4f7b54a';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.quadraticCurveTo((p.x+(creature?.x??ARENA.mouth.x))/2,p.y-45,creature?.x??ARENA.mouth.x,creature?.y??ARENA.mouth.y);ctx.stroke();ctx.restore();}// The player's own serving, told apart from the room's cutlery.
+      //
+      // At 960 px a tin can in flight and a spoon the magnet is dragging in were
+      // the same fourteen-pixel grey smudge over the same busy photograph, and a
+      // stranger could not tell the thing they launched from the thing about to
+      // ruin it. The serving now carries a dark halo, a long bright tail in its
+      // own ingredient colour and a ring — none of which the kitchen's metal has.
+      ctx.save();
+      ctx.strokeStyle='rgba(4,12,10,0.5)';ctx.globalAlpha=1;ctx.lineWidth=11;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(p.x-p.vx*3.4,p.y-p.vy*3.4);ctx.lineTo(p.x,p.y);ctx.stroke();
+      ctx.strokeStyle=COLORS[p.ingredient];ctx.globalAlpha=.6;ctx.lineWidth=6;
+      ctx.beginPath();ctx.moveTo(p.x-p.vx*3.2,p.y-p.vy*3.2);ctx.lineTo(p.x,p.y);ctx.stroke();
+      ctx.globalAlpha=.95;ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(p.x-p.vx*1.6,p.y-p.vy*1.6);ctx.lineTo(p.x,p.y);ctx.stroke();
+      ctx.globalAlpha=.85;ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.arc(p.x,p.y,25,0,Math.PI*2);ctx.stroke();
+      ctx.restore();
+      item(ctx,p.ingredient,p.x,p.y,52,reduced?0:p.age*.065);});
     // A missed snack stays on the floor for a moment. Without it, a miss and a
     // catch look the same on a stream: the creature reacts and nothing else
     // changes.

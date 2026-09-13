@@ -393,6 +393,16 @@ export interface ArcadeState {
   hungerDebt: number;
   /** Tick the one last serving was granted on, or -1 while it is unspent. */
   lastServingAt: number;
+  /**
+   * Ticks spent with the belly above the line the score also pays on.
+   *
+   * The pay rate used to ride the wall clock, and a critic caught it climbing
+   * x2.46 to x2.51 across five seconds in which the player landed nothing and
+   * the score did not move: a headline number going up during a total failure
+   * streak is feedback pointing the wrong way. The shift pays for time kept fed,
+   * which is the same thing the score itself has measured since iteration 1.
+   */
+  paidTicks: number;
   /** Whether the one last serving has already been used this shift. */
   lastServingSpent: boolean;
   /** Drool on the floor: snacks slide and bounce differently until this tick. */
@@ -456,8 +466,8 @@ export const MUTATION_RULES: Record<Ingredient, string> = {
 };
 
 /** The shift's pay rate: everything scored is multiplied by this. */
-export function payRate(tick: number): number {
-  return quantize(1 + (tick / (60 * ARENA.tickRate)) * TUNING.payPerMinute);
+export function payRate(paidTicks: number): number {
+  return quantize(1 + (paidTicks / (60 * ARENA.tickRate)) * TUNING.payPerMinute);
 }
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -598,7 +608,7 @@ export function createArcade(seed: number): ArcadeState {
     beatAt: TUNING.beatEvery, threat: null,
     craving: null, cravingNextAt: 180, cravingsMet: 0, cravingsMissed: 0, cravingStreak: 0,
     hatchClosedUntil: 0, hatchReadyAt: 0, hatchSaves: 0, hungerDebt: 0,
-    lastServingAt: -1, lastServingSpent: false,
+    lastServingAt: -1, lastServingSpent: false, paidTicks: 0,
     slickUntil: 0, vent: null, ending: 0, charge: 0,
     announcement: "It only swallows when the mouth is open. Watch the mouth, not the line.",
     rolls: { rhythm: 0, craving: 0, beat: 0, spit: 0, junk: 0 },
@@ -747,7 +757,7 @@ export function slamHatch(state: ArcadeState): boolean {
     state.announcement = "The hatch comes down. It thinks better of it.";
     event(state, "hatch", ARENA.launcher.x, ARENA.launcher.y - 70, "HATCH — LUNGE STOPPED");
     state.hatchSaves += 1;
-    state.score += Math.round(150 * payRate(state.tick));
+    state.score += Math.round(150 * payRate(state.paidTicks));
   } else {
     event(state, "hatch", ARENA.launcher.x, ARENA.launcher.y - 70, "HATCH");
   }
@@ -955,7 +965,7 @@ function acceptFood(state: ArcadeState, food: Projectile) {
   const points = 100 + (state.combo - 1) * 40 + (craving ? TUNING.cravingBonus + TUNING.cravingCombo * (state.combo - 1) : 0) +
     (precision ? 50 : 0) + (food.bounces || food.hazardBounces ? 120 : 0) +
     (clutch ? 90 : 0) + (food.assisted ? 40 : 0);
-  state.score += Math.round(points * payRate(state.tick));
+  state.score += Math.round(points * payRate(state.paidTicks));
   const restore = (craving ? TUNING.restoreCraved : TUNING.restore) * (gorged ? TUNING.gorgeRestore : 1);
   state.hunger = quantize(Math.min(100, state.hunger + restore));
   state.rage = Math.max(0, state.rage - (craving ? TUNING.cravingCalm : TUNING.feedRage));
@@ -1217,7 +1227,7 @@ export function stepArcade(state: ArcadeState): void {
       if (state.tick < state.hatchClosedUntil) {
         // Off the hatch. This is what the lockout bought.
         state.hatchSaves += 1;
-        state.score += Math.round(220 * payRate(state.tick));
+        state.score += Math.round(220 * payRate(state.paidTicks));
         state.announcement = "Off the hatch. That is what it is for.";
         event(state, "block", ARENA.launcher.x, ARENA.launcher.y - 46, "BLOCKED +220", { ingredient: food.ingredient });
         continue;
@@ -1300,8 +1310,9 @@ export function stepArcade(state: ArcadeState): void {
   // Time *kept fed*, which is what the score claims to measure. It used to tick
   // up regardless, so the biggest number on screen kept climbing through a run
   // that was visibly falling apart.
+  if (state.hunger > 30) state.paidTicks += 1;
   if (state.tick % 10 === 0 && state.hunger > 30) {
-    state.score += Math.max(1, Math.round(payRate(state.tick)));
+    state.score += Math.max(1, Math.round(payRate(state.paidTicks)));
   }
 
   // THE LAST SERVING — once a shift, a serving already in the air gets to land.

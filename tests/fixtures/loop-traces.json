@@ -445,7 +445,7 @@
         }
       ],
       "expect": {
-        "score": 5302,
+        "score": 5301,
         "totalFeeds": 11,
         "phase": "lost",
         "failureReason": "empty-belly"
@@ -838,7 +838,7 @@
         }
       ],
       "expect": {
-        "score": 15713,
+        "score": 15673,
         "totalFeeds": 17,
         "phase": "lost",
         "failureReason": "kitchen-destroyed"

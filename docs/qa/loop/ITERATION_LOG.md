@@ -11,7 +11,7 @@ Readability, moved off 5 for the first time in six iterations on the last one.
 
 ### The gates
 
-| gate | ceiling / floor | iteration 22 | verdict |
+| gate | ceiling / floor | iteration 23 | verdict |
 |---|---|---|---|
 | naive median survival | ≤ 45 s | 28.6 s | pass |
 | moderate median | 90–150 s | 133.8 s | pass |
@@ -20,7 +20,7 @@ Readability, moved off 5 for the first time in six iterations on the last one.
 | decision density (moderate) | ≥ 6 changes/min | 127/min | pass |
 | replay fixtures | exact | exact | pass |
 
-Iterations 7 through 22 — **fifteen consecutive**, against an exit bar of two.
+Iterations 7 through 23 — **sixteen consecutive**, against an exit bar of two.
 Iterations 12 to 21 changed no rule at all, and the frozen traces came back
 byte-identical every time, which is the check that proves it.
 
@@ -1751,6 +1751,64 @@ eleven iterations, to the second** — which is the point: the reward curve bent
 and the difficulty did not. **All five gates pass — fifteenth consecutive
 iteration.** 36 tests green; fixtures regenerated, since this is the first rule
 change since iteration 11.
+
+---
+
+## Iteration 23 — you are not paid for the seconds you are failing
+
+Two faults from the iteration-22 critic, one of them introduced by iteration 22
+itself.
+
+**The pay rate was climbing while the player failed.** *"In strip-0200-05 and
+-08 the score is frozen at 11512 — no feed since 01:56 — yet SHIFT PAY climbs
+x2.46, x2.49, x2.51 across the same window. A headline number that goes up
+during a five-second total-failure streak is anti-agency feedback."* Correct, and
+the fix was already in the game's own vocabulary: the score has paid for **time
+kept fed** since iteration 1, and the multiplier now rides the same clock. A
+belly under the line stops the meter.
+
+**You could not tell your own snack from the kitchen's cutlery.** *"In
+clip-first-stack/frame-08-stream the player's tin can and the hazard spoon are
+the same fourteen-pixel grey smudge over the same busy photograph."* A serving in
+flight now carries a dark halo, a long bright tail in its own ingredient colour
+and a ring around it — three things the room's metal does not have. Verified at
+960 px: three servings in flight in `iter-23/clip-first-stack/frame-08-stream.png`
+read instantly against a belly covered in forks.
+
+### Bots — 200 seeded shifts each
+
+| bot | median | score | points/second |
+|---|---|---|---|
+| naive | 28.6 s | 157 | — |
+| moderate | 133.8 s | 14167 | 105.9 |
+| good | 183.7 s | 23324 | 127.0 |
+
+Survival, causes and spread identical again; the score ratio holds at **1.65x
+against a survival ratio of 1.37x** after moving the multiplier onto paid time.
+**All five gates pass — sixteenth consecutive iteration.** 36 tests green.
+
+### The iteration-22 critic, and what it weighted
+
+| | Agency | Consequence | Tension | Readability | Comedy | Fairness |
+|---|---|---|---|---|---|---|
+| iteration 21 | — | — | — | — | — | — |
+| **iteration 22** | 6 | 8 | 6 | 5 | 7 | 7 |
+
+**No cheap death.** Agency and Tension are lower than the previous critic's, and
+the reason is a different emphasis rather than a regression: this one weighted
+**the naive tier** heavily — *"200 runs, 0 feeds, a 4.1-second outcome spread and
+one cause of death... that is not a game with low agency, that is a cutscene of
+fixed length"* — and the flat opening, *"FULLNESS reads 65 % at 00:20, 00:32,
+00:40 and 00:47. Four samples spanning 27 seconds and the needle does not move."*
+
+Both are worth answering and neither is answered here. The naive bot is a
+deliberate strawman — it never aims at all, which is not what a beginner does —
+but "nothing in the first thirty seconds teaches aim" is true of the game and not
+just of the bot, and the numeric gate requires that bot to die inside 45 s, so
+the answer has to be an aid rather than a difficulty change. The flat opening is
+a tuning question: the drain is real from the grace tick onward, it is simply
+slower than a serving restores, so a competent player sits at a plateau until
+the appetite catches up.
 
 ---
 
