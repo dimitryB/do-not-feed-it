@@ -380,6 +380,13 @@ export function createScene(){
     // than loose text composited over the creature's body. At most three at a
     // time and never on top of each other — five of them landing together was
     // rendering as one unreadable smear.
+    // Decided before the verdict pills are placed: while a mutation banner is up
+    // it is the one thing on screen, and a critic counting five competing text
+    // objects in one frame is counting a readability failure.
+    const banner=playing&&state
+      ? state.events.filter(e=>e.type==='mutation'&&tick-e.tick<175).slice(-1)[0]
+      : undefined;
+    const bannerUp=Boolean(banner&&banner.ingredient);
     if(!(DEV_HOOKS&&devRender.hideLabels)){
       // Two at a time, and never the same words twice: two projectiles landing
       // together used to draw "ONE MORE CHANCE" twice in one frame, and four
@@ -389,7 +396,12 @@ export function createScene(){
       // the size and for twice as long, and the two drawn together overlapped
       // into an unreadable double.
       const pills=recent.filter(e=>e.type==='feed'||e.type==='miss'||e.type==='bounce'||e.type==='snub'||e.type==='grow'||e.type==='clog'||e.type==='sneeze'||e.type==='hit'||e.type==='spit'||e.type==='burp')
-        .filter(e=>{if(seenLabel.has(e.label))return false;seenLabel.add(e.label);return true;}).slice(-2);
+        // A bounce is a second chance, and at zero fullness there is no second
+        // chance: ONE MORE CHANCE over an empty belly on the frame the shift
+        // ends is the game telling the player something untrue.
+        .filter(e=>!(e.type==='bounce'&&(state?.hunger??100)<=0))
+        .filter(e=>{if(seenLabel.has(e.label))return false;seenLabel.add(e.label);return true;})
+        .slice(bannerUp?-1:-2);
       const taken:{x:number;y:number;w:number}[]=[];
       // The meters are the lose condition and a verdict pill must never sit on
       // them: a critic caught ONE MORE CHANCE covering the fullness number on
@@ -424,16 +436,22 @@ export function createScene(){
         ctx.restore();
       });
     }
-    // What a mutation DOES, at a size a stream can read, for two and a half
-    // seconds after it arrives. The rule existed only as nine-pixel grey text in
-    // the darkest corner of the frame, on for one beat — so the single most
-    // important sentence in the game was the least legible thing in it.
-    if(playing&&state){
-      const fresh=state.events.filter(e=>e.type==='mutation'&&tick-e.tick<175).slice(-1)[0];
-      if(fresh&&fresh.ingredient){
+    // What a mutation DOES, at a size a stream can read, for three seconds after
+    // it arrives — and NOT on top of the creature.
+    //
+    // The first version of this banner was centred over the frame, which put a
+    // 680 px box across a fully-open mouth: it covered the upper lip and the
+    // teeth, which are the exact pixels the player has to read to time the shot
+    // the banner is telling them to take, and it clipped the toast beside it.
+    // It now lives in the empty left third of the kitchen, clear of the creature
+    // at every size and next to the launcher the advice is about.
+    const bannerX = 268;
+    if(banner&&banner.ingredient){
+      {
+        const fresh=banner;const food=banner.ingredient;
         const age=tick-fresh.tick;
-        const name=MUTATION_NAMES[fresh.ingredient].toUpperCase();
-        const rule=MUTATION_RULES[fresh.ingredient];
+        const name=MUTATION_NAMES[food].toUpperCase();
+        const rule=MUTATION_RULES[food];
         ctx.save();
         // No fade-in. A banner that ramps up over a tenth of a second is
         // invisible on the one frame a capture takes at the moment it fires,
@@ -443,13 +461,13 @@ export function createScene(){
         ctx.font="700 13px 'Helvetica Neue',sans-serif";
         const rw=ctx.measureText(rule).width;
         ctx.font="800 19px 'Helvetica Neue',sans-serif";
-        const bw=Math.max(rw,ctx.measureText(name).width)+56;
-        const by=146-Math.min(10,age)*0.6;
-        ctx.fillStyle='#081311f2';ctx.strokeStyle=COLORS[fresh.ingredient];ctx.lineWidth=2;
-        ctx.beginPath();ctx.roundRect(600-bw/2,by-30,bw,62,10);ctx.fill();ctx.stroke();
-        ctx.fillStyle=COLORS[fresh.ingredient];ctx.fillText(name,600,by-6);
+        const bw=Math.min(492,Math.max(rw,ctx.measureText(name).width)+44);
+        const by=150-Math.min(10,age)*0.6;
+        ctx.fillStyle='#081311f2';ctx.strokeStyle=COLORS[food];ctx.lineWidth=2;
+        ctx.beginPath();ctx.roundRect(bannerX-bw/2,by-30,bw,62,10);ctx.fill();ctx.stroke();
+        ctx.fillStyle=COLORS[food];ctx.fillText(name,bannerX,by-6);
         ctx.font="700 13px 'Helvetica Neue',sans-serif";ctx.fillStyle='#d8e2cd';
-        ctx.fillText(rule,600,by+18);
+        ctx.fillText(rule,bannerX,by+18,bw-18);
         ctx.restore();
       }
     }

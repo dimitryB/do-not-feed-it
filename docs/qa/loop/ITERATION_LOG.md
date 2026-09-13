@@ -1222,6 +1222,54 @@ The Readability faults are specific and one of them is mine from iteration 11:
 
 ---
 
+## Iteration 13 — one thing on screen at a time
+
+No rule changed. The iteration-12 critic counted five competing text objects in
+one frame and found the mutation banner — added two iterations earlier to make
+the rule legible — parked across a fully open mouth.
+
+- **The banner moved off the creature**, into the empty left third of the
+  kitchen, beside the launcher the advice is about. It is clear of the creature
+  at every size, and it no longer clips the toast beside it.
+- **While a banner is up it is the only verdict on screen**: the pill limit drops
+  from two to one.
+- **A bounce no longer promises a second chance there isn't one of.** `ONE MORE
+  CHANCE` over a belly at zero, on the frame the shift ends, is the game saying
+  something untrue; that pill is suppressed at zero fullness.
+- **The stat row is readable at 960 px.** The HUD labels went from 11 px to
+  14 px and the values from 30 px to 34: `ITS SIZE x1.82` is the game's headline
+  number and at stream size a stranger could not read it.
+
+### Bots and critic — iteration 13
+
+Byte-identical again, fixtures included. **All five gates pass — seventh
+consecutive iteration.**
+
+| | Agency | Consequence | Tension | Readability | Comedy | Fairness |
+|---|---|---|---|---|---|---|
+| iteration 12 | 8 | 9 | 7 | 5 | 7 | 7 |
+| **iteration 13** | 8 | 8 | **8** | 5 | 7 | 7 |
+
+**No cheap death.** Fifth consecutive critic to look and report none.
+
+Readability stayed at 5, and the reason is not the text any more — it is a
+correctness bug the previous four critics had not caught:
+
+> *"The bright swallow ellipse detaches from the mouth as the creature grows.
+> hud-0020 at size x1.28: the ring sits exactly on the open mouth. hud-0120 at
+> x1.68: the mouth is wide open near the top of the creature; the ellipse is
+> centred roughly 180 px lower, over the belly. The error scales with size, so
+> the display gets less honest exactly as the run gets more valuable... The game
+> draws a target that is not the target."*
+
+That is the next iteration, and it is a fairness bug rather than a clarity one.
+The other standing faults: the cutlery decals are frozen in place from 01:01 to
+the end screen, so a mutation grows as a HUD chip rather than as a body; the act
+counter oscillates 04 to 03 and back; and two critics in a row have now asked for
+a death beat.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s
