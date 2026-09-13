@@ -664,9 +664,13 @@ export class CreatureAnimator {
       target.teethAlign = Math.max(target.teethAlign, 0.5 + metal * 0.5);
       target.teethLong = Math.max(target.teethLong, metal * 0.55);
       // A mouth full of cutlery does not close cleanly.
+      // A mouth full of cutlery does not close cleanly. It also must not move:
+      // the jaw shift raised the drawn mouth 22 px at a clog of 0.6, and the
+      // rules' ellipse does not move with clog at all, so every pixel of it was
+      // the ring drifting off the mouth.
       if (clog > 0.1) {
         target.teethQuiver = Math.max(target.teethQuiver, clog);
-        target.jawShift += clog * 0.35;
+        target.jawShift += clog * 0.08;
       }
     }
     if (ended && enraged) {
@@ -736,19 +740,26 @@ export class CreatureAnimator {
       target.headX -= grow * 26;
       target.headY -= grow * 28;
       target.lean += grow * 0.12;
-      // The balloon. The rules move the mouth up by `lift`; the picture has to
-      // move with it or the lit target ring is hanging in the air off the face.
-      // The two channels are in the same proportion the growth rise uses, which
-      // is what `scripts/mouth-calibrate.mjs` measured.
+      // The balloon. The rules move the mouth up by exactly `lift` pixels, and
+      // the picture has to move by the same amount — not by a similar amount.
+      //
+      // At 1.05 and 0.95 it moved by three and a half times as much: measured,
+      // ten units of lift raised the drawn mouth 34 px while the rules raised
+      // theirs 10, so by mid-shift the lit target ring was sitting 70 px below
+      // an open mouth and the game was drawing a target that was not the target.
+      // The coefficients below are the measured ones, divided by that factor;
+      // `scripts/mouth-calibrate.mjs` now checks the agreement in the states a
+      // shift actually reaches rather than only on a bare creature.
       const lift = creature.lift ?? 0;
       if (lift > 0) {
-        target.bodyRise += lift * 1.05;
-        target.headY -= lift * 0.95;
+        target.bodyRise += lift * 0.31;
+        target.headY -= lift * 0.28;
       }
       target.teethLong = Math.max(target.teethLong, clamp01(grow / 1.4) * 0.55);
       // A shut mouth on a big creature is the thing the player is waiting out,
       // so it tightens rather than simply closing.
       if (open < 0.05) target.cornerLift = mix(target.cornerLift, -0.35, 0.4 * clamp01(grow / 0.7));
+
     }
 
     // Inflation rides the uniform body scale rather than a deformer of its own:
@@ -756,9 +767,16 @@ export class CreatureAnimator {
     // Wider than it is tall, and lifting, so it still reads as a balloon rather
     // than as the camera moving closer.
     if (target.bellySwell !== 0) {
-      target.squashX *= 1 + target.bellySwell * 0.1;
-      target.squashY *= 1 + target.bellySwell * 0.075;
-      target.bodyRise += target.bellySwell * 16;
+      // Inflation makes it WIDER, not taller, and it does not raise the head.
+      //
+      // The vertical half of this was moving the painted mouth up by 84 px on a
+      // full balloon while the rules' collision ellipse stayed where it was, so
+      // the lit target ring — which is that ellipse — was hanging below an open
+      // mouth on exactly the frames a player has the most to lose. The rules
+      // already own the vertical: `creature.lift` is the number that moves the
+      // mouth up, it is clamped to what the rig can show, and the pose follows
+      // it above. Two mechanisms for one movement, disagreeing, is the bug.
+      target.squashX *= 1 + target.bellySwell * 0.14;
     }
     // Hard ceiling on how far the painting may be stretched. Scale magnifies
     // the source, and past about fourteen percent the skin's bump detail

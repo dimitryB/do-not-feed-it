@@ -86,6 +86,54 @@ async function main() {
       console.log(`size ${size.toFixed(2)}  drawn mouth  x ${box.x.toFixed(1)}  y ${box.y.toFixed(1)}  rx ${box.rx.toFixed(1)}  ry ${box.ry.toFixed(1)}`);
     }
 
+    // The fit above is a bare creature. A shift is not: by a minute in it is
+    // carrying mutations, a balloon lift and a clogged mouth, and each of those
+    // moves the drawn mouth and the rules' ellipse through different code. A
+    // critic reading a real mid-run frame reported the lit ring sitting well
+    // below the open mouth, which the bare fit says cannot happen — so the
+    // states a shift actually reaches are measured against the rules directly.
+    const LIVE = [
+      { name: "bare x1.68", size: 1.68, m: { metal: 0, balloon: 0, pepper: 0 }, extra: {} },
+      { name: "lift 10 only", size: 1.68, m: { metal: 0, balloon: 1, pepper: 0 }, extra: { lift: 10, clog: 0, pressure: 0 } },
+      { name: "lift 20 only", size: 1.68, m: { metal: 0, balloon: 1, pepper: 0 }, extra: { lift: 20, clog: 0, pressure: 0 } },
+      { name: "clog 0.6 only", size: 1.68, m: { metal: 1, balloon: 0, pepper: 0 }, extra: { lift: 0, clog: 0.6, pressure: 0 } },
+      { name: "metal 3 only", size: 1.68, m: { metal: 3, balloon: 0, pepper: 0 }, extra: { lift: 0, clog: 0, pressure: 0 } },
+      { name: "pepper 3 only", size: 1.68, m: { metal: 0, balloon: 0, pepper: 3 }, extra: { lift: 0, clog: 0, pressure: 0 } },
+      { name: "balloon 3 no lift", size: 1.68, m: { metal: 0, balloon: 3, pepper: 0 }, extra: { lift: 0, clog: 0, pressure: 0.9 } },
+      { name: "balloon 1 x1.68", size: 1.68, m: { metal: 1, balloon: 1, pepper: 1 }, extra: { lift: 10, clog: 0.2 } },
+      { name: "balloon 2 x2.0", size: 2.0, m: { metal: 2, balloon: 2, pepper: 1 }, extra: { lift: 18, clog: 0.4 } },
+      { name: "balloon 3 x2.4", size: 2.4, m: { metal: 3, balloon: 3, pepper: 3 }, extra: { lift: 11.5, clog: 0.7 } },
+    ];
+    console.log("\nDrawn mouth vs the rules' ellipse, in states a shift reaches:");
+    for (const live of LIVE) {
+      const pair = await page.evaluate(async (st) => {
+        const play = window.__dnfi.play;
+        play.start(4242);
+        play.manual(true);
+        for (let i = 0; i < 900; i += 1) {
+          play.setSize(st.size);
+          play.setMutations(st.m, st.extra);
+          play.step(1);
+          const state = play.state();
+          if (state.creature && state.creature.aperture >= 0.999 && i > 120) break;
+        }
+        play.setSize(st.size);
+        play.setMutations(st.m, st.extra);
+        for (let i = 0; i < 50; i += 1) await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        const c = play.state().creature;
+        const drawn = await window.__dnfi.mouthBox();
+        return { drawn, rule: { x: c.x, y: c.y, rx: c.rx, ry: c.ry, lift: c.lift, open: c.open } };
+      }, live);
+      const n = (v) => (typeof v === "number" ? v.toFixed(1) : String(v));
+      const d = pair.drawn ?? {}, r = pair.rule ?? {};
+      // The rules' vertical half-height is ry scaled by the gap they test
+      // against, not raw ry: `dyGap = (y - mouthY) / (ry * max(gapFloor, open))`.
+      const effRy = r.ry * Math.max(0.3, r.open ?? 1);
+      console.log(`  ${live.name.padEnd(18)} drawn y ${n(d.y)} ry ${n(d.ry)}`
+        + `   rule y ${n(r.y)} effRy ${n(effRy)}   open ${n(r.open)}`
+        + `   dy ${n(r.y - d.y)}  dry ${n(effRy - d.ry)}`);
+    }
+
     const fx = fit(samples, (s) => s.x);
     const fy = fit(samples, (s) => s.y);
     const frx = fit(samples, (s) => s.rx);

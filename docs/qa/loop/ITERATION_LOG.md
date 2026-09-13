@@ -1270,6 +1270,99 @@ a death beat.
 
 ---
 
+## Iteration 14 — the target ring is the mouth again
+
+The iteration-13 critic found the game drawing a target that was not the target:
+the lit ellipse is the rules' collision region, and on a mid-run creature it was
+sitting well below the open mouth, with the error growing as the run got more
+valuable. No rule changed in this iteration; the picture was wrong.
+
+### The instrument came first
+
+`scripts/mouth-calibrate.mjs` had only ever measured a **bare** creature, and on
+a bare creature the drawn mouth and the rules' ellipse agree to within 2.5 px at
+every size — which is why five iterations of critics had not seen this and the
+script said nothing was wrong. It now also measures the states a shift actually
+reaches, one channel at a time, and compares the drawn mouth against the rules'
+*effective* ellipse — `ry x max(gapFloor, open)`, which is what the collision
+tests, not raw `ry`.
+
+That turned an eyeball complaint into a table, and the table named the culprits:
+
+| state | drawn vs rules, before |
+|---|---|
+| bare x1.68 | 4.2 px — fine |
+| lift 10 | **28.9 px** |
+| lift 20 | **39.1 px** |
+| clog 0.6 | 27.8 px |
+| metal 3 | 13.0 px |
+| pepper 3 | 13.5 px |
+| **balloon 3, no lift at all** | **84.1 px** |
+
+The vertical size of the ring was never the problem — every `dry` is inside the
+deliberate 0.86 inset. It is the position, and two mechanisms were fighting over
+it.
+
+### What was wrong
+
+**Two mechanisms for one movement.** The rules move the mouth up by exactly
+`creature.lift`, a number clamped to what the rig can show. The picture moved it
+up by the lift *and* by the belly inflation — `bellySwell` was feeding
+`bodyRise` and `squashY` as well as `squashX` — so a full balloon lifted the
+painted mouth 84 px that the rules knew nothing about. The lift channel was
+over-scaled on top of that: ten units of lift moved the picture 34 px.
+
+**The fix:** inflation makes it wider, not taller. `bellySwell` now feeds
+`squashX` alone; `lift` — the number the rules own — carries the vertical, at
+coefficients divided by the measured 3.4x error. The clog's jaw shift, which was
+raising the drawn mouth 22 px on its own, is cut to a quarter.
+
+| state | before | after |
+|---|---|---|
+| lift 10 | 28.9 px | **6.4 px** |
+| lift 20 | 39.1 px | **5.3 px** |
+| balloon 3, no lift | 84.1 px | **49.4 px** |
+| balloon 2 at x2.0 | 75.9 px | **41.1 px** |
+| metal 3 | 13.0 px | 14.6 px |
+| clog 0.6 | 27.8 px | 26.8 px |
+
+### What was tried and reverted
+
+A blanket correction term that pushed the head back down by the measured
+displacement of every channel. It overshot by 200 px: the correction is large
+enough to push the mouth into the region where the warp's floor gate changes the
+response, so the system is not linear in the direction that would make a
+compensation table work. Removing the cause beats cancelling it.
+
+### Bots and critic — iteration 14
+
+Byte-identical, fixtures included. **All five gates pass — eighth consecutive
+iteration.**
+
+| | Agency | Consequence | Tension | Readability | Comedy | Fairness |
+|---|---|---|---|---|---|---|
+| iteration 13 | 8 | 8 | 8 | 5 | 7 | 7 |
+| **iteration 14** | 8 | **9** | 8 | 5 | 7 | 6 |
+
+**No cheap death.** Sixth consecutive critic to look and report none.
+
+This critic measured the ring in pixels rather than describing it, and the result
+is both a confirmation and a new finding:
+
+> *"The ring is correct **only at full aperture**."* At x1.53 wide open,
+> `strip-0040-05`: **offset ~0 px**. But on a shut or nearly shut mouth it is
+> *"114 px low and nearly five times the height of the opening"*
+> (`strip-0120-05`).
+
+That is a different object. When the mouth is shut the bright ellipse on screen
+is the **opens-in telegraph**, drawn at `rx x 1.08` around the whole face, and it
+looks exactly like the target ring because it is the same colour and the same
+shape. The thing the critic measured as a badly-placed hitbox is a clock wearing
+a hitbox's clothes. That is the next iteration, along with the loss card, whose
+cause-of-death line is an eighth the size of the headline above it.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s
