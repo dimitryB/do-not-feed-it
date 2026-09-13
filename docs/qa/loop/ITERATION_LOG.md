@@ -1004,6 +1004,54 @@ it had never been shown a kitchen-destroyed ending to judge.
 
 ---
 
+## Iteration 11 — a readability pass, and nothing else
+
+Readability was the one criterion still under 7 (6 at iteration 10, 5 at
+iteration 8). The iteration-10 critic named the faults precisely, and all of
+them were presentation, so **no rule changed in this iteration** — which the
+measurement confirms: the bot table and the frozen replay traces came back
+byte-identical to iteration 10.
+
+**The verdict pills no longer sit on the meters.** *"ONE MORE CHANCE sits
+directly on top of the FULLNESS/IRRITATION bars and buries the fullness readout —
+on the exact frame the player dies of an empty belly. Unacceptable."* The meter
+band is now reserved before any pill is placed, and pills are pushed clear of it
+upward.
+
+**The meters are no longer the smallest type on screen.** *"the '40%' and '48%'
+are the least legible elements in the frame, and they are the entire lose
+condition."* Labels and numerals went from 11 px to 14 px, the bars from 9 px to
+13 px tall, the panel from 250 px wide to 296, with a hairline border so it
+separates from the counter.
+
+**A verdict is a beat, not a banner.** A miss held for 65 ticks — longer than a
+whole sampled second — so `TOO LATE` was still on screen over a wide-open mouth
+and read as the game contradicting itself. Mistakes now hold for 38 ticks;
+praise and mutations keep the longer hold.
+
+**HATCH SHUT says why, and for how long.** *"its six slats are identically dark
+in every frame I opened, so the most control-depriving moment in the run is also
+the least explained."* The panel now carries `YOU SLAMMED IT` and a bar that
+drains over the 84 ticks it stays down.
+
+**What a mutation DOES is drawn at a size a stream can read.** The rule existed
+only as 9 px grey text in the darkest corner of the frame, on for one beat. It is
+now a banner across the top for three seconds, in the ingredient's own colour,
+carrying the name and the rule.
+
+One bug was caught by looking at the capture rather than the code: the banner
+faded in over six ticks, which meant it was invisible on the one clip frame taken
+at the moment the mutation fires — the only frame that matters for it. It now
+appears at full strength and only fades out.
+
+### Bots — 200 seeded shifts each
+
+Byte-identical to iteration 10, as intended: naive 28.6 s, moderate 133.8 s at a
+38 % worst bucket, good 183.7 s = 6.4×, density 127/min. **All five gates pass —
+fifth consecutive iteration.**
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s

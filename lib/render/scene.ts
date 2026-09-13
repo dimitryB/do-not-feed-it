@@ -1,4 +1,4 @@
-import { ARENA, FOODS, getHazard, trajectoryPreview, type ArcadeState, type Ingredient } from '../game/arcade';
+import { ARENA, FOODS, MUTATION_NAMES, MUTATION_RULES, getHazard, trajectoryPreview, type ArcadeState, type Ingredient } from '../game/arcade';
 import { CreatureAnimator } from './creature/pose';
 import { buildRig, type CreatureRig } from './creature/rig';
 import { drawCreature } from './creature/draw';
@@ -7,6 +7,8 @@ import { DEV_HOOKS, devRender } from '../dev/hook';
 const COLORS:Record<Ingredient,string>={metal:'#ddea9c',balloon:'#9be9df',pepper:'#f6a074'};
 const clampAlpha=(v:number)=>v<0?0:v>1?1:v;
 const HATCH_TOP=ARENA.launcher.y-46;
+/** Where the two meters live, and how wide they are. */
+const METER_Y=552;const METER_W=296;
 
 /**
  * What the creature has become, drawn on the creature.
@@ -317,8 +319,17 @@ export function createScene(){
       ctx.beginPath();ctx.roundRect(hx-104,top,208,h,5);ctx.fill();ctx.stroke();
       ctx.fillStyle='#1d2a24';for(let i=0;i<6;i++)ctx.fillRect(hx-94+i*33,top+8,24,Math.max(0,h-16));
       ctx.strokeStyle='#59685288';ctx.lineWidth=1;for(let i=0;i<6;i++)ctx.strokeRect(hx-94.5+i*33,top+7.5,25,Math.max(0,h-15));
-      if(h>34){ctx.fillStyle='#dded92';ctx.font="700 15px 'Helvetica Neue',sans-serif";ctx.textAlign='center';
-        ctx.fillText('HATCH SHUT',hx,top+h/2+5);}
+      if(h>34){
+        ctx.fillStyle='#dded92';ctx.font="700 16px 'Helvetica Neue',sans-serif";ctx.textAlign='center';
+        ctx.fillText('HATCH SHUT',hx,top+h/2-4);
+        // Why, and for how long. The panel said neither, so the one moment in
+        // the shift that takes the launcher away was also the least explained.
+        ctx.fillStyle='#b7c7a4';ctx.font="600 12px 'Helvetica Neue',sans-serif";
+        ctx.fillText('YOU SLAMMED IT',hx,top+h/2+14);
+        const left=Math.max(0,Math.min(1,(state.hatchClosedUntil-state.tick)/ARENA.hatchTicks));
+        ctx.fillStyle='#2b3a30';ctx.beginPath();ctx.roundRect(hx-72,top+h-16,144,7,3.5);ctx.fill();
+        ctx.fillStyle='#dded92';ctx.beginPath();ctx.roundRect(hx-72,top+h-16,Math.max(3,144*left),7,3.5);ctx.fill();
+      }
       ctx.globalCompositeOperation='screen';ctx.globalAlpha=.4;
       const glow=ctx.createLinearGradient(0,top,0,top+h);glow.addColorStop(0,'#dded9255');glow.addColorStop(1,'#dded9200');
       ctx.fillStyle=glow;ctx.fillRect(hx-104,top,208,h);
@@ -369,21 +380,37 @@ export function createScene(){
       // together used to draw "ONE MORE CHANCE" twice in one frame, and four
       // stacked verdicts cannot be attributed to anything.
       const seenLabel=new Set<string>();
-      const pills=recent.filter(e=>e.type==='feed'||e.type==='miss'||e.type==='bounce'||e.type==='snub'||e.type==='grow'||e.type==='clog'||e.type==='sneeze'||e.type==='hit'||e.type==='spit'||e.type==='mutation'||e.type==='burp')
+      // No mutation pill: the banner below says the same thing at three times
+      // the size and for twice as long, and the two drawn together overlapped
+      // into an unreadable double.
+      const pills=recent.filter(e=>e.type==='feed'||e.type==='miss'||e.type==='bounce'||e.type==='snub'||e.type==='grow'||e.type==='clog'||e.type==='sneeze'||e.type==='hit'||e.type==='spit'||e.type==='burp')
         .filter(e=>{if(seenLabel.has(e.label))return false;seenLabel.add(e.label);return true;}).slice(-2);
       const taken:{x:number;y:number;w:number}[]=[];
+      // The meters are the lose condition and a verdict pill must never sit on
+      // them: a critic caught ONE MORE CHANCE covering the fullness number on
+      // the frame the player starved. The band is reserved before anything is
+      // placed, and pills are pushed clear of it upward.
+      const band=state?{top:METER_Y-26,bottom:METER_Y+44,x:state.creature.x,w:METER_W+30}:null;
       pills.forEach((e)=>{const age=tick-e.tick;
         const good=e.type==='feed'||e.type==='sneeze'||e.type==='burp';
-        const loud=e.type==='mutation'||e.type==='hit'||e.type==='spit';
-        ctx.save();ctx.globalAlpha=Math.max(0,Math.min(1,(65-age)/9));
+        const loud=e.type==='hit'||e.type==='spit';
+        // A verdict is a beat, not a banner. A miss used to hold for 65 ticks,
+        // which is longer than a whole sampled second, so TOO LATE was still on
+        // screen over a wide-open mouth and read as the game contradicting
+        // itself. Praise and mutations keep the longer hold; mistakes do not.
+        const life=good||loud?65:38;
+        ctx.save();ctx.globalAlpha=Math.max(0,Math.min(1,(life-age)/9));
+        if(age>=life){ctx.restore();return;}
         ctx.font=`bold ${good||loud?18:14}px 'Helvetica Neue',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
         const w=ctx.measureText(e.label).width+22;
         let y=good?Math.max(74,86-(reduced?0:age*.4)):Math.max(70,e.y-46-(reduced?0:age*.55));
         const x=Math.max(w/2+16,Math.min(1184-w/2,e.x));
+        if(band&&y+14>band.top&&y-14<band.bottom&&Math.abs(band.x-x)<(band.w+w)/2)y=band.top-16;
         // Push down until it is clear of anything already placed this frame.
         for(let guard=0;guard<4;guard++){
           const hit=taken.find(t=>Math.abs(t.y-y)<38&&Math.abs(t.x-x)<(t.w+w)/2+12);
           if(!hit)break;y=hit.y+40;}
+        if(band&&y+14>band.top&&y-14<band.bottom&&Math.abs(band.x-x)<(band.w+w)/2)y=band.top-16;
         taken.push({x,y,w});
         ctx.fillStyle='#050d0cf2';ctx.strokeStyle=loud?'#ffc59866':good?'#cfe89066':'#e5a97a55';ctx.lineWidth=loud?2:1;
         ctx.beginPath();ctx.roundRect(x-w/2,y-13,w,26,13);ctx.fill();ctx.stroke();
@@ -391,6 +418,35 @@ export function createScene(){
         if(!reduced&&age<26&&good){ctx.globalAlpha*=Math.max(0,1-age/26);for(let i=0;i<7;i++){const a=i*2.4+age*.02;const r=6+age*2.1;ctx.fillStyle=COLORS[e.ingredient??selected];ctx.beginPath();ctx.arc(e.x+Math.cos(a)*r,e.y+Math.sin(a)*r*.7+age*.4,Math.max(0,2.2-age/13),0,Math.PI*2);ctx.fill();}}
         ctx.restore();
       });
+    }
+    // What a mutation DOES, at a size a stream can read, for two and a half
+    // seconds after it arrives. The rule existed only as nine-pixel grey text in
+    // the darkest corner of the frame, on for one beat — so the single most
+    // important sentence in the game was the least legible thing in it.
+    if(playing&&state){
+      const fresh=state.events.filter(e=>e.type==='mutation'&&tick-e.tick<175).slice(-1)[0];
+      if(fresh&&fresh.ingredient){
+        const age=tick-fresh.tick;
+        const name=MUTATION_NAMES[fresh.ingredient].toUpperCase();
+        const rule=MUTATION_RULES[fresh.ingredient];
+        ctx.save();
+        // No fade-in. A banner that ramps up over a tenth of a second is
+        // invisible on the one frame a capture takes at the moment it fires,
+        // and that moment is the whole point of it.
+        ctx.globalAlpha=Math.min(1,(175-age)/18);
+        ctx.textAlign='center';
+        ctx.font="700 13px 'Helvetica Neue',sans-serif";
+        const rw=ctx.measureText(rule).width;
+        ctx.font="800 19px 'Helvetica Neue',sans-serif";
+        const bw=Math.max(rw,ctx.measureText(name).width)+56;
+        const by=146-Math.min(10,age)*0.6;
+        ctx.fillStyle='#081311f2';ctx.strokeStyle=COLORS[fresh.ingredient];ctx.lineWidth=2;
+        ctx.beginPath();ctx.roundRect(600-bw/2,by-30,bw,62,10);ctx.fill();ctx.stroke();
+        ctx.fillStyle=COLORS[fresh.ingredient];ctx.fillText(name,600,by-6);
+        ctx.font="700 13px 'Helvetica Neue',sans-serif";ctx.fillStyle='#d8e2cd';
+        ctx.fillText(rule,600,by+18);
+        ctx.restore();
+      }
     }
     // What it wants, drawn on the creature at a size a spectator can read, with
     // the time left as a ring around it. It was a ten-pixel label in a chip in
@@ -421,34 +477,37 @@ export function createScene(){
     // its own body. Fullness and irritation were also both drawn peach, so the
     // dangerous one looked like the safe one; they now share no colour at all.
     if(playing&&state){
-      const c=state.creature;const w=250;const x=c.x-w/2;const y=552;
+      const c=state.creature;const w=METER_W;const x=c.x-w/2;const y=METER_Y;
       const fullness=Math.max(0,Math.min(1,state.hunger/100));
       const irritation=Math.max(0,Math.min(1,state.rage/100));
       const fullColour=fullness<0.18?'#ff6a4d':fullness<0.35?'#eea66d':'#cdec7a';
       const held=tick<state.hatchClosedUntil;
       ctx.save();
-      ctx.fillStyle='#04090988';ctx.beginPath();ctx.roundRect(x-12,y-20,w+24,54,10);ctx.fill();
+      // Sized up: at 960 px these were the smallest type on screen and they are
+      // the only two numbers that end a shift.
+      ctx.fillStyle='#040909b0';ctx.beginPath();ctx.roundRect(x-14,y-24,w+28,70,11);ctx.fill();
+      ctx.strokeStyle='#5d6b5540';ctx.lineWidth=1;ctx.stroke();
       const rows=[['FULLNESS',fullness,fullColour,'#22301f'],['IRRITATION',irritation,'#e2493a','#341c1a']] as const;
       for(const [i,row] of rows.entries()){
-        const by=y+i*26;
-        ctx.fillStyle=row[3];ctx.beginPath();ctx.roundRect(x,by-4,w,9,4.5);ctx.fill();
-        ctx.fillStyle=row[2];ctx.beginPath();ctx.roundRect(x,by-4,Math.max(5,w*row[1]),9,4.5);ctx.fill();
-        ctx.font="700 11px ui-monospace,monospace";ctx.textAlign='left';ctx.fillStyle='#cfd9c8';
-        ctx.fillText(row[0],x,by-10);
-        ctx.textAlign='right';ctx.fillStyle=row[2];ctx.fillText(`${Math.round(row[1]*100)}%`,x+w,by-10);
+        const by=y+i*32;
+        ctx.fillStyle=row[3];ctx.beginPath();ctx.roundRect(x,by-5,w,13,6.5);ctx.fill();
+        ctx.fillStyle=row[2];ctx.beginPath();ctx.roundRect(x,by-5,Math.max(7,w*row[1]),13,6.5);ctx.fill();
+        ctx.font="700 14px ui-monospace,monospace";ctx.textAlign='left';ctx.fillStyle='#dbe5d3';
+        ctx.fillText(row[0],x,by-11);
+        ctx.textAlign='right';ctx.fillStyle=row[2];ctx.fillText(`${Math.round(row[1]*100)}%`,x+w,by-11);
         // The belly stops emptying whenever the launcher is taken away. The
         // rule is only fair if it is visible, so the bar says so while it holds.
         if(i===0&&(held||state.hungerDebt>0.01)){
-          const label=held?'HELD':'CATCHING UP';const lw=ctx.measureText(label).width+14;
-          ctx.fillStyle='#0c1a16';ctx.beginPath();ctx.roundRect(x+w/2-lw/2,by-20,lw,14,7);ctx.fill();
+          const label=held?'HELD':'CATCHING UP';const lw=ctx.measureText(label).width+16;
+          ctx.fillStyle='#0c1a16';ctx.beginPath();ctx.roundRect(x+w/2-lw/2,by-23,lw,17,8);ctx.fill();
           ctx.strokeStyle=held?'#9bd7c4':'#eea66d';ctx.lineWidth=1;ctx.stroke();
-          ctx.textAlign='center';ctx.fillStyle=held?'#9bd7c4':'#eea66d';ctx.fillText(label,x+w/2,by-10);
+          ctx.textAlign='center';ctx.fillStyle=held?'#9bd7c4':'#eea66d';ctx.fillText(label,x+w/2,by-11);
         }
       }
       if(fullness<0.25&&!reduced){
         ctx.globalAlpha=.35+.35*Math.abs(Math.sin(time*7));
-        ctx.strokeStyle='#ff6a4d';ctx.lineWidth=2;
-        ctx.beginPath();ctx.roundRect(x-12,y-20,w+24,54,10);ctx.stroke();
+        ctx.strokeStyle='#ff6a4d';ctx.lineWidth=2.5;
+        ctx.beginPath();ctx.roundRect(x-14,y-24,w+28,70,11);ctx.stroke();
       }
       ctx.restore();
     }
