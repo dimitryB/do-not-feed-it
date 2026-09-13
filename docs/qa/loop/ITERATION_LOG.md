@@ -1,13 +1,12 @@
 # Feeding-loop iteration log
 
-## FINAL REPORT — third block, exit criteria not met, and the list is short
+## FINAL REPORT — through iteration 25
 
 **Status: all eight stages implemented and reachable, all five numeric gates
-passing on eleven consecutive iterations, no open cheap-death finding, the render
-regression found and mostly paid down, and the target ring — which five critics
-in a row called the worst thing in the game — measured correct to two pixels at
-every size.** Five of the six critic criteria have been at 7 or above; the sixth,
-Readability, moved off 5 for the first time in six iterations on the last one.
+passing on eighteen consecutive iterations, no open cheap-death finding, the
+target ring measured correct to two pixels, the render regression found and
+mostly paid down, and the creature has a temper.** Four of the six critic
+criteria sit at 7 or above; Readability is at 6 and climbing, Comedy at 7.
 
 ### The gates
 
@@ -21,127 +20,78 @@ Readability, moved off 5 for the first time in six iterations on the last one.
 | replay fixtures | exact | exact | pass |
 
 Iterations 7 through 25 — **eighteen consecutive**, against an exit bar of two.
-Iterations 12 to 21 changed no rule at all, and the frozen traces came back
-byte-identical every time, which is the check that proves it.
+Twelve to twenty-one changed no rule at all; twenty-two and twenty-three changed
+only the reward curve, and survival came back identical to the second.
 
 ### The critic
 
 | iteration | Agency | Consequence | Tension | Readability | Comedy | Fairness |
 |---|---|---|---|---|---|---|
 | 0 (baseline) | 2 | 2 | 2 | 2 | 4 | 1 |
-| 7 | 5 | 7 | 5 | 3 | 7 | 4 |
 | 11 | 8 | 6 | 7 | 4 | 6 | 7 |
-| 12 | 8 | 9 | 7 | 5 | 7 | 7 |
-| 13 | 8 | 8 | 8 | 5 | 7 | 7 |
-| 14 | 8 | 9 | 8 | 5 | 7 | 6 |
-| 15 | 8 | 9 | 8 | 5 | 8 | 7 |
-| 16 | 8 | 9 | 7 | 5 | 8 | 4 |
-| **17** | **8** | **8** | **7** | **6** | **7** | **6** |
+| 17 | 8 | 8 | 7 | 6 | 7 | 6 |
+| 18 (kitchen destroyed) | — | — | — | 5 | — | 6 |
+| 22 | 6 | 8 | 6 | 5 | 7 | 7 |
+| **24** | **7** | **8** | **8** | **6** | **7** | **7** |
 
-Nine critics, each a fresh context shown only pictures and numbers. Treat the
-row-to-row wobble as noise and the named faults as signal; the faults are below.
+Twelve critics, each a fresh context shown only pictures and numbers. Treat the
+row-to-row wobble as noise and the named faults as signal.
 
-### What this block did
+### What the last stretch did
 
-1. **Found and mostly paid down a render regression nobody had measured.** The
-   capture harness had only ever timed a creature with *no mutations* and
-   reported ~4 ms for eleven iterations while a typical mid-shift creature cost
-   9.6. A new per-frame profiler split the draw: the warp grid was flat across
-   every state, and the whole variable was `drawSkin` running four blended
-   full-resolution composites, one per colour grade. One unblended composite over
-   the body's own rectangle, a fifth-resolution scratch and a slightly coarser
-   grid took the worst state from **9.72 ms to 4.52** and the mutation surcharge
-   from **+5.3 ms to +1.5**.
-2. **Made the target ring true.** Five critics called it the worst thing in the
-   game. It took four iterations and the instrument had to be rebuilt twice: the
-   calibration script measured only a bare creature, so it was blind to the
-   mutation channels; then it had no projectile in its probes, so it was blind to
-   the creature's *tracking*, which is the largest divergence of all and applies
-   on most of the frames a player aims on. Found and fixed along the way: a
-   belly inflation that lifted the painted mouth 84 px the rules knew nothing
-   about, a lift channel over-scaled 3.4×, two mutation expressions carrying 30 px
-   of head lift each, and a tracking channel the picture followed at a quarter
-   strength. The ninth critic measured the result at **dx = +2 px at x1.28 and
-   +2 px at x1.82**.
-3. **Stopped the HUD talking over itself**: five competing text objects in one
-   frame became one, the mutation banner moved off the creature's mouth, a toast
-   that promised a second chance at zero fullness was suppressed, the telegraph
-   stopped wearing the target's colour and shape, the stat row and the loss card
-   became readable at 960 px, and `IRRITATION` — which ends every naive run —
-   finally got a line explaining what it is.
-4. **Fixed a harness bug that had been corrupting every render measurement in the
-   session.** `stopServer` sent SIGTERM and returned; the dev server's workerd
-   child ignores it. Seven stale server pairs had accumulated, holding five
-   gigabytes.
+1. **The render regression, found and mostly paid down** (iteration 12). The
+   capture harness had only ever timed a creature with no mutations and reported
+   ~4 ms for eleven iterations while a typical mid-shift creature cost 9.6. One
+   unblended composite instead of four blended ones took the worst state from
+   **9.72 ms to 4.52** and the mutation surcharge from **+5.3 ms to +1.5**.
+2. **The target ring, true at last** (iterations 14–17). Four iterations, and the
+   calibration instrument had to be rebuilt twice: it measured only a bare
+   creature, then had no projectile in its probes and so was blind to the
+   creature's *tracking*, which moves the mouth up to 46 px on most of the frames
+   a player aims on. Measured result: **+2 px at ×1.28 and +2 px at ×1.82.**
+3. **The other ending, filmed and judged** (iterations 18–19). "Kitchen
+   destroyed" is every naive death and half a moderate shift's, and four critics
+   had said they could not judge it. `--cause kitchen-destroyed` fixed that and
+   produced the sharpest review of the project.
+4. **A temper** (iterations 20–21), to the limit of the rig — and
+   `scripts/pose-probe.mjs`, which reads the pose the animator settled on and
+   answered in three minutes what three sixteen-minute captures had not.
+5. **A reward curve** (iterations 22–23). Moderate and good players scored 60.8
+   and 61.1 points a second — identical. Paying by size did nothing, because size
+   plateaus; paying by **time kept fed** took the score ratio to **1.65× against
+   a survival ratio of 1.37×**, with survival untouched to the second.
+6. **An opening with a stake, and the HUD's lies removed** (iterations 24–25).
 
 ### What is left, in the order I would do it
 
-**1. The ring's shape, which is the last of the ring.** The rules' acceptance
-test is an axis-aligned ellipse; the painted mouth is a rotated wedge. The ring
-is now in the right place and still claims 109 px of cheek at x1.28 and misses a
-387 px band of open gullet at x1.82. Closing it means changing one of the two —
-give the collision the mouth's axis and taper (a rule change, gates to
-re-measure), or redraw the painted mouth rounder (a rig change). Either is a real
-iteration; nothing else on this list is worth more.
+**1. The ring's shape.** The rules accept food inside an axis-aligned ellipse and
+the painted mouth is a rotated wedge, so the ring is truthful about the rules and
+still claims some cheek and misses some gullet. Give the collision the mouth's
+axis and taper — a rule change, gates to re-measure — or redraw the mouth
+rounder. It is a design decision before it is any work.
 
-**2. The render is still 13–25 % over budget with mutations on.** 4.52 ms worst
-case against 4 ms, measured with `scripts/render-budget.mjs` — never with the
-capture harness — on a machine with no GPU. The remaining cost is ~470
-transformed `drawImage` calls for the warp grid. A coarser grid fits the budget
-and tears an inflated belly; that was measured and rejected.
+**2. The creature still does not perform.** The temper reached the limit of what
+the corner channel can do to a painted grin; the mouth flattens and will not
+invert. Every critic across four blocks has named some version of this. Finishing
+it means authoring a snarl into the mouth drawing itself.
 
-**3. The creature does not act.** Every critic in three blocks has said the same
-thing: the comedy and the feedback are both entirely in the typography. It
-opens, it shuts, it blushes, and it never reacts to being fed, missed or
-clanged. This is the largest single upside left and it is presentation-only.
+**3. The consequence ladder saturates.** Both moderate and good bots finish at
+exactly ×1.96, and `ITS SIZE` is frozen for the last twenty seconds of a captured
+run. Iteration 22 bent the reward curve past that ceiling; the *visual* ceiling
+is still there.
 
-**4. The last third of a run has nothing new in it.** Moderate and good bots both
-finish at exactly ×1.96 with identical score rates — 60.8 against 61.1 points a
-second — so the fifty extra seconds an expert earns is the fourth act repeating.
-Note that the one obvious lever, making mutation levels arrive faster, was tried
-in iteration 10 and broke the death-spread gate: mutation strength *is* the
-difficulty ramp. The answer has to be something that escalates without being
-harder.
+**4. The render is 13–25 % over budget with mutations on** — 4.52 ms against
+4 ms, measured with `scripts/render-budget.mjs`, never with the capture harness.
+The rest is the warp grid's floor; a coarser grid fits and tears.
 
-**5. The kitchen-destroyed ending is now filmed and judged** (iterations 18 and
-19) — no cheap death, Fairness 6, Readability 5 — and it produced the sharpest
-review of the project. Two of its findings are fixed; two are not. **The creature
-does not show irritation at all**: the same placid smile at 8 % and at 93 %, so
-the death that ends every naive run has no presence outside the HUD. And **the
-report card for "it has eaten the kitchen" draws an undamaged kitchen** — intact
-pots, clean counter, delighted frog. The picture contradicts its own sentence.
-
-**5b. The irritation curve is a cliff, not a ramp.** Measured off the frames of a
-139-second shift: under 10 % for the first 100 seconds — *decaying* at 1:42 —
-then 0 to 100 in the last 27. That is a rule-level observation, not a
-presentation one, and it is the best remaining explanation for why the
-death-spread gate sits at 38 % rather than comfortably below it.
+**5. The naive tier is a strawman and the opening is untested.** The naive bot
+never aims at all, so its 200-run, zero-feed record says less about beginners
+than it looks like it does — but "nothing in the first thirty seconds teaches
+aim" is true of the game too, and no capture set contains the first twenty
+seconds of a shift. Film the opening.
 
 **6. `npm run test:contract` still cannot run** — `binaries.soliditylang.org` is
-blocked by this environment's egress policy. No chain code was touched on this
-branch.
-
-### Recommended next step
-
-**The temper is done to the limit of the rig** (iterations 20 and 21): at 87 %
-irritation the brows come down heavy over narrowed eyes, the flush is on the
-face, and `scripts/pose-probe.mjs` shows every channel at full snarl and holding
-through a burp. The mouth only flattens, because the painted grin at a wide
-aperture is something the warp can bend and not invert; finishing that means
-authoring a snarl into the mouth drawing rather than asking the corner channel
-for more than it has.
-
-**So the next thing is the run's last third**, which has nothing new in it:
-moderate and good bots both finish at exactly x1.96 with identical score rates,
-60.8 against 61.1 points a second, so fifty extra seconds of expert play is the
-fourth act repeating. Note the obvious lever was tried and rejected in iteration
-10 — faster mutation levels broke the death-spread gate, because mutation
-strength *is* the difficulty ramp. The answer has to escalate without being
-harder.
-
-Then the ring's shape, which is a design decision before it is any work: an
-axis-aligned ellipse is a rule a player can learn and a wedge is a shape they can
-see, and the game currently asks them to believe both.
+blocked by this environment's egress policy. No chain code was touched.
 
 ---
 
