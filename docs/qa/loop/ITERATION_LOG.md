@@ -11,7 +11,7 @@ Readability, moved off 5 for the first time in six iterations on the last one.
 
 ### The gates
 
-| gate | ceiling / floor | iteration 21 | verdict |
+| gate | ceiling / floor | iteration 22 | verdict |
 |---|---|---|---|
 | naive median survival | ≤ 45 s | 28.6 s | pass |
 | moderate median | 90–150 s | 133.8 s | pass |
@@ -20,7 +20,7 @@ Readability, moved off 5 for the first time in six iterations on the last one.
 | decision density (moderate) | ≥ 6 changes/min | 127/min | pass |
 | replay fixtures | exact | exact | pass |
 
-Iterations 7 through 21 — **fourteen consecutive**, against an exit bar of two.
+Iterations 7 through 22 — **fifteen consecutive**, against an exit bar of two.
 Iterations 12 to 21 changed no rule at all, and the frozen traces came back
 byte-identical every time, which is the check that proves it.
 
@@ -1705,6 +1705,52 @@ the corner channel for more than it has.
 byte-identical, 36 tests green. The bots never touch the renderer, so a pose
 change cannot move them; that is why this one is presentation-only in the
 strictest sense.
+
+---
+
+## Iteration 22 — the last third is worth something
+
+*"Moderate and good bots both finish at exactly x1.96 with identical score rates,
+60.8 against 61.1 points a second, so fifty extra seconds of expert play is the
+fourth act repeating."* And the obvious lever — making the mutations arrive
+faster — was measured in iteration 10 and rejected, because mutation strength
+**is** the difficulty ramp and speeding it up broke the death-spread gate.
+
+So the escalation this iteration adds is not difficulty. **Everything scored is
+multiplied by a shift pay rate that rises with time survived.** The last third of
+a run is worth more than the first, a number on the HUD goes up every twenty
+seconds in a stretch that previously had nothing new in it, and the dead
+`ITS APPETITE` slot — which never left x1.00 to x1.05 in any captured shift —
+becomes `SHIFT PAY`, which reaches x2.51 by two minutes.
+
+### Keyed to size first, and measured, and changed
+
+The first version paid by how big the creature had got, which reads better as a
+fiction. It did nothing:
+
+| | survival ratio | score ratio |
+|---|---|---|
+| before | 1.37x | 1.38x |
+| **paid by size** | 1.37x | **1.30x** |
+| **paid by time** | 1.37x | **1.65x** |
+
+Size plateaus at about x1.96 for every competent player, so a multiplier riding
+it is flat across exactly the stretch it was meant to bend. Time is the thing
+that never plateaus.
+
+### Bots — 200 seeded shifts each
+
+| bot | median | score | points/second |
+|---|---|---|---|
+| naive | 28.6 s | 157 | — |
+| moderate | 133.8 s | **14362** | **107.3** |
+| good | 183.7 s | **23635** | **128.7** |
+
+Survival, causes of death and the death spread are **identical to the previous
+eleven iterations, to the second** — which is the point: the reward curve bent
+and the difficulty did not. **All five gates pass — fifteenth consecutive
+iteration.** 36 tests green; fixtures regenerated, since this is the first rule
+change since iteration 11.
 
 ---
 

@@ -82,6 +82,25 @@ export const TUNING = Object.freeze({
    * feeds on cooldown even when both never miss.
    */
   appetitePerFeed: 0.01,
+  /**
+   * What the shift pays, as a multiple, by how long you have lasted.
+   *
+   * A critic measured moderate and good players scoring 60.8 and 61.1 points a
+   * second — identical — so the fifty extra seconds an expert earns buys them
+   * nothing but more of the same, and the biggest number on screen is a
+   * stopwatch that cannot tell the two apart.
+   *
+   * Keyed to size first, and measured: it did nothing, because size plateaus at
+   * about x1.96 for every competent player, so a multiplier that rides it is
+   * flat for the whole stretch it was meant to bend. Time is the thing that
+   * never plateaus. Every minute survived raises the rate for everything
+   * scored, so the last third of a run is worth more than the first — which is
+   * both the reward curve the game was missing and a thing that visibly arrives
+   * every twenty seconds in a stretch that previously had nothing new in it.
+   *
+   * It changes no difficulty. Survival is untouched; only the reward bends.
+   */
+  payPerMinute: 0.75,
   restore: 10,
   restoreCraved: 14,
   /**
@@ -436,6 +455,11 @@ export const MUTATION_RULES: Record<Ingredient, string> = {
   pepper: "It spits food back. Feed it pepper to clear a clogged mouth.",
 };
 
+/** The shift's pay rate: everything scored is multiplied by this. */
+export function payRate(tick: number): number {
+  return quantize(1 + (tick / (60 * ARENA.tickRate)) * TUNING.payPerMinute);
+}
+
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const clamp01 = (value: number) => clamp(value, 0, 1);
 const quantize = (value: number) => Math.round(value * 10000) / 10000;
@@ -723,7 +747,7 @@ export function slamHatch(state: ArcadeState): boolean {
     state.announcement = "The hatch comes down. It thinks better of it.";
     event(state, "hatch", ARENA.launcher.x, ARENA.launcher.y - 70, "HATCH — LUNGE STOPPED");
     state.hatchSaves += 1;
-    state.score += 150;
+    state.score += Math.round(150 * payRate(state.tick));
   } else {
     event(state, "hatch", ARENA.launcher.x, ARENA.launcher.y - 70, "HATCH");
   }
@@ -931,7 +955,7 @@ function acceptFood(state: ArcadeState, food: Projectile) {
   const points = 100 + (state.combo - 1) * 40 + (craving ? TUNING.cravingBonus + TUNING.cravingCombo * (state.combo - 1) : 0) +
     (precision ? 50 : 0) + (food.bounces || food.hazardBounces ? 120 : 0) +
     (clutch ? 90 : 0) + (food.assisted ? 40 : 0);
-  state.score += points;
+  state.score += Math.round(points * payRate(state.tick));
   const restore = (craving ? TUNING.restoreCraved : TUNING.restore) * (gorged ? TUNING.gorgeRestore : 1);
   state.hunger = quantize(Math.min(100, state.hunger + restore));
   state.rage = Math.max(0, state.rage - (craving ? TUNING.cravingCalm : TUNING.feedRage));
@@ -1193,7 +1217,7 @@ export function stepArcade(state: ArcadeState): void {
       if (state.tick < state.hatchClosedUntil) {
         // Off the hatch. This is what the lockout bought.
         state.hatchSaves += 1;
-        state.score += 220;
+        state.score += Math.round(220 * payRate(state.tick));
         state.announcement = "Off the hatch. That is what it is for.";
         event(state, "block", ARENA.launcher.x, ARENA.launcher.y - 46, "BLOCKED +220", { ingredient: food.ingredient });
         continue;
@@ -1277,7 +1301,7 @@ export function stepArcade(state: ArcadeState): void {
   // up regardless, so the biggest number on screen kept climbing through a run
   // that was visibly falling apart.
   if (state.tick % 10 === 0 && state.hunger > 30) {
-    state.score += 1;
+    state.score += Math.max(1, Math.round(payRate(state.tick)));
   }
 
   // THE LAST SERVING — once a shift, a serving already in the air gets to land.
