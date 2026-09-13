@@ -1454,6 +1454,93 @@ It should film one of each.
 
 ---
 
+## Iteration 17 — the ring is the mouth, and the reason it never was
+
+The iteration-16 critic called the target ring a cheap death: *"A player who does
+exactly what the HUD instructs is, at x1.82, throwing at the creature's chin."*
+The calibration script disagreed, and the way out was to find what the script was
+not measuring.
+
+**It was the tracking.** The rules move the mouth vertically by `creature.track`
+— *"a snack in the air owns the face"* — by up to forty-six pixels, and they do it
+on every frame with a serving in flight, which is most of the frames a player is
+aiming on. The picture followed that with nine pixels of head travel in the two
+tracking expressions and nothing else. The calibration probes had no projectile
+in them, so `track` was zero in every one of them and the script had been blind
+to the largest divergence in the game.
+
+The pose now follows `creature.track` the way it follows `creature.lift`. The
+coefficient is three times the lift's, and that is measured rather than assumed:
+at the lift's own numbers, forty units of track moved the painted mouth eleven
+pixels against the rules' thirty-six, because downward displacement through the
+body kernel meets the floor gate on the way and costs about three times as much
+to buy.
+
+Two smaller things rode along, both named by critics: a dark stroke under the lit
+ring, because on a pale flushed creature it was cream on cream and the first
+thing a 960 px downscale threw away; and a coaching line for `IRRITATION`, which
+ends 100 % of naive runs and 29 % of expert ones and had never once been
+explained on screen while `FULLNESS` had four lines to itself.
+
+### The whole repair, measured
+
+| state | it 13 | it 14 | it 16 | **it 17** |
+|---|---|---|---|---|
+| bare x1.68 | 4.2 px | 3.1 | 3.1 | **2.9** |
+| **track +40** | — | — | 30.3 | **4.4** |
+| lift 10 | 28.9 | 6.4 | -1.2 | **-2.2** |
+| lift 20 | 39.1 | 5.3 | -6.0 | **-6.5** |
+| balloon 1, live | 30.4 | 22.5 | 13.0 | **10.1** |
+| balloon 3, no lift | 84.1 | 49.4 | 34.0 | **22.2** |
+
+### Bots and critic — iteration 17
+
+Byte-identical bots and fixtures. **All five gates pass — eleventh consecutive
+iteration.** 36 tests green.
+
+| | Agency | Consequence | Tension | Readability | Comedy | Fairness |
+|---|---|---|---|---|---|---|
+| iteration 16 | 8 | 9 | 7 | 5 | 8 | 4 |
+| **iteration 17** | 8 | 8 | 7 | **6** | 7 | **6** |
+
+**No cheap death.** And Readability moved for the first time in six iterations.
+
+The ring verdict, from a critic who measured it rather than describing it:
+
+> *"**It is now centred correctly.** Ring centre vs mouth-opening centre is
+> dx = +2 px at x1.28 and dx = +2 px at x1.82. Vertically it tracks the lip line
+> within ±7 px. Whoever worked on this last got the anchor right, and the
+> previous reviewers' complaint about placement is resolved."*
+
+### What is left of it, and it is a different problem
+
+> *"Position: fixed. Boundary: not fixed. The drawn mouth is a rotated wedge —
+> wide and flat across the top where the teeth are, tapering to a rounded point
+> at the lower right. The ring is an axis-aligned ellipse. So it simultaneously
+> claims face and abandons mouth: 109 px of ring on bare cheek at x1.28, and a
+> 387 px band of open gullet above its top edge at x1.82."*
+
+That is not a bug in the drawing. The rules' acceptance test **is** an
+axis-aligned ellipse — `dx² + dyGap² ≤ 1` about the mouth's centre — so the ring
+is telling the truth about the rules, and the painting is the thing that is a
+wedge. Closing it means changing one of the two: either the collision takes the
+mouth's axis and taper, or the painted mouth is redrawn rounder. The first is a
+rule change and needs the gates re-measured; the second is a rig change. Either
+is a real iteration, and it is now the whole of the ring problem.
+
+### One critic finding checked and rejected
+
+> *"The end card reads ACCURACY 28%. The real landed rate is 17 of ~120
+> launches, about 14%. The card flatters by 2x."*
+
+It does not. `state.shots` increments once per launch, and replaying the captured
+shift gives **61 launches, 17 feeds, 28 %** — exactly what the card prints. The
+critic counted event-log entries rather than launches. Recorded because a
+measured claim deserves a measured answer, and because the next reader of this
+log should not go and "fix" a correct number.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s

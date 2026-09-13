@@ -764,6 +764,21 @@ export class CreatureAnimator {
         target.bodyRise += lift * 0.31;
         target.headY -= lift * 0.28;
       }
+      // And the tracking, which is the same thing in the other direction and is
+      // much larger: a hungry creature reaches for a snack in the air, and the
+      // rules move its mouth by up to forty-six pixels to do it. The picture
+      // followed that with nine pixels of head travel in the tracking
+      // expressions and nothing else, so on every frame with a snack in flight —
+      // which is most of the frames a player is aiming on — the ring was
+      // descending while the painted mouth was not. Same two channels as the
+      // lift, same calibrated coefficients, opposite sign.
+      // Measured, not guessed: at 0.31/0.28 — the lift's coefficients — forty
+      // units of track moved the painted mouth eleven pixels against the rules'
+      // thirty-six. Downward displacement through the body kernel meets the
+      // floor gate on its way and costs about three times as much to buy.
+      const track = creature.track ?? 0;
+      target.bodyRise -= track * 1.0;
+      target.headY += track * 0.9;
       target.teethLong = Math.max(target.teethLong, clamp01(grow / 1.4) * 0.55);
       // A shut mouth on a big creature is the thing the player is waiting out,
       // so it tightens rather than simply closing.

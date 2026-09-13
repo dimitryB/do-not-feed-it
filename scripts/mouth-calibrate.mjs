@@ -94,6 +94,8 @@ async function main() {
     // states a shift actually reaches are measured against the rules directly.
     const LIVE = [
       { name: "bare x1.68", size: 1.68, m: { metal: 0, balloon: 0, pepper: 0 }, extra: {} },
+      { name: "track +40", size: 1.68, m: { metal: 0, balloon: 0, pepper: 0 }, extra: { track: 40 } },
+      { name: "track -40", size: 1.68, m: { metal: 0, balloon: 0, pepper: 0 }, extra: { track: -40 } },
       { name: "lift 10 only", size: 1.68, m: { metal: 0, balloon: 1, pepper: 0 }, extra: { lift: 10, clog: 0, pressure: 0 } },
       { name: "lift 20 only", size: 1.68, m: { metal: 0, balloon: 1, pepper: 0 }, extra: { lift: 20, clog: 0, pressure: 0 } },
       { name: "clog 0.6 only", size: 1.68, m: { metal: 1, balloon: 0, pepper: 0 }, extra: { lift: 0, clog: 0.6, pressure: 0 } },

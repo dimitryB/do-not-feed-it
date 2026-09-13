@@ -212,8 +212,16 @@ export function createScene(){
       // The gap: where a snack will actually go in. Lit only while it is open
       // wide enough to accept one, and exactly the shape the rules test.
       const gap=Math.max(.3,c.open);
-      ctx.setLineDash([]);ctx.lineWidth=taking?2.4:1.2;
-      ctx.strokeStyle=taking?`rgba(216,248,150,${.5+.22*(reduced?0:Math.abs(Math.sin(time*5)))})`:'#eff4bd22';
+      ctx.setLineDash([]);
+      // A dark stroke under the lit one. On a pale, flushed, mutated creature
+      // the ring was cream on cream, and it was the first thing a 960 px
+      // downscale threw away.
+      if(taking){
+        ctx.lineWidth=6;ctx.strokeStyle='rgba(6,16,14,0.55)';
+        ctx.beginPath();ctx.ellipse(c.x,c.y,c.rx,c.ry*gap,0,0,Math.PI*2);ctx.stroke();
+      }
+      ctx.lineWidth=taking?3:1.2;
+      ctx.strokeStyle=taking?`rgba(216,248,150,${.72+.2*(reduced?0:Math.abs(Math.sin(time*5)))})`:'#eff4bd22';
       ctx.beginPath();ctx.ellipse(c.x,c.y,c.rx,c.ry*gap,0,0,Math.PI*2);ctx.stroke();
       ctx.restore();
     }
