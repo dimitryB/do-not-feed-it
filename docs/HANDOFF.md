@@ -84,16 +84,21 @@ choice was made is in `docs/DECISION_REGISTER.md` (D36–D53); the evidence is i
 `docs/qa/loop/ITERATION_LOG.md`, whose final report is the first thing to read.
 
 **Read the final report before changing anything.** It states what passed, what
-did not, and the next step in order. The short version after two blocks of work:
-**all five numeric gates pass and have passed on five consecutive iterations**,
-the naive "press Space on cooldown" strategy went from surviving 119.2 s of a
-120 s shift to dying in 28.6 s of an endless one, and no cheap-death finding is
-open. Two things stop it exiting: no single critic has scored all six rubric
-criteria at 7 or above, and — the one to fix first — **the draw is roughly twice
-its 4 ms budget once the creature carries two mutations**, which went unnoticed
-for eleven iterations because the capture harness only ever timed a creature with
-none. Measure that with `scripts/render-budget.mjs`, not with the capture
-harness.
+did not, and the next step in order. After three blocks of work: **all five
+numeric gates pass and have passed on ten consecutive iterations**, four of the
+six critic criteria sit at 7 or above, and the naive "press Space on cooldown"
+strategy went from surviving 119.2 s of a 120 s shift to dying in 28.6 s of an
+endless one.
+
+Two things are open and the first is small and specific. **The lit target ring is
+the rules' collision ellipse, drawn exactly — and the painted mouth is not where
+`scripts/mouth-calibrate.mjs` thinks it is.** That script measures the aperture
+the rig draws lip to lip; a critic tracing the dark cavity between the teeth
+measured the ring 162 px below it at full size. Fix `mouthBox()` to report the
+cavity, re-run the calibration, re-fit the five rule constants it prints. Until
+that is done no further tuning of the ring means anything. Second, the draw is
+13-25 % over its 4 ms budget once the creature carries two mutations — measure
+that with `scripts/render-budget.mjs`, never with the capture harness.
 
 Do not merge this branch. Nothing in `contracts/`, `worker/` or `db/` was
 touched.

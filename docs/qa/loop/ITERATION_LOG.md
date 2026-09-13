@@ -1,17 +1,16 @@
 # Feeding-loop iteration log
 
-## FINAL REPORT — second block, stopped at the ten-hour cap, exit criteria not met
+## FINAL REPORT — third block, stopped at the cap, exit criteria not met
 
-**Status: all eight stages are implemented and reachable in real play, all five
-numeric gates now pass and have passed on five consecutive iterations, and no
-open cheap-death finding remains. The exit criteria are still not met on two
-counts: no critic has scored every criterion at 7 or above, and the render is
-over budget once the creature carries mutations — a breach that had never been
-measured because the harness only ever timed a bare creature.**
+**Status: all eight stages implemented and reachable, all five numeric gates
+passing on ten consecutive iterations, the render regression found and mostly
+paid down — and one cheap-death finding reopened on the last iteration of the
+block, by a critic who measured the target ring by hand and found the game
+drawing it somewhere the mouth is not.** The sixteen-iteration cap is reached.
 
 ### The gates
 
-| gate | ceiling / floor | iteration 11 | verdict |
+| gate | ceiling / floor | iteration 16 | verdict |
 |---|---|---|---|
 | naive median survival | ≤ 45 s | 28.6 s | pass |
 | moderate median | 90–150 s | 133.8 s | pass |
@@ -20,148 +19,113 @@ measured because the harness only ever timed a bare creature.**
 | decision density (moderate) | ≥ 6 changes/min | 127/min | pass |
 | replay fixtures | exact | exact | pass |
 
-Passed on iterations **7, 8, 9, 10 and 11** — five consecutive. The exit bar is
-two. The death-spread gate, which had never passed in the first block, was closed
-in iteration 7 by making a good decision compound rather than pay a flat rate.
+Passed on iterations 7 through 16 — **ten consecutive**, against an exit bar of
+two. Iterations 12 to 16 changed no rule at all, and the frozen traces came back
+byte-identical every time, which is the check that proves it.
 
 ### The critic
 
 | iteration | Agency | Consequence | Tension | Readability | Comedy | Fairness |
 |---|---|---|---|---|---|---|
 | 0 (baseline) | 2 | 2 | 2 | 2 | 4 | 1 |
-| 5 (end of first block) | 4 | 7 | 5 | 3 | 6 | 4 |
 | 7 | 5 | 7 | 5 | 3 | 7 | 4 |
-| 8 | **8** | **9** | **7** | 5 | 7 | 6 |
-| 9 | 8 | 7 | 6 | **7** | 6 | 7 |
-| 10 | 8 | **9** | 7 | 6 | 7 | **8** |
-| 11 | 8 | 6 | 7 | **4** | 6 | 7 |
+| 11 (end of block two) | 8 | 6 | 7 | 4 | 6 | 7 |
+| 12 | 8 | 9 | 7 | 5 | 7 | 7 |
+| 13 | 8 | 8 | 8 | 5 | 7 | 7 |
+| 14 | 8 | 9 | 8 | 5 | 7 | 6 |
+| 15 | 8 | 9 | 8 | 5 | **8** | 7 |
+| 16 | 8 | 9 | 7 | 5 | 8 | **4** |
 
-Every criterion has reached 7 at least once. None of the four critics in this
-block scored all six at 7 together, and iteration 11's dropped Readability from
-6 to 4. Each critic is a fresh context shown only pictures and numbers, so these
-are four different readers rather than one reader's trend — which is why the
-brief says to treat the averages as noise and the named faults as signal. The
-named faults are listed at the bottom.
+Agency, Consequence, Tension and Comedy are all at or above 7 and have been for
+five iterations. **Readability has been 5 for five straight iterations**, and
+every critic in that run has given the same reason: the lit target ring.
 
-**Cheap death: closed.** Iteration 8's critic found one — *"the player dies with
-an empty launcher two seconds before the hatch reopens, and the manifest shows it
-reopening one tick after the loss."* Iterations 9 and 10 answered it with two
-rules, and the three critics since have each looked for one and reported none.
+### What this block did
 
-### What this block changed
+1. **Found and mostly paid down a render regression nobody had measured**
+   (iteration 12). The capture harness had only ever timed a creature with no
+   mutations, and reported ~4 ms for eleven iterations while a typical mid-shift
+   creature cost 9.6. A new profiler split the frame: the warp grid was flat
+   across every state, and the whole variable was `drawSkin` running four blended
+   full-resolution composites, one per colour grade. One unblended composite over
+   the body's own rectangle, a fifth-resolution scratch, and a slightly coarser
+   grid took the worst state from **9.72 ms to 4.52** and the mutation surcharge
+   from **+5.3 ms to +1.5**. A bare creature is inside the 4 ms budget; a mutated
+   one is 13–25 % over, and the remainder is the warp's own floor, which predates
+   every mutation and cannot be cut further without the belly tearing.
+2. **Stopped five text objects competing in one frame** (iteration 13), moved the
+   mutation banner off the creature's mouth, suppressed a toast that promised a
+   second chance at zero fullness, and made the stat row readable at 960 px.
+3. **Chased the target ring through three iterations** (14, 15, 16) with a
+   calibration script that was extended to measure the states a shift actually
+   reaches rather than only a bare creature. That found and fixed: a balloon
+   inflation that lifted the painted mouth 84 px the rules knew nothing about, a
+   lift channel over-scaled 3.4×, and two mutation expressions carrying 30 px of
+   head lift each. Measured against that instrument the error fell from **84 px
+   to 34 px worst case, and from 29 px to under 2 px for the lift**.
+4. **Made the opens-in telegraph stop dressing as the target** (iteration 15): it
+   was a lime arc around the whole face, the same colour and shape as the accept
+   ring, and three critics in a row measured it as a badly-placed hitbox. It is
+   now amber brackets that converge on the gap.
+5. **Made the loss card lead with the loss** (iteration 15).
+6. **Fixed a harness bug that had been corrupting every render measurement in the
+   session**: `stopServer` sent SIGTERM and returned, the dev server's workerd
+   child ignored it, and seven stale server pairs had accumulated holding five
+   gigabytes.
 
-1. **The aim is on screen (iteration 8).** A lance out of the muzzle with a
-   crossbar at the distance the current charge throws, the loaded serving visible
-   in the breech through the whole reload, and a ring that fills as the reload
-   finishes. Agency went 5 → 8.
-2. **The capture harness stopped lying (iteration 8).** It replayed the bot's
-   commands by firing each on its tick, so the launcher teleported to its angle
-   on the frame it fired and every other frame showed a player doing nothing. It
-   now plays the wind-up — the sweep at the game's own aim rate, the charge
-   starting exactly as far back as the shot's power is worth — over the same
-   trace.
-3. **A shift may not end on a tick the player was locked out of (iteration 9).**
-   While the hatch is shut the hunger drain accumulates as a debt and is repaid
-   at triple rate the moment the launcher is available again. Nothing is
-   forgiven, so the economy is unchanged; only the tick the loss can land on has
-   moved.
-4. **THE LAST SERVING (iteration 10).** Once a shift, a serving already in the
-   air gets to land before the belly empties the run.
-5. **The third act arrives (iteration 10).** The stage marker was keyed to a size
-   the medians never reach, so act four existed and never appeared. It now
-   arrives when the shift is actually in trouble.
-6. **A readability pass (iteration 11).** The meters are no longer the smallest
-   type on screen, verdict pills can no longer sit on them, a mistake holds for a
-   beat instead of a second, the hatch says why it is shut and for how long, and
-   what a mutation DOES is drawn at a size a stream can read.
+### What did not pass, and what to do about it
 
-Two duplicated draw blocks were found and removed along the way — the meters in
-iteration 6 and a 131-line block in iteration 8 containing the launcher, the
-hatch, the projectiles, the event labels and the craving ring, all of which were
-being executed twice per frame.
+**1. The cheap death is open again, and the two instruments disagree.** This is
+the thing to fix first and it is not a tuning problem.
 
-### What did not pass, and it is the most important thing in this report
+The iteration-16 critic traced the painted mouth by hand at five sizes and
+measured the ring 162 px below it at ×1.82, 69 % disjoint. The calibration script
+says the same states agree within 34 px. Both cannot be right — and the critic's
+own numbers independently confirm the ring is exactly the rules' ellipse, to the
+pixel, at every size. So the disagreement is about **where the mouth is**:
+`mouthBox()` reports the aperture the rig draws lip to lip, and the critic traced
+the dark cavity between the teeth. On a wide-open mouth those are different
+objects, and the player aims at the hole they can see.
 
-**The render is over budget with mutations on, and always has been.**
-`scripts/loop-shots.mjs` measures the draw on a full-size creature with *no
-mutations*, which is not a state a shift spends much time in. A new standalone
-profiler, `scripts/render-budget.mjs`, measures each state on its own with a
-warm-up pass discarded:
+**Fix `mouthBox()` to report the cavity, re-run the calibration, re-fit the rule
+constants.** Everything measured in iterations 14 and 16 stands and was worth
+doing — it was measured against the wrong reference, and the reference is one
+function.
 
-| state | mean draw at 1920×1080 |
-|---|---|
-| bare, ×2.4 | **3.80 ms** |
-| metal 3 | 5.74 ms |
-| balloon 3 | 5.03 ms |
-| pepper 3 | 5.04 ms |
-| typical 2 / 2 / 1 at ×2.0 | **7.34 ms** |
-| worst 3 / 3 / 3 at ×2.4 | **7.89 ms** |
+**2. Readability has been 5 for five iterations.** Once the ring is honest, the
+remaining named faults are small and cheap: give the ring a dark outer stroke so
+it survives pale mutated skin and the 960 px downscale; explain `IRRITATION`
+somewhere, since it ends 100 % of naive runs and 29 % of expert ones and appears
+in zero coaching lines while `FULLNESS` has four.
 
-The budget is 4 ms average. A typical mid-shift state costs nearly twice it. Note
-that two mutations at level 2 cost about the same as three at level 3, which says
-the cost is not the overlays scaling with level but something that switches on
-when more than one pose channel is displaced at once — the warp grid is the
-obvious suspect, since it is priced per cell drawn and a cell is skipped only
-when its displacement is under a third of a pixel. **This should be the next
-iteration, before anything else.** It was invisible for eleven iterations because
-the harness never measured the state the game is actually in.
+**3. The render is still 13–25 % over budget with mutations on.** 4.52 ms worst
+case against 4 ms, measured with `scripts/render-budget.mjs` on a machine with no
+GPU. The remaining cost is ~470 transformed `drawImage` calls per frame for the
+warp grid; a coarser grid fits the budget and tears an inflated belly, which was
+measured and rejected.
 
-### Also not passed
+**4. Half the death space has never been filmed.** Three critics have now said
+they cannot judge the fairness of "kitchen destroyed", which is 100 % of naive
+deaths and half of a moderate shift's. The capture harness films one fixed seed
+and that seed starves. It should film one of each ending.
 
-- **No critic has scored every criterion ≥ 7.** Iteration 10 came closest, with
-  Readability at 6 the only one short.
-- The title, mid-run and ending screens have been re-captured every iteration and
-  are in `docs/qa/loop/iter-11/`, but they have not been judged side by side
-  against `docs/qa/title.png` / `docs/qa/survival.png`.
-- `npm run test:contract` still cannot run: `binaries.soliditylang.org` is
-  blocked by this environment's egress policy, so the Solidity compiler cannot be
-  downloaded. No chain code was touched on this branch.
+**5. The creature still does not act.** Every critic in both blocks has said the
+comedy is in the typography: it opens, it shuts, it blushes, and it never
+reacts to being fed, missed or clanged. This is the largest single upside left
+and it is presentation-only work.
 
-### The open faults, in the order I would fix them
-
-1. **The draw is over budget with mutations on.** Above. Everything else on this
-   list is cosmetic by comparison, because a stream that drops frames is
-   unreadable whatever is drawn on it.
-2. **The mouth wind-up arc and the irritation flush are the same value.** The arc
-   that closes about 400 ms before the mouth opens is the only timing tell in the
-   game, and it is drawn in pale lime on a belly that rising irritation flushes to
-   pale pink-tan. The danger cue erases the timing cue exactly when the danger is
-   highest. Redraw it in a colour that never appears on the creature.
-3. **The size number and the picture disagree.** The HUD says ×1.82; a critic
-   measured the silhouette and found it about 3 % wider than at ×1.28. The rig
-   has a hard scale ceiling for texture quality, so either the drawn growth has to
-   find another channel — the creature filling more of the frame, or the frame
-   coming to it — or the HUD has to stop printing a multiplier the art cannot
-   honour.
-4. **The mutation banner collides with the verdict pills.** Iteration 11
-   introduced the banner and suppressed the duplicate mutation pill, but a
-   critic still caught a banner stacked over TOO LATE over TASTY +100 in one
-   300 px band. The banner needs its own reserved band, the way the meters now
-   have one.
-5. **"THE CUTLERY IS MOVING" is a caption on something that does not move.** The
-   toast fires when the room's metal flies at the mouth; the cutlery stuck to the
-   body is a static decal. Either animate the decals or stop claiming they move.
-6. **There is no death beat.** Every ending clip cuts from play to the report
-   card. The loss is the punchline of the whole run and it is not on screen.
-7. **"HELD" reads as a broken promise at stream sampling.** The belly really does
-   hold while the hatch is shut, but two HELD frames six seconds apart bracket a
-   fall from 28 % to 10 % because the drain resumed in between. The badge needs
-   to make the held quantity visible — a frozen notch on the bar — rather than
-   just asserting the freeze.
-8. **The naive cliff.** 78.5 % of naive runs die in one 30-second bucket having
-   landed zero servings, so the least skilled judge never sees a mutation. The
-   naive bot never aims at all, which is not what a beginner does, so the number
-   probably overstates it — but nothing in the game currently teaches aim inside
-   the first thirty seconds.
+**6. `npm run test:contract` still cannot run** — `binaries.soliditylang.org` is
+blocked by this environment's egress policy. No chain code was touched.
 
 ### Recommended next step
 
-Fix the render budget first — measure with `scripts/render-budget.mjs`, not with
-the capture harness, and make the cell-skip threshold and the warp grid pay for
-the mutation states rather than only the bare one. Then take faults 2 and 3
-together as one iteration: they are both "the creature's state is not legible on
-the creature", which is the single theme every critic in both blocks has
-independently landed on.
+One iteration, in this order, and it is small: make `mouthBox()` report the dark
+cavity rather than the lip-to-lip box; re-run `scripts/mouth-calibrate.mjs`;
+re-fit `ARENA.mouth`, `leanPerSize`, `risePerSize`, `mouthGrowX` and
+`mouthGrowY` to what it then says; put a dark stroke under the ring; and add one
+coaching line for `IRRITATION`. Then film a kitchen-destroyed shift. That is the
+whole of the open Readability and Fairness list, and nothing else in this log is
+close to it in value.
 
 ---
 
