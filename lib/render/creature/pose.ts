@@ -457,6 +457,9 @@ export class CreatureAnimator {
     return this.pose;
   }
 
+  /** Development only: the pose as it currently stands. */
+  get current(): CreaturePose { return this.pose; }
+
   /** The pose without spring smoothing, for a still capture that must be exact. */
   snapToTargets() {
     for (const field of FIELDS) { this.pose[field] = this.target[field]; this.velocity[field] = 0; }
@@ -603,10 +606,33 @@ export class CreatureAnimator {
     // player's own doing and it is the feedback they need. But a creature at
     // ninety per cent irritation that a burp turns back into a smiling frog is
     // the exact failure a critic named: the meter that ends every unskilled run
-    // having no presence on the animal. Above step three this goes on last, at
-    // a weight that blends under the reaction rather than replacing it, so the
-    // snarl is still there underneath the burp.
-    if (step3 > 0.35) this.wear("annoy3", (step3 - 0.35) * 1.1);
+    // having no presence on the animal.
+    //
+    // Blending it underneath was tried first and measured on a real capture. It
+    // bought the brow and the eyes — heavy lids and brows down, where they had
+    // been raised — and it did not buy the mouth, because a reaction owns
+    // `cornerLift` and `mouthWidth` outright and half a weight underneath does
+    // not invert a grin.
+    //
+    // So above the top step those two channels are taken rather than blended.
+    // Two channels, not the expression: the burp still opens the jaw, puffs the
+    // cheeks and vents steam, so the reaction still reads as the reaction. What
+    // it can no longer do is put a smile on a creature that is about to take the
+    // kitchen apart.
+    if (step3 > 0.35) {
+      const temper = clamp01((step3 - 0.35) * 1.6);
+      this.wear("annoy3", temper);
+      // The painted mouth curves upward on its own, so pulling the corners to
+      // level still reads as a smile — which is why a blend toward the snarl's
+      // own -1.45 did nothing visible. The corners have to go past level, and
+      // this is the one place in the rig allowed to say so outright.
+      target.cornerLift = Math.min(target.cornerLift, -0.35 - 1.15 * temper);
+      target.mouthWidth = Math.min(target.mouthWidth, 1.02);
+      target.teethBare = Math.max(target.teethBare, temper);
+      target.browAngry = Math.max(target.browAngry, temper);
+      target.lowerLid = Math.max(target.lowerLid, 0.82 * temper);
+      target.lipPress = Math.min(target.lipPress, 1 - temper);
+    }
 
     // 7. The whistle. There is no surviving the shift any more — the run ends
     //    when the creature wins — so the smug look belongs to the ending where

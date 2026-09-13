@@ -11,7 +11,7 @@ Readability, moved off 5 for the first time in six iterations on the last one.
 
 ### The gates
 
-| gate | ceiling / floor | iteration 20 | verdict |
+| gate | ceiling / floor | iteration 21 | verdict |
 |---|---|---|---|
 | naive median survival | ≤ 45 s | 28.6 s | pass |
 | moderate median | 90–150 s | 133.8 s | pass |
@@ -20,8 +20,8 @@ Readability, moved off 5 for the first time in six iterations on the last one.
 | decision density (moderate) | ≥ 6 changes/min | 127/min | pass |
 | replay fixtures | exact | exact | pass |
 
-Iterations 7 through 20 — **thirteen consecutive**, against an exit bar of two.
-Iterations 12 to 20 changed no rule at all, and the frozen traces came back
+Iterations 7 through 21 — **fourteen consecutive**, against an exit bar of two.
+Iterations 12 to 21 changed no rule at all, and the frozen traces came back
 byte-identical every time, which is the check that proves it.
 
 ### The critic
@@ -123,14 +123,21 @@ branch.
 
 ### Recommended next step
 
-**Finish the temper.** Iteration 20 got the brow and the eyes: at 87 %
-irritation the creature now has heavy lids and brows down over its eyes where it
-used to have raised ones. Its mouth is still smiling, because the one-shot
-reactions own `cornerLift` and `mouthWidth` outright and irritation blends
-underneath them. Let irritation take those two channels above the top step, or
-author snarling variants of the recovery reactions. Small, presentation-only, and
-it closes the fault every critic across three blocks has named in different
-words.
+**The temper is done to the limit of the rig** (iterations 20 and 21): at 87 %
+irritation the brows come down heavy over narrowed eyes, the flush is on the
+face, and `scripts/pose-probe.mjs` shows every channel at full snarl and holding
+through a burp. The mouth only flattens, because the painted grin at a wide
+aperture is something the warp can bend and not invert; finishing that means
+authoring a snarl into the mouth drawing rather than asking the corner channel
+for more than it has.
+
+**So the next thing is the run's last third**, which has nothing new in it:
+moderate and good bots both finish at exactly x1.96 with identical score rates,
+60.8 against 61.1 points a second, so fifty extra seconds of expert play is the
+fourth act repeating. Note the obvious lever was tried and rejected in iteration
+10 — faster mutation levels broke the death-spread gate, because mutation
+strength *is* the difficulty ramp. The answer has to escalate without being
+harder.
 
 Then the ring's shape, which is a design decision before it is any work: an
 axis-aligned ellipse is a rule a player can learn and a wedge is a shape they can
@@ -1654,6 +1661,50 @@ letting irritation take `cornerLift` and `mouthWidth` outright above the top ste
 authoring a snarling variant of the recovery reactions. That is the next
 iteration and it is small. This one was not put to a critic; there was no block
 time left to run one.
+
+---
+
+## Iteration 21 — finishing the temper, and building the instrument that finished it
+
+Iteration 20 got the brow and the eyes and left the mouth smiling. Two further
+attempts at the mouth changed nothing on screen, and each one cost a sixteen-
+minute capture to discover that. A capture shows you the frame; it does not tell
+you which channel is winning.
+
+**`scripts/pose-probe.mjs`** prints the pose the animator actually settled on, in
+a named state, with a real reaction playing over the top. It answered in three
+minutes what three captures had not:
+
+| | cornerLift | teethBare | browAngry | lowerLid | rageFlush |
+|---|---|---|---|---|---|
+| calm (rage 4) | -0.12 | 0.40 | 0.39 | 0.42 | 0.00 |
+| rage 87 | **-1.00** | **0.99** | **0.99** | **0.82** | **0.94** |
+| rage 87, mid-burp | **-0.97** | 0.89 | 0.90 | 0.75 | 0.94 |
+
+The blend was never the problem after iteration 20's re-ordering — the channels
+were already at full snarl, and they already survived a burp. So the change that
+finished it is small: above the top step irritation now takes `cornerLift`,
+`mouthWidth`, `teethBare`, `browAngry`, `lowerLid` and `lipPress` outright rather
+than blending, and it pushes the corners *past* level, because the painted mouth
+curves upward on its own and pulling it to level still reads as a smile.
+
+### What it looks like, and where the rig's limit is
+
+Side by side at 87 % irritation, iteration 19 against 21 (`clip-ending/frame-09`
+of each): **the brows come down heavy over narrowed eyes and the flush is on the
+face** — the creature is unmistakably scowling where it used to be beaming. The
+mouth flattens and drops a little, and no further.
+
+That last part is a rig limit, not a blend order, and the probe is what proves
+it: `cornerLift` is at -1.00, as low as the expression set goes, and the painted
+mouth at a wide aperture is a grin the warp can bend but not invert. Taking it
+further means authoring a snarl into the mouth drawing itself rather than asking
+the corner channel for more than it has.
+
+**All five gates pass — fourteenth consecutive iteration**, fixtures
+byte-identical, 36 tests green. The bots never touch the renderer, so a pose
+change cannot move them; that is why this one is presentation-only in the
+strictest sense.
 
 ---
 

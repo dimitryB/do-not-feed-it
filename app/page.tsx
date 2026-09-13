@@ -57,6 +57,8 @@ export default function Home(){
         if(extra?.track!==undefined)run.creature.track=extra.track;
         setView(clone(run));return snapshot();},
       point:(value:number)=>{aim(value);},
+      // Development only: irritation is otherwise only reachable by missing.
+      setRage:(value:number)=>{const run=runRef.current;if(!run)return;run.rage=Math.max(0,Math.min(100,value));setView(clone(run));},
       // Development only: holds or releases the charge the way the space bar
       // does, so a capture can show the launcher winding up before a shot
       // instead of the power appearing only in the command that fires it.

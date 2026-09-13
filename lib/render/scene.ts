@@ -578,5 +578,7 @@ export function createScene(){
   /** Development only: advances the performance without drawing, so a capture
    *  harness can settle the springs at a frozen clock. */
   const warm=(state:ArcadeState|null,playing:boolean,reduced:boolean,time:number,delta:number)=>{animator.step(state,playing,reduced,time,delta,!(DEV_HOOKS&&devRender.holdBlink));};
-  return {draw,ready,debugRig,warm};
+  /** Development only: the pose the animator settled on for the last frame. */
+  const debugPose=()=>({...animator.current});
+  return {draw,ready,debugRig,debugPose,warm};
 }

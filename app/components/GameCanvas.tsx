@@ -69,6 +69,7 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,guideSteps,onA
         bag.profile=()=>drawProfileSummary();
         bag.resetTiming=()=>{resetDrawCost();};
         bag.sceneReady=()=>scene.ready();
+        bag.poseNow=()=>scene.debugPose();
         bag.rigDump=(part:string)=>{
           const built=scene.debugRig();
           if(!built)return null;
@@ -83,7 +84,7 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,guideSteps,onA
         // by scripts/mouth-calibrate.mjs to keep the rules' collision ellipse
         // and the drawn mouth the same object.
         bag.mouthBox=async()=>{const {lastMouth}=await import("../../lib/render/creature/draw");return {...lastMouth};};
-        detachHooks=()=>{delete bag.mouthBox;delete bag.sceneReady;delete bag.canvasSize;delete bag.rigDump;delete bag.settle;delete bag.hideAim;delete bag.hideLabels;delete bag.holdBlink;};
+        detachHooks=()=>{delete bag.mouthBox;delete bag.sceneReady;delete bag.canvasSize;delete bag.rigDump;delete bag.poseNow;delete bag.settle;delete bag.hideAim;delete bag.hideLabels;delete bag.holdBlink;};
       }
     }
     return()=>{disposed=true;cancelAnimationFrame(frame);observer.disconnect();detachHooks?.();};
