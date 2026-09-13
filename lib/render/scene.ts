@@ -1,4 +1,4 @@
-import { ARENA, FOODS, MUTATION_NAMES, MUTATION_RULES, getHazard, trajectoryPreview, type ArcadeState, type Ingredient } from '../game/arcade';
+import { ARENA, FOODS, MUTATION_NAMES, MUTATION_RULES, TUNING, getHazard, trajectoryPreview, type ArcadeState, type Ingredient } from '../game/arcade';
 import { CreatureAnimator } from './creature/pose';
 import { buildRig, type CreatureRig } from './creature/rig';
 import { drawCreature } from './creature/draw';
@@ -183,14 +183,31 @@ export function createScene(){
       // The face: where a snack will hit something. Always dim, always there.
       ctx.lineWidth=1;ctx.setLineDash([5,12]);ctx.strokeStyle='#eff4bd2e';
       ctx.beginPath();ctx.ellipse(c.x,c.y,c.rx,c.ry,0,0,Math.PI*2);ctx.stroke();
-      // When it will open. The shut mouth had no tell at all beyond a coach
-      // line, so a shot committed a second early was unreadable rather than
-      // unlucky; this is the same number the rules use.
+      // When it will open — a CLOCK, and it must not look like the target.
+      //
+      // It used to be a lime arc around the whole face at the target's own
+      // colour and shape, so on a shut mouth the brightest thing on the
+      // creature was a hoop five times the size of the opening, sitting on the
+      // jaw. A critic measured it as the hitbox and reported the game throwing
+      // the player at its chin; it was the countdown. It is now amber, it is a
+      // pair of closing brackets rather than a ring, and it converges on the
+      // gap the mouth is about to become.
       if(!taking&&c.untilOpen>0&&c.untilOpen<=54){
         const near=1-c.untilOpen/54;
-        ctx.setLineDash([]);ctx.lineWidth=3+near*3;
-        ctx.strokeStyle=`rgba(216,248,150,${.18+.55*near*near})`;
-        ctx.beginPath();ctx.ellipse(c.x,c.y,c.rx*1.08,c.ry*1.08,0,-Math.PI/2,-Math.PI/2+Math.PI*2*near);ctx.stroke();
+        const gapRy=Math.max(6,c.ry*TUNING.openMin);
+        const reach=(1-near)*c.rx*0.55;
+        ctx.setLineDash([]);ctx.lineCap='round';
+        ctx.lineWidth=3+near*2.5;
+        ctx.strokeStyle=`rgba(246,186,110,${.3+.6*near*near})`;
+        for(const side of [-1,1]){
+          const bx=c.x+side*(c.rx*0.92+reach);
+          ctx.beginPath();
+          ctx.moveTo(bx-side*13,c.y-gapRy-7);
+          ctx.lineTo(bx,c.y-gapRy-7);
+          ctx.lineTo(bx,c.y+gapRy+7);
+          ctx.lineTo(bx-side*13,c.y+gapRy+7);
+          ctx.stroke();
+        }
       }
       // The gap: where a snack will actually go in. Lit only while it is open
       // wide enough to accept one, and exactly the shape the rules test.

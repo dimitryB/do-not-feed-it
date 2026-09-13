@@ -1363,6 +1363,133 @@ cause-of-death line is an eighth the size of the headline above it.
 
 ---
 
+## Iteration 15 — the clock stops dressing as the target
+
+The iteration-14 critic measured the lit ring in pixels and found it correct at
+full aperture and 114 px low on a shut mouth. Those are two different objects:
+the target ring, and the **opens-in telegraph**, which was drawn as a lime arc
+around the whole face at the target's own colour and shape. On a shut mouth the
+brightest thing on the creature was a hoop five times the size of the opening,
+sitting on the jaw, and it was read — reasonably — as the hitbox.
+
+- **The telegraph is now a clock.** Amber, a pair of closing brackets rather than
+  a ring, converging from outside the face onto the gap the mouth is about to
+  become. Nothing else on the creature is that colour or that shape.
+- **The loss card leads with the loss.** The cause-of-death sentence went from
+  12 px to 25, the stats labels from 10 to 14 and their values from 18 to 30, so
+  `Empty belly. It has eaten the shift supervisor.` and `ACCURACY 28%` are
+  readable at 960 px instead of being an eighth the height of the headline.
+
+Byte-identical bots and fixtures again. **All five gates pass — ninth
+consecutive iteration.**
+
+| | Agency | Consequence | Tension | Readability | Comedy | Fairness |
+|---|---|---|---|---|---|---|
+| iteration 14 | 8 | 9 | 8 | 5 | 7 | 6 |
+| **iteration 15** | 8 | 9 | 8 | 5 | **8** | 7 |
+
+**No cheap death.** Seventh consecutive critic to look and report none — and this
+one singled the hatch out: *"the one lockout that could have felt unfair is
+handled carefully... blame explicitly assigned to the player, and the drain
+provably frozen while it lasts. Whoever built that thought about fairness."*
+
+Readability stayed at 5, and the critic's remaining complaint is the same
+object again, measured more precisely than before: the brackets read as a
+camera-focus reticle, and the ring *"is anchored to the head, not to the jaw"* —
+a mid-run creature at x1.68 still has it low. Which is the residual the
+calibration table had already quantified, and iteration 16 is that residual.
+
+---
+
+## Iteration 16 — the last of the mouth drift
+
+The remaining divergence, found by walking the calibration table one channel at
+a time, was in the mutation *expressions* themselves. Three presets were moving
+the head:
+
+- `activeBalloon`, worn at nine tenths of the balloon level, carried
+  `headY: -20, bodyRise: 30` — **32 px of head lift on a full balloon** that the
+  rules' collision ellipse knew nothing about, and the single largest remaining
+  source of the ring sitting off the mouth.
+- `warnBalloon`, worn as the pressure builds toward a burp, carried another
+  `headY: -14, bodyRise: 20`.
+
+Both now put their volume into width alone. A mutation is allowed to change the
+creature's shape, its skin and its face; it is not allowed to move the one part
+of it the rules have an opinion about.
+
+### The whole repair, measured
+
+Drawn mouth against the rules' effective collision ellipse, in the states a
+shift reaches:
+
+| state | iteration 13 | iteration 14 | iteration 16 |
+|---|---|---|---|
+| bare x1.68 | 4.2 px | 3.1 | **3.1** |
+| lift 10 | 28.9 | 6.4 | **-1.2** |
+| lift 20 | 39.1 | 5.3 | **-6.0** |
+| balloon 1, live | 30.4 | 22.5 | **13.0** |
+| balloon 2 at x2.0, live | 75.9 | 41.1 | **24.0** |
+| balloon 3, no lift | 84.1 | 49.4 | **34.0** |
+| metal 3 | 13.0 | 14.6 | 14.4 |
+| clog 0.6 | 27.8 | 26.8 | 27.8 |
+
+Two sources are still open and are now the whole of it: a clogged mouth is drawn
+28 px higher than the rules put it, and every mutation preset overrides the jaw's
+own aperture by a little, which shifts the drawn mouth's centre about 13 px even
+when the rules say the mouth is fully open.
+
+### Bots and critic — iteration 16
+
+Byte-identical bots and fixtures. **All five gates pass — tenth consecutive
+iteration.**
+
+| | Agency | Consequence | Tension | Readability | Comedy | Fairness |
+|---|---|---|---|---|---|---|
+| iteration 15 | 8 | 9 | 8 | 5 | 8 | 7 |
+| **iteration 16** | 8 | 9 | 7 | 5 | 8 | **4** |
+
+**Cheap death: found, and it is the ring.** After seven consecutive critics
+reporting none, this one traced the painted mouth cavity by hand at five sizes
+and called the target itself the cheap death: *"A player who does exactly what
+the HUD instructs — land the snack inside the lime ellipse — is, at x1.82,
+throwing at the creature's chin."*
+
+### The two instruments disagree, and that is the finding
+
+This critic's table and `scripts/mouth-calibrate.mjs` cannot both be right:
+
+| | calibration says | critic measured |
+|---|---|---|
+| ring x centre, every size | exactly the rules' x | *"pinned at x 1337, rx 194"* — which **is** the rules' x and rx, to the pixel |
+| drawn mouth y at x1.82 | within ~30 px of the rules | **162 px above the ring** |
+
+The ring is provably the rules' ellipse — the critic's own numbers confirm it
+independently. So the disagreement is about **where the mouth is**, and the two
+instruments are measuring two different things: `mouthBox()` reports the aperture
+the rig draws, lip to lip, while the critic traced the dark cavity between the
+teeth. On a wide-open mouth those are not the same object, and the player aims at
+the hole they can see.
+
+**That is the next iteration and it is the most important one on this list.**
+Until the two agree, no amount of tuning the ring is trustworthy, because the
+number being tuned against is not the number the player is looking at. The fix
+is to make `mouthBox()` report the cavity — the dark opening — rather than the
+painted aperture box, re-run the calibration, and re-fit. Everything measured in
+iterations 14 and 16 stands; it was measured against the wrong reference.
+
+Also from this critic, and cheap: **`IRRITATION` is never explained anywhere.**
+It kills 100 % of naive runs and 29 % of expert ones, and across 116 captured
+frames no toast, card or hint ever says what fills it. `FULLNESS` has four
+coaching lines. That is a one-line fix worth a point of Fairness on its own.
+
+And an evidence gap three critics have now raised: **there is still no capture of
+the kitchen-destroyed ending**, which is half of a moderate shift's deaths. The
+capture harness films the moderate bot on one fixed seed, and that seed starves.
+It should film one of each.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s

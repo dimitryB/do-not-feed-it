@@ -292,7 +292,9 @@ const EXPRESSIONS = {
     // the belly is already going, so it has to be more than a face.
     jawOpen: 0, mouthWidth: 0.56, cornerLift: -0.45, lipPress: 1, cheekPuff: 1.6,
     lidLeft: 0, lidRight: 0, lowerLid: 0.1, browRaise: 1, browSad: 0.55,
-    headY: -14, bellySwell: 1.05, bodyRise: 20, squashY: 1.03, squashX: 1.04,
+    // No vertical, for the same reason as `activeBalloon` below: the rules'
+    // mouth does not move when the pressure builds, so the painted one must not.
+    bellySwell: 1.05, squashX: 1.09,
     antennaDroop: -1.2, antennaTwist: 0.3, pupilScale: 1.34,
   },
   /** Balloon live: round, light, pleased with itself. */
@@ -302,7 +304,14 @@ const EXPRESSIONS = {
     // Most of "inflated" now comes from the uniform body scale rather than the
     // local belly kernel: a smooth global scale is something the mouth's affine
     // can follow, a steep local one is not.
-    headY: -20, bellySwell: 1.9, bodyRise: 30, squashY: 1.04, squashX: 1.05,
+    //
+    // And none of it moves the head. Worn at nine tenths on a full balloon, the
+    // `headY: -20, bodyRise: 30` this used to carry raised the painted mouth 32
+    // px that the rules' collision ellipse knew nothing about — measured, the
+    // single largest remaining source of the lit ring sitting off the mouth.
+    // The volume went into width instead, where it costs nothing that is not
+    // already in the rules.
+    bellySwell: 1.9, squashX: 1.11,
     antennaDroop: -1.15, antennaTwist: 0.15, pupilScale: 1.3,
   },
   /** Pepper building: holding it in. */

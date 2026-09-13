@@ -100,6 +100,8 @@ async function main() {
       { name: "metal 3 only", size: 1.68, m: { metal: 3, balloon: 0, pepper: 0 }, extra: { lift: 0, clog: 0, pressure: 0 } },
       { name: "pepper 3 only", size: 1.68, m: { metal: 0, balloon: 0, pepper: 3 }, extra: { lift: 0, clog: 0, pressure: 0 } },
       { name: "balloon 3 no lift", size: 1.68, m: { metal: 0, balloon: 3, pepper: 0 }, extra: { lift: 0, clog: 0, pressure: 0.9 } },
+      { name: "balloon 3 p0", size: 1.68, m: { metal: 0, balloon: 3, pepper: 0 }, extra: { lift: 0, clog: 0, pressure: 0 } },
+      { name: "balloon 1 p0", size: 1.68, m: { metal: 0, balloon: 1, pepper: 0 }, extra: { lift: 0, clog: 0, pressure: 0 } },
       { name: "balloon 1 x1.68", size: 1.68, m: { metal: 1, balloon: 1, pepper: 1 }, extra: { lift: 10, clog: 0.2 } },
       { name: "balloon 2 x2.0", size: 2.0, m: { metal: 2, balloon: 2, pepper: 1 }, extra: { lift: 18, clog: 0.4 } },
       { name: "balloon 3 x2.4", size: 2.4, m: { metal: 3, balloon: 3, pepper: 3 }, extra: { lift: 11.5, clog: 0.7 } },
