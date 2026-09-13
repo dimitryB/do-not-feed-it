@@ -444,7 +444,16 @@ export function createScene(){
         ctx.save();ctx.globalAlpha=Math.max(0,Math.min(1,(life-age)/9));
         if(age>=life){ctx.restore();return;}
         ctx.font=`bold ${good||loud?18:14}px 'Helvetica Neue',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-        const w=ctx.measureText(e.label).width+22;
+        // What it cost, on the label, in the same breath as the label.
+        //
+        // Every reward carried a number — PERFECT +530, CRAVING +360 — and every
+        // mistake carried a mood word and nothing else, so the currency that
+        // wins is counted and the currency that kills is invisible. A player at
+        // 8 % irritation had no way to learn they were twenty seconds from 100.
+        // The costs are the rules' own: a snub 2.5, a miss 5.
+        const cost=e.type==='snub'?TUNING.snubRage:e.type==='miss'?TUNING.missRage:0;
+        const text=cost>0?`${e.label}  +${cost} IRRITATION`:e.label;
+        const w=ctx.measureText(text).width+22;
         let y=good?Math.max(74,86-(reduced?0:age*.4)):Math.max(70,e.y-46-(reduced?0:age*.55));
         const x=Math.max(w/2+16,Math.min(1184-w/2,e.x));
         if(band&&y+14>band.top&&y-14<band.bottom&&Math.abs(band.x-x)<(band.w+w)/2)y=band.top-16;
@@ -454,9 +463,9 @@ export function createScene(){
           if(!hit)break;y=hit.y+40;}
         if(band&&y+14>band.top&&y-14<band.bottom&&Math.abs(band.x-x)<(band.w+w)/2)y=band.top-16;
         taken.push({x,y,w});
-        ctx.fillStyle='#050d0cf2';ctx.strokeStyle=loud?'#ffc59866':good?'#cfe89066':'#e5a97a55';ctx.lineWidth=loud?2:1;
+        ctx.fillStyle='#050d0cf2';ctx.strokeStyle=loud?'#ffc59866':good?'#cfe89066':cost>0?'#e2493a99':'#e5a97a55';ctx.lineWidth=loud||cost>0?2:1;
         ctx.beginPath();ctx.roundRect(x-w/2,y-13,w,26,13);ctx.fill();ctx.stroke();
-        ctx.fillStyle=loud?'#ffd7ad':good?'#efffc3':'#ffc698';ctx.fillText(e.label,x,y+1);ctx.textBaseline='alphabetic';
+        ctx.fillStyle=loud?'#ffd7ad':good?'#efffc3':'#ffc698';ctx.fillText(text,x,y+1);ctx.textBaseline='alphabetic';
         if(!reduced&&age<26&&good){ctx.globalAlpha*=Math.max(0,1-age/26);for(let i=0;i<7;i++){const a=i*2.4+age*.02;const r=6+age*2.1;ctx.fillStyle=COLORS[e.ingredient??selected];ctx.beginPath();ctx.arc(e.x+Math.cos(a)*r,e.y+Math.sin(a)*r*.7+age*.4,Math.max(0,2.2-age/13),0,Math.PI*2);ctx.fill();}}
         ctx.restore();
       });
@@ -535,7 +544,10 @@ export function createScene(){
       // the only two numbers that end a shift.
       ctx.fillStyle='#040909b0';ctx.beginPath();ctx.roundRect(x-14,y-24,w+28,70,11);ctx.fill();
       ctx.strokeStyle='#5d6b5540';ctx.lineWidth=1;ctx.stroke();
-      const rows=[['FULLNESS',fullness,fullColour,'#22301f'],['IRRITATION',irritation,'#e2493a','#341c1a']] as const;
+      // Measured by a critic: the fill-to-track contrast was 10.5:1 for fullness
+      // and 3.96:1 for irritation — the meter that ends the shift was the quieter
+      // of the two at every value. Brighter fill, darker track.
+      const rows=[['FULLNESS',fullness,fullColour,'#22301f'],['IRRITATION',irritation,irritation>0.55?'#ff6a52':'#f0705c','#1a0d0c']] as const;
       for(const [i,row] of rows.entries()){
         const by=y+i*32;
         ctx.fillStyle=row[3];ctx.beginPath();ctx.roundRect(x,by-5,w,13,6.5);ctx.fill();

@@ -103,10 +103,19 @@ in iteration 10 and broke the death-spread gate: mutation strength *is* the
 difficulty ramp. The answer has to be something that escalates without being
 harder.
 
-**5. Half the death space has never been filmed.** Four critics have now said
-they cannot judge the fairness of "kitchen destroyed", which is 100 % of naive
-deaths and half of a moderate shift's. The capture harness films one fixed seed
-and that seed starves; it should film one of each ending.
+**5. The kitchen-destroyed ending is now filmed and judged** (iterations 18 and
+19) — no cheap death, Fairness 6, Readability 5 — and it produced the sharpest
+review of the project. Two of its findings are fixed; two are not. **The creature
+does not show irritation at all**: the same placid smile at 8 % and at 93 %, so
+the death that ends every naive run has no presence outside the HUD. And **the
+report card for "it has eaten the kitchen" draws an undamaged kitchen** — intact
+pots, clean counter, delighted frog. The picture contradicts its own sentence.
+
+**5b. The irritation curve is a cliff, not a ramp.** Measured off the frames of a
+139-second shift: under 10 % for the first 100 seconds — *decaying* at 1:42 —
+then 0 to 100 in the last 27. That is a rule-level observation, not a
+presentation one, and it is the best remaining explanation for why the
+death-spread gate sits at 38 % rather than comfortably below it.
 
 **6. `npm run test:contract` still cannot run** — `binaries.soliditylang.org` is
 blocked by this environment's egress policy. No chain code was touched on this
@@ -1531,6 +1540,68 @@ shift gives **61 launches, 17 feeds, 28 %** — exactly what the card prints. Th
 critic counted event-log entries rather than launches. Recorded because a
 measured claim deserves a measured answer, and because the next reader of this
 log should not go and "fix" a correct number.
+
+---
+
+## Iteration 18 — the other ending, finally on film
+
+Four critics in a row had written some version of *"I cannot judge the fairness
+of the ending I was never shown."* **Kitchen destroyed is 100 % of how an
+unskilled player dies and about half of how a competent one does**, and there
+was not one frame of it anywhere in eighteen iterations of captures, because the
+harness films one fixed seed and that seed starves.
+
+`scripts/loop-shots.mjs --cause kitchen-destroyed` walks seeds until the moderate
+bot dies the way you asked to see. Seed 20268830, 2:19, 21 feeds, 43 % accuracy.
+`docs/qa/loop/iter-18/`.
+
+### The critic, on an ending nobody had judged
+
+Fairness **6**, Readability **5**, and **no cheap death** — but the review is the
+most useful one this project has had, because it measured things:
+
+**The meter that kills you teaches you it is not your problem, then kills you in
+twenty seconds.** Read off the frames: irritation is 0 % at 0:20, 4 % at 1:01,
+10 % at 1:21 — and **8 % at 1:42, having decayed** — then 20, 30, 47, 66, 87, 93,
+100. *"Eighty per cent of the meter that kills you fills in the last 27 seconds
+of a 139-second shift."*
+
+**The reward currency was counted and the death currency was invisible.** Every
+hit carried a number — `PERFECT +530`, `CRAVING +360`. Every miss carried a mood
+word and nothing else: `ON THE FLOOR`, `DROPPED`, `OFF THE BELLY`, `TOO LATE`,
+`CLANG`. *"A player cannot learn that a miss is worth 7 irritation because the
+game never once tells them a miss is worth anything."*
+
+**The lethal meter was the quieter of the two, measured rather than eyeballed:**
+fill-to-track contrast **10.53:1 for fullness against 3.96:1 for irritation.**
+
+And two things that are real and are not fixed here: the creature wears the same
+placid smile at 8 % irritation and at 93 %, so the death has no presence outside
+the HUD; and the report card for "it has eaten the kitchen" renders a spotless
+kitchen with intact pots and a delighted frog.
+
+---
+
+## Iteration 19 — the death currency gets a number
+
+Two of that review's findings are presentation and both are now fixed. No rule
+changed: the costs are read out of `TUNING`, the labels are composed in the
+renderer, and the frozen traces came back byte-identical.
+
+- **Every miss carries its price.** `TOO LATE  +2.5 IRRITATION`,
+  `ON THE FLOOR  +5 IRRITATION`, in the same size and weight as `PERFECT +530`,
+  in a red-bordered pill instead of the reward's.
+- **The lethal meter is no longer the quiet one.** The irritation fill went from
+  a dark red on a near-black maroon track to a bright salmon on true black, and
+  it brightens again past 55 %.
+
+`docs/qa/loop/iter-19/` is the same kitchen-destroyed shift with both. **All five
+gates pass — twelfth consecutive iteration**, fixtures byte-identical. Verified
+by eye at 960 px; not yet put to a critic.
+
+Still open from the iteration-18 review, and both are real: the creature does not
+show irritation at all, and the report card contradicts its own sentence by
+drawing an undamaged kitchen.
 
 ---
 

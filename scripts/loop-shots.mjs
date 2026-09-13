@@ -76,13 +76,14 @@ const stamp = (tick) => {
 };
 
 function parseArgs(argv) {
-  const args = { iter: 0, seed: 20260911, port: 4321, headed: false };
+  const args = { iter: 0, seed: 20260911, port: 4321, headed: false, cause: null };
   for (let i = 0; i < argv.length; i += 1) {
     const item = argv[i];
     if (item === "--iter") args.iter = Number(argv[++i]);
     else if (item === "--seed") args.seed = Number(argv[++i]);
     else if (item === "--port") args.port = Number(argv[++i]);
     else if (item === "--headed") args.headed = true;
+    else if (item === "--cause") args.cause = argv[++i];
   }
   if (!Number.isInteger(args.iter) || args.iter < 0) throw new Error("--iter must be a non-negative integer");
   return args;
@@ -238,8 +239,25 @@ async function main() {
   const frameDir = path.join(outDir, "frames");
   await mkdir(frameDir, { recursive: true });
 
-  console.log(`[loop-shots] running the moderate bot on seed ${args.seed}`);
-  const run = playShift("moderate", args.seed >>> 0);
+  // Four critics in a row have said they cannot judge the fairness of the
+  // ending they were never shown. The harness filmed one fixed seed and that
+  // seed starves, so "kitchen destroyed" — every naive death and half of a
+  // moderate shift's — had no frames anywhere. `--cause` walks seeds until the
+  // moderate bot dies the way you asked to see.
+  let seed = args.seed >>> 0;
+  if (args.cause) {
+    let found = null;
+    for (let i = 0; i < 400 && !found; i += 1) {
+      const candidate = (args.seed + i * 7919) >>> 0;
+      const trial = playShift("moderate", candidate);
+      if (trial.cause === args.cause) found = { seed: candidate, run: trial };
+    }
+    if (!found) throw new Error(`no seed within 400 tries ended in "${args.cause}"`);
+    seed = found.seed;
+    console.log(`[loop-shots] seed ${seed} ends in ${args.cause}`);
+  }
+  console.log(`[loop-shots] running the moderate bot on seed ${seed}`);
+  const run = playShift("moderate", seed);
   console.log(`[loop-shots] ${(run.ticks / TICKS).toFixed(1)}s, ${run.feeds} feeds, ${run.commands.length} commands, cause ${run.cause}`);
   const schedule = buildSchedule(run);
   console.log(`[loop-shots] ${schedule.length} frames scheduled across ${new Set(schedule.map((s) => s.group)).size} groups`);
@@ -312,7 +330,7 @@ async function main() {
 
     await page.evaluate(DRIVER);
     await page.evaluate(({ commands, seed, arena }) => window.__loop.start(commands, seed, arena),
-      { commands: run.commands, seed: args.seed, arena: {
+      { commands: run.commands, seed, arena: {
         minPower: ARENA.minPower, maxPower: ARENA.maxPower, chargeTicks: ARENA.chargeTicks,
         defaultAngle: ARENA.defaultAngle, aimLead: AIM_LEAD } });
 
@@ -402,7 +420,7 @@ async function main() {
     const manifest = {
       iteration: args.iter,
       capturedAt: new Date().toISOString(),
-      seed: args.seed,
+      seed,
       viewport: { width: WIDTH, height: HEIGHT },
       bot: { name: "moderate", ticks: run.ticks, seconds: run.ticks / TICKS, feeds: run.feeds, score: run.score, cause: run.cause, markers: run.markers },
       browserFinal: finalState,
