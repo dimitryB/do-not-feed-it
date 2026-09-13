@@ -2,7 +2,7 @@ import { ARENA, FOODS, MUTATION_NAMES, MUTATION_RULES, getHazard, trajectoryPrev
 import { CreatureAnimator } from './creature/pose';
 import { buildRig, type CreatureRig } from './creature/rig';
 import { drawCreature } from './creature/draw';
-import { DEV_HOOKS, devRender } from '../dev/hook';
+import { DEV_HOOKS, devRender, frameCells } from '../dev/hook';
 
 const COLORS:Record<Ingredient,string>={metal:'#ddea9c',balloon:'#9be9df',pepper:'#f6a074'};
 const clampAlpha=(v:number)=>v<0?0:v>1?1:v;
@@ -159,10 +159,15 @@ export function createScene(){
       ctx.drawImage(rig?rig.art:kitchen,0,0,1200,700);
       if(rig){
         const pose=animator.step(state,playing,reduced,time,delta,!(DEV_HOOKS&&devRender.holdBlink));
+        if(DEV_HOOKS){frameCells.count=0;frameCells.skipped=0;}
+        const rigStart=DEV_HOOKS?performance.now():0;
         drawCreature(ctx,rig,pose,time,reduced);
+        if(DEV_HOOKS)devRender.profile.rig+=performance.now()-rigStart;
       }
     }
-    const shade=ctx.createLinearGradient(0,0,800,0);shade.addColorStop(0,playing?'#06121255':'#061212bb');shade.addColorStop(1,'#06121200');ctx.fillStyle=shade;ctx.fillRect(0,0,1200,700);
+    // The left vignette reaches transparent at x=800, so it is filled to 800 and
+    // not across the whole frame: a full-frame fill every frame is not free.
+    const shade=ctx.createLinearGradient(0,0,800,0);shade.addColorStop(0,playing?'#06121255':'#061212bb');shade.addColorStop(1,'#06121200');ctx.fillStyle=shade;ctx.fillRect(0,0,800,700);
     if(!reduced){ctx.save();for(let i=0;i<22;i++){const x=(i*131.3+time*(3+i%4))%1200;const y=110+(i*79.7-time*(4+i%3))%510;ctx.fillStyle=i%3===0?'#f4c88c35':'#d6ecd21b';ctx.beginPath();ctx.arc(x,y,1+i%2,0,Math.PI*2);ctx.fill();}ctx.restore();}
     if(playing&&state&&!(DEV_HOOKS&&devRender.hideAim)){
       const key=`${Math.floor(tick/6)}-${angle}-${selected}-${power}-${guideSteps}`;if(key!==previewKey){guide=guideSteps>0?trajectoryPreview(state,selected,angle,power,guideSteps):[];previewKey=key;}

@@ -267,10 +267,20 @@ async function main() {
     await waitForScene(timingPage);
     await timingPage.addStyleTag({ content: STAGE_FILL });
     await settle(timingPage, 5);
-    // Measured on a full-grown creature: that is when every warp cell is
-    // displaced and the draw costs the most.
+    // Measured on a full-grown creature CARRYING MUTATIONS.
+    //
+    // This used to time a bare creature at full size and report about 4 ms, and
+    // it did that for eleven iterations while a typical mid-shift creature
+    // actually cost more than twice that. A creature with no mutations is not a
+    // state a shift spends much time in, and timing it is how a render
+    // regression stayed invisible through six iterations of adding to the draw.
+    // `scripts/render-budget.mjs` is the instrument for deciding whether a
+    // change made the draw cheaper; this one is here so the manifest of every
+    // capture carries an honest number for the state it filmed.
     timing = await measureRenderCost(timingPage, 4242, 8, (page) => page.evaluate(() => {
-      window.__dnfi.play.setSize(2.4);
+      window.__dnfi.play.setSize(2.0);
+      window.__dnfi.play.setMutations({ metal: 2, balloon: 2, pepper: 1 },
+        { clog: 0.4, lift: 9, pressure: 0.5 });
     }));
     await timingPage.close();
 
@@ -403,7 +413,7 @@ async function main() {
     console.log(`[loop-shots] wrote ${created.length} sheets to ${path.relative(ROOT, outDir)}`);
   } finally {
     await browser.close();
-    stopServer(server.child);
+    await stopServer(server.child);
     await wait(300);
   }
 }

@@ -498,6 +498,6 @@ export function buildRig(image: HTMLImageElement): CreatureRig {
 
   return {
     art, pupil, lidUpper, lidLower, lidSkin, tongue, tooth, steelTooth: buildSteelTooth(tooth),
-    bodyMask: buildBodyMask(), grade: canvasOf(ARENA_WIDTH / 3, ARENA_HEIGHT / 3), palette,
+    bodyMask: buildBodyMask(), grade: canvasOf(ARENA_WIDTH / 5, ARENA_HEIGHT / 5), palette,
   };
 }

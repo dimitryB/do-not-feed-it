@@ -2,7 +2,7 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { ARENA, type ArcadeState, type Ingredient } from "../../lib/game/arcade";
 import { createScene } from "../../lib/render/scene";
-import { DEV_HOOKS, devHookBag, devRender, drawCostSummary, recordDrawCost, resetDrawCost } from "../../lib/dev/hook";
+import { DEV_HOOKS, devHookBag, devRender, drawCostSummary, drawProfileSummary, frameCells, recordDrawCost, recordFrameProfile, resetDrawCost } from "../../lib/dev/hook";
 
 export function GameCanvas({runRef,angle,selected,playing,reduced,guideSteps,onAim}:{runRef:RefObject<ArcadeState|null>;angle:number;selected:Ingredient;playing:boolean;reduced:boolean;guideSteps:number;onAim:(angle:number)=>void}) {
   const canvasRef=useRef<HTMLCanvasElement>(null);
@@ -26,7 +26,7 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,guideSteps,onA
       }
       const started=performance.now();
       scene.draw(context,canvas.width,canvas.height,state,aim,food,live,motion,time,p.guideSteps);
-      if(DEV_HOOKS)recordDrawCost(performance.now()-started);
+      if(DEV_HOOKS){const cost=performance.now()-started;recordDrawCost(cost);recordFrameProfile(frameCells.count,0,cost);}
       frame=requestAnimationFrame(draw);
     };
     frame=requestAnimationFrame(draw);
@@ -66,6 +66,7 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,guideSteps,onA
         bag.hideAim=(value:boolean)=>{devRender.hideAim=value;};bag.hideLabels=(value:boolean)=>{devRender.hideLabels=value;};
         bag.holdBlink=(value:boolean)=>{devRender.holdBlink=value;};
         bag.timing=()=>drawCostSummary();
+        bag.profile=()=>drawProfileSummary();
         bag.resetTiming=()=>{resetDrawCost();};
         bag.sceneReady=()=>scene.ready();
         bag.rigDump=(part:string)=>{

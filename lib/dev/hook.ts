@@ -32,6 +32,15 @@ export interface DevRenderControl {
   holdBlink: boolean;
   /** Rolling scene-draw cost in milliseconds. */
   timing: { samples: number; total: number; max: number; last: number; all: number[] };
+  /**
+   * Where the frame went, development only.
+   *
+   * A single millisecond figure says the draw is too expensive without saying
+   * which part of it is. `cells` is the number of warp cells actually redrawn —
+   * the warp is priced per cell, not per pixel — and `rig` is the cost of the
+   * creature alone, so the rest of the scene is the difference.
+   */
+  profile: { samples: number; cells: number; rig: number; total: number };
 }
 
 export const devRender: DevRenderControl = {
@@ -42,7 +51,22 @@ export const devRender: DevRenderControl = {
   hideLabels: false,
   holdBlink: false,
   timing: { samples: 0, total: 0, max: 0, last: 0, all: [] as number[] },
+  profile: { samples: 0, cells: 0, rig: 0, total: 0 },
 };
+
+/** Counted by the warp, read by the profiler; reset every frame. */
+export const frameCells = { count: 0, skipped: 0, clipped: 0 };
+
+/**
+ * Where the creature's own draw went, in milliseconds, accumulated per frame.
+ * The cell count told us the warp grid is not the variable — it is 600 cells in
+ * every mutation state — so the cost has to be found inside the rig's phases.
+ */
+export const rigParts = { field: 0, warp: 0, skin: 0, mouth: 0, face: 0, overlay: 0, saturation: 0, multiply: 0, screen: 0 };
+export function resetRigParts() {
+  rigParts.field = 0; rigParts.warp = 0; rigParts.skin = 0; rigParts.mouth = 0; rigParts.face = 0;
+  rigParts.overlay = 0; rigParts.saturation = 0; rigParts.multiply = 0; rigParts.screen = 0;
+}
 
 /**
  * Every sample is kept, not just the running total.
@@ -78,6 +102,38 @@ export function drawCostSummary() {
 
 export function resetDrawCost() {
   devRender.timing = { samples: 0, total: 0, max: 0, last: 0, all: [] };
+  devRender.profile = { samples: 0, cells: 0, rig: 0, total: 0 };
+  resetRigParts();
+}
+
+export function recordFrameProfile(cells: number, rigMs: number, totalMs: number) {
+  const profile = devRender.profile;
+  profile.samples += 1;
+  profile.cells += cells;
+  profile.rig += rigMs;
+  profile.total += totalMs;
+}
+
+export function drawProfileSummary() {
+  const p = devRender.profile;
+  const n = Math.max(1, p.samples);
+  return {
+    samples: p.samples,
+    cellsPerFrame: p.cells / n,
+    clippedCells: frameCells.clipped,
+    rigMs: p.rig / n,
+    sceneMs: (p.total - p.rig) / n,
+    totalMs: p.total / n,
+    field: rigParts.field / n,
+    warp: rigParts.warp / n,
+    skin: rigParts.skin / n,
+    mouth: rigParts.mouth / n,
+    face: rigParts.face / n,
+    modes: {
+      overlay: rigParts.overlay / n, saturation: rigParts.saturation / n,
+      multiply: rigParts.multiply / n, screen: rigParts.screen / n,
+    },
+  };
 }
 
 type HookBag = Record<string, unknown>;

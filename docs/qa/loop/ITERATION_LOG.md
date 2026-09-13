@@ -1091,6 +1091,137 @@ none.
 
 ---
 
+## Iteration 12 — the render budget, measured properly and then paid down
+
+The final report of the second block named this first: **the draw was roughly
+twice its 4 ms budget once the creature carried two mutations, and nobody had
+noticed for eleven iterations because the capture harness only ever timed a
+creature with none.** No rule changed in this iteration.
+
+### Finding it
+
+`scripts/render-budget.mjs` grew a per-frame profiler: warp cells actually
+redrawn, the creature's own draw split into its phases, and each blended
+composite timed separately. Three measurements settled it, and each one killed a
+theory:
+
+1. **The warp grid is not the variable.** 599 cells bare, 601 with metal, 611
+   with all three — the cell count is flat across every state, so the warp is a
+   constant floor of about 3.4 ms and not the thing that grows.
+2. **`drawSkin` is the whole variable.** 0.01 ms bare, 1.4 ms with one mutation,
+   4.5 ms with two or three.
+3. **The blend mode is not the cost; the composite is.** Timed separately:
+   overlay 1.42 ms, screen 1.18 ms, saturation 0.78 ms. A blended
+   full-resolution composite of the body region costs about a millisecond
+   whatever arithmetic it does, and a mid-shift creature was running four of
+   them — because each colour grade composited itself.
+
+### Paying it down
+
+- **One composite instead of four, and `source-over` instead of blend modes.**
+  Every body grade — irritation heat, rage, the metal wash, the balloon's taut
+  rim, hunger pallor — is now painted into one scratch, masked once, and
+  composited once with the one operation that is not blended. What is lost is
+  luminance preservation, a wash rather than a grade, which at these alphas at
+  960 px is not a difference anyone can see.
+- **The grade scratch went from a third resolution to a fifth**, which is where
+  the five radial gradients are actually filled. 1.78 ms to 0.72.
+- **The composite covers the rectangle the grades paint into**, not the frame.
+- **A no-skew fast path in the warp**: a cell that stretches and shifts but does
+  not shear is exactly what `drawImage`'s source and destination rectangles
+  express, so those cells draw under the scene's own transform with no transform
+  switching. Measured: no change. The warp's cost is the pixels, not the calls,
+  which is worth recording so nobody tries it again.
+- **The grid went from 35x28 to 32x25**, and the vignette fill stops at x=800
+  where its gradient reaches transparent instead of covering the frame.
+
+### Two things that were tried and rejected by measurement
+
+- **A lower supersample factor for the rig art (HI 2 to 1.5).** The theory was
+  that the warp minifies its source 2:1 and pays for it. The warp got *slower*,
+  2.70 to 3.29 ms. Reverted.
+- **A 29x23 grid.** It fits the budget — and it tears. An inflated, lifted belly
+  breaks into hard rectangular seams down the right flank with vertical
+  streaking where the body meets the counter, which is the same failure a critic
+  caught at 34x27 in the first block. 32x25 is clean on that pose and is where
+  this stops.
+
+### The numbers
+
+Measured with nothing else running, a warm-up pass discarded, at 1920x1080:
+
+| state | before | after |
+|---|---|---|
+| bare, x2.4 | 4.43 ms | **3.94 ms** |
+| metal 3 | 6.50 | 4.68 |
+| balloon 3 | 5.93 | 4.75 |
+| pepper 3 | 6.13 | 4.47 |
+| **typical 2/2/1 at x2.0** | **9.57** | **5.09** |
+| worst 3/3/3 at x2.4 | 9.72 | 5.49 |
+
+**The mutation cost fell from +5.3 ms to +1.5 ms.** A bare creature is inside
+budget. A mutated one is 25-37 % over it, and the remaining cost is the warp:
+about 470 transformed `drawImage` calls covering the creature at full
+resolution, which is the floor of this architecture and was already being paid
+before any of the mutation work existed. Cutting it further means a coarser grid,
+and a coarser grid tears.
+
+### A third thing the instruments were lying about
+
+The profiler's own worst-case state was **unreachable in play**. It set the
+balloon's lift to 16 at size 2.4, but the rules clamp lift to
+`(liftMax + liftMaxPerLevel x level) x (1 - liftCrowding x sizeT)` — 11.5 at that
+size. The tearing that state showed was the renderer being asked for a pose the
+game cannot produce. The states are now set to what the ceiling actually allows,
+including the steepest reachable one (balloon 3 at x2.0, lift 21.4), and that one
+is clean.
+
+### And a harness bug worth its own line
+
+`stopServer` sent SIGTERM and returned. The dev server's workerd child ignores
+it, so **every harness run in this session had been leaving a server and a
+workerd behind**: seven stale pairs had accumulated, holding about five
+gigabytes, and every render measurement taken while they were up was competing
+with them for the machine. It now terminates the group, waits, and kills what is
+still standing.
+
+`scripts/loop-shots.mjs` now times a mid-shift creature with mutations rather
+than a bare one, so the manifest of every capture carries an honest number.
+
+### Bots and critic — iteration 12
+
+Byte-identical to iterations 10 and 11, fixtures included, as intended for an
+iteration that changed no rule: moderate 133.8 s at a 38 % worst bucket, good
+183.7 s = 6.4x, density 127/min. **All five gates pass — sixth consecutive
+iteration.** The capture harness's own wall clock fell from 925 s to 704 s for
+the same shift, which is the cheaper draw showing up somewhere other than the
+profiler.
+
+| | Agency | Consequence | Tension | Readability | Comedy | Fairness |
+|---|---|---|---|---|---|---|
+| iteration 11 | 8 | 6 | 7 | 4 | 6 | 7 |
+| **iteration 12** | 8 | **9** | 7 | 5 | 7 | 7 |
+
+**No cheap death.** Fourth consecutive critic to look and report none.
+
+The Readability faults are specific and one of them is mine from iteration 11:
+
+- *"the PRESSURE BURP banner is a 680 px box parked directly over a fully-open
+  mouth, covering the upper lip and left teeth — the exact pixels the player must
+  read to time the shot the banner is telling them to take. It also overlaps the
+  BALLAST toast, which renders as '...ALLAST'."* The banner added in iteration 11
+  to make the mutation rule legible is now sitting on the thing it describes.
+- *"strip-0140-00 carries five competing text objects simultaneously."*
+- *"the top-left stat row renders at roughly 6-7 px cap height at stream size —
+  ITS SIZE x1.82 is the game's headline number and a stranger simply cannot read
+  it."*
+- *"No sampled frame contains a death beat, so the most important moment of the
+  run is a hard cut."* Two critics in a row have now said this.
+- And one fairness line worth its own fix: *"the toast ONE MORE CHANCE is on
+  screen in that same frame, which at 0% fullness is flatly untrue."*
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s

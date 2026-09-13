@@ -30,9 +30,19 @@ export const STREAM_WIDTH = 960;
 
 export const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export function stopServer(child) {
+export async function stopServer(child) {
+  // SIGTERM alone does not do it. The dev server spawns a workerd child that
+  // ignores it, and every harness run was leaving a server and a workerd behind
+  // holding half a gigabyte each: seven stale pairs had accumulated before this
+  // was noticed, and every render measurement taken while they were up was
+  // competing with them for the machine. Terminate the group, wait, then kill
+  // whatever is still standing.
   try { process.kill(-child.pid, "SIGTERM"); } catch { /* already gone */ }
   try { child.kill("SIGTERM"); } catch { /* already gone */ }
+  await wait(900);
+  try { process.kill(-child.pid, "SIGKILL"); } catch { /* already gone */ }
+  try { child.kill("SIGKILL"); } catch { /* already gone */ }
+  await wait(200);
 }
 
 export async function startDevServer(root, port) {
@@ -57,7 +67,7 @@ export async function startDevServer(root, port) {
     } catch { /* not listening yet */ }
     await wait(500);
   }
-  stopServer(child);
+  await stopServer(child);
   throw new Error(`Dev server did not start in time:\n${log}`);
 }
 

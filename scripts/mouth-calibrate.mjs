@@ -107,7 +107,7 @@ async function main() {
     await page.close();
   } finally {
     await browser.close();
-    stopServer(server.child);
+    await stopServer(server.child);
   }
 }
 

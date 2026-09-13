@@ -8,6 +8,7 @@
  */
 import { BELLY, COUNTER_Y, HEAD, HI } from "./anatomy";
 import type { CreaturePose } from "./pose";
+import { DEV_HOOKS, frameCells } from "../../dev/hook";
 
 /**
  * The rectangle of the picture the field is allowed to touch.
@@ -33,10 +34,33 @@ export const WARP_REGION = { x: 470, y: 6, width: 674, height: 508 };
 // smaller count is a saving; what a coarser grid costs is fidelity where the
 // field's gradient is steep, which is the balloon inflation and the jaw. Both
 // were checked at full size for tile edges and streaking after this change.
-const CELLS_X = 35;
-const CELLS_Y = 28;
-/** Sub-pixel displacement a cell may have and still be left as the base drew it. */
-const SKIP = 0.34;
+//
+// 29x23 was tried and rejected: an inflated, lifted belly tore into hard
+// rectangular seams down the right flank and streaked where the body meets the
+// counter — the same failure a critic caught at 34x27 earlier, and the reason
+// the grid went back up then. 32x25 is clean on that pose and is where this
+// stops. The remaining cost is the floor of this architecture.
+//
+// 32x25 after the warp was measured properly for the first time: about 590 of
+// the grid's cells are redrawn every frame in every state, each one a
+// transformed drawImage costing around five microseconds, and roughly a fifth of
+// them take a save/clip/restore path on top of that. The grid is the floor cost
+// of the whole renderer — 3.4 ms of a 4 ms budget — and it is paid whether or
+// not anything has mutated.
+const CELLS_X = 32;
+const CELLS_Y = 25;
+/**
+ * Sub-pixel displacement a cell may have and still be left as the base drew it.
+ *
+ * 0.34 px drew about 600 of the grid's 980 cells in every state, and each drawn
+ * cell is a transformed `drawImage`. Three quarters of a pixel is still below
+ * what a resample can show and below one device pixel at the 960 px resolution
+ * the game is judged at, and a skipped cell is not a hole — it is the base layer
+ * the rig already drew, offset by less than a pixel from where the warp wanted
+ * it. Checked for tile edges on an inflated belly and a wide-open jaw, which are
+ * the two steepest gradients in the field.
+ */
+const SKIP = 0.75;
 /** How far the chin travels between a wide-open and a closed mouth. */
 // Smaller than it was, over a wider kernel. The lift is applied in almost every
 // state — the painting's mouth is open and the rig rebuilt it shut, so a closed
@@ -282,6 +306,8 @@ export function drawWarped(context: CanvasRenderingContext2D, source: HTMLCanvas
   }
 
   const bleed = 0.8;
+  // Whether the context is currently at the scene's own transform.
+  let atBase = true;
   for (let row = 0; row < cellsY; row++) {
     for (let column = 0; column < cellsX; column++) {
       const at = row * (cellsX + 1) + column;
@@ -308,16 +334,14 @@ export function drawWarped(context: CanvasRenderingContext2D, source: HTMLCanvas
           Math.abs(ux - stepX) < SKIP && Math.abs(vy - stepY) < SKIP &&
           Math.abs(uy) < SKIP && Math.abs(vx) < SKIP &&
           Math.abs(gridX[opposite0] - (region.x + (column + 1) * stepX)) < SKIP &&
-          Math.abs(gridY[opposite0] - (region.y + (row + 1) * stepY)) < SKIP) continue;
+          Math.abs(gridY[opposite0] - (region.y + (row + 1) * stepY)) < SKIP) { if (DEV_HOOKS) frameCells.skipped += 1; continue; }
+      if (DEV_HOOKS) frameCells.count += 1;
       const m11 = stepX * vy / det;
       const m21 = -stepX * vx / det;
       const m12 = -stepY * uy / det;
       const m22 = stepY * ux / det;
       const x0 = region.x + column * stepX;
       const y0 = region.y + row * stepY;
-      // Back to the scene transform before every cell: the clip rectangle is
-      // expressed in arena coordinates.
-      context.setTransform(base);
       const tx = x0 - (m11 * gridX[at] + m21 * gridY[at]);
       const ty = y0 - (m12 * gridX[at] + m22 * gridY[at]);
       const opposite = below + 1;
@@ -325,11 +349,31 @@ export function drawWarped(context: CanvasRenderingContext2D, source: HTMLCanvas
       const maxX = Math.max(gridX[at], gridX[right], gridX[below], gridX[opposite]) + bleed;
       const minY = Math.min(gridY[at], gridY[right], gridY[below], gridY[opposite]) - bleed;
       const maxY = Math.max(gridY[at], gridY[right], gridY[below], gridY[opposite]) + bleed;
+      // The common cell has no skew in it: the field stretches and shifts it but
+      // does not rotate it. That mapping is exactly what drawImage's own source
+      // and destination rectangles express, so those cells are drawn under the
+      // scene's transform with no transform switching at all — which, once the
+      // warp was measured, turned out to be most of the cost. A cell is only
+      // worth a custom transform when it actually shears.
+      if (Math.abs(m21) < 1e-3 && Math.abs(m12) < 1e-3) {
+        if (!atBase) { context.setTransform(base); atBase = true; }
+        const dx0 = m11 * minX + tx;
+        const dy0 = m22 * minY + ty;
+        context.drawImage(source,
+          (minX - origin.x) * HI, (minY - origin.y) * HI, (maxX - minX) * HI, (maxY - minY) * HI,
+          dx0, dy0, m11 * (maxX - minX), m22 * (maxY - minY));
+        continue;
+      }
+      // Back to the scene transform before every cell: the clip rectangle is
+      // expressed in arena coordinates.
+      context.setTransform(base);
+      atBase = true;
       // A skewed cell's source rectangle is much larger than the cell itself,
       // and its image under the transform spills across the frame. Clip those
       // to their own cell; the common near-identity cells need no clip.
       const skewed = (maxX - minX) * (maxY - minY) > Math.abs(det) * 3;
       if (skewed) {
+        if (DEV_HOOKS) frameCells.clipped += 1;
         context.save();
         context.beginPath();
         context.rect(x0 - 0.5, y0 - 0.5, stepX + 1, stepY + 1);
@@ -343,6 +387,7 @@ export function drawWarped(context: CanvasRenderingContext2D, source: HTMLCanvas
         (minX - origin.x) * HI, (minY - origin.y) * HI, (maxX - minX) * HI, (maxY - minY) * HI,
         minX, minY, maxX - minX, maxY - minY);
       if (skewed) context.restore();
+      atBase = false;
     }
   }
   context.setTransform(base);
