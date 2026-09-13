@@ -1,162 +1,169 @@
 # Feeding-loop iteration log
 
-## FINAL REPORT — stopped at the ten-hour cap, exit criteria not met
+## FINAL REPORT — second block, stopped at the ten-hour cap, exit criteria not met
 
-**Status: all eight stages are implemented and reachable in real play, four of
-the five numeric gates pass, and the critic's scores are the best they have
-been — but no criterion has reached 7 on two consecutive iterations, which is
-the exit bar, and one gate has never passed.** The loop is no longer a clicker,
-and that part is not a judgement call: it is in the bot table.
+**Status: all eight stages are implemented and reachable in real play, all five
+numeric gates now pass and have passed on five consecutive iterations, and no
+open cheap-death finding remains. The exit criteria are still not met on two
+counts: no critic has scored every criterion at 7 or above, and the render is
+over budget once the creature carries mutations — a breach that had never been
+measured because the harness only ever timed a bare creature.**
 
-### The one number that matters most
+### The gates
 
-| | iteration 0 | final |
-|---|---|---|
-| naive bot median survival | **119.2 s** of a 120 s shift | **12.4 s** |
-| good bot ÷ naive bot | **1.01×** | **10.8×** |
-| moderate bot median | 120 s (survived, 198/200) | 96.4 s |
-| cause of death | the clock | empty belly 150/200, kitchen destroyed 50/200 |
+| gate | ceiling / floor | iteration 11 | verdict |
+|---|---|---|---|
+| naive median survival | ≤ 45 s | 28.6 s | pass |
+| moderate median | 90–150 s | 133.8 s | pass |
+| moderate death spread | no 30 s bucket > 40 % | 38 % | pass |
+| good ÷ naive | ≥ 2.5× | 6.4× | pass |
+| decision density (moderate) | ≥ 6 changes/min | 127/min | pass |
+| replay fixtures | exact | exact | pass |
 
-The strategy that won the old game — hold the default angle, press Space on
-cooldown, never react — reached 119.2 seconds of a 120-second shift on every one
-of two hundred seeds. It now dies in twelve, because the default aim is no
-longer a landing angle, because a fixed charge only lands two or three angles,
-and because feeding a creature that is not hungry is the worst move in the game.
-A skilled bot outlives an unskilled one by nearly eleven times instead of by one
-percent.
+Passed on iterations **7, 8, 9, 10 and 11** — five consecutive. The exit bar is
+two. The death-spread gate, which had never passed in the first block, was closed
+in iteration 7 by making a good decision compound rather than pay a flat rate.
 
-### What passed
+### The critic
 
-- **All eight stages implemented and reachable in real play**, verified by
-  browser capture rather than only in the simulation. `docs/qa/loop/iter-5/`
-  contains a real shift with the HUD visible: growth, the mouth's rhythm, three
-  stacking mutations, a stack of two, cravings with timers, the charge, the
-  hatch, autonomous beats and an ending chosen by size.
-- **Four of five numeric gates** on the final build: naive ≤ 45 s (12.4 s),
-  moderate 90–150 s (96.4 s), good ≥ 2.5× naive (10.8×), decision density ≥ 6/min
-  (87.5/min).
-- **Replay is exact.** Three frozen bot traces reproduce their final state
-  byte-for-byte, and the test fails loudly whenever a rule changes without them
-  being regenerated. The trace now carries the charge and the reaction verb;
-  `GAME_VERSION` is 2.
-- **Render inside budget.** 3.90 ms median / 5.10 ms p95 / **4.04 ms mean** at
-  full size with the canvas filling 1920×1080, 3.39 ms at size 1, against a 4 ms
-  average budget.
-- **`npm run typecheck`, `npm run lint`, `npm test` and `npm run build` green**,
-  35 tests. See the `test:contract` caveat below.
-- **The target ring is measured, not asserted.** `scripts/mouth-calibrate.mjs`
-  reads the mouth the rig actually draws at five sizes and fits the rule
-  constants to it; the residual is under 2 px. The lit ring and the painted
-  mouth are the same object.
-- **The rig work was not wasted and no new faces were authored.** Growth, lean,
-  mouth aperture, lift, clog and the three mutation levels drive the pose
-  channels that already existed.
+| iteration | Agency | Consequence | Tension | Readability | Comedy | Fairness |
+|---|---|---|---|---|---|---|
+| 0 (baseline) | 2 | 2 | 2 | 2 | 4 | 1 |
+| 5 (end of first block) | 4 | 7 | 5 | 3 | 6 | 4 |
+| 7 | 5 | 7 | 5 | 3 | 7 | 4 |
+| 8 | **8** | **9** | **7** | 5 | 7 | 6 |
+| 9 | 8 | 7 | 6 | **7** | 6 | 7 |
+| 10 | 8 | **9** | 7 | 6 | 7 | **8** |
+| 11 | 8 | 6 | 7 | **4** | 6 | 7 |
 
-### What did not pass
+Every criterion has reached 7 at least once. None of the four critics in this
+block scored all six at 7 together, and iteration 11's dropped Readability from
+6 to 4. Each critic is a fresh context shown only pictures and numbers, so these
+are four different readers rather than one reader's trend — which is why the
+brief says to treat the averages as noise and the named faults as signal. The
+named faults are listed at the bottom.
 
-- **The death-spread gate never passed.** 61.5 % of the moderate bot's deaths
-  fall in one 30-second bucket, against a 40 % ceiling. Runs of equal quality end
-  at nearly the same place. Cravings, spits and beats added variance — the figure
-  has been between 44 % and 90 % across iterations — but not enough, and the
-  reason is structural: total drain over a run is close to a deterministic
-  function of size, so the number of feeds a shift needs is nearly fixed. Fixing
-  it properly means making a *good* decision measurably extend a run, not just a
-  bad one shorten it — a compounding reward, which the craving's growth pause is
-  the beginning of and not enough of.
-- **No critic criterion reached 7 twice in a row.** Best final scores: Agency 4,
-  Consequence 7, Tension 5, Readability 3, Comedy 6, Fairness 4. Consequence hit
-  7 twice (iterations 2 and 5) but not consecutively — it collapsed to 2 in
-  between, for a reason worth keeping (below).
-- **Readability is the standing failure, at 3.** The mutations are named in
-  chips, not in the body: *"I could not name a single mutation without reading
-  the chip text; pallor and size are the only body cues, and Pressure burp has
-  no visual at all."* This is pose-and-art work on a rig that can already carry
-  it, and it is the single highest-value thing left.
-- **Only five measured iterations, not sixteen.** Each full cycle — 200 seeded
-  shifts × 3 bots, a real-browser capture, a fresh-context critic — costs
-  40–60 minutes of wall clock, and the balance work between them costs more.
-  Stages 4 through 8 were therefore implemented in one push and measured once,
-  which is a departure from the brief's one-stage-per-iteration rule and is why
-  there is no per-stage evidence for cravings, the charge, the hatch, the beats
-  or the endings individually.
-- **`npm run test:contract` cannot run here.** Hardhat downloads the Solidity
-  compiler from `binaries.soliditylang.org`, which this session's egress policy
-  refuses (the proxy returns 403 on CONNECT). No Solidity file is touched
-  anywhere on this branch, so the contract tests are unaffected — but they have
-  not been run and are not claimed to pass.
-- **The captures were produced in a Linux container**, not on the Mac. The
-  repository's `node_modules` is a macOS build whose `workerd` binary cannot run
-  under the device shell, so the dev server, the build and the harnesses were run
-  against a clean install in the cloud workspace on the same commits.
+**Cheap death: closed.** Iteration 8's critic found one — *"the player dies with
+an empty launcher two seconds before the hatch reopens, and the manifest shows it
+reopening one tick after the loss."* Iterations 9 and 10 answered it with two
+rules, and the three critics since have each looked for one and reported none.
 
-### The three findings worth keeping
+### What this block changed
 
-1. **Ending the shift when the creature reached full size inverted the skill
-   ordering.** A better player fed faster, reached the cap sooner, and scored
-   *less*. Size is now a plateau; what keeps rising is a permanent appetite
-   multiplier, because with both capped a player with perfect aim survives
-   indefinitely.
-2. **Irritation was cooled at the bottom of the tick, after a miss had raised
-   it.** A miss pushed the meter to exactly 100 and the same tick shaved it to
-   99.99 before the check ran, so the "kitchen destroyed" ending was unreachable
-   and a player who never landed a shot starved instead. Two hundred bot shifts
-   found this; no test would have.
-3. **A measurement can be right and still measure something only sometimes
-   visible.** Growth was put on the mouth because the mouth is drawn rather than
-   warped and costs nothing at any size. At full size the mouth is shut about
-   five sixths of the time. One critic was handed frames with it open and scored
-   Consequence 7; the next was handed frames with it shut and scored 1. Both
-   reported what they saw. The fix was to move the growth onto the body and pay
-   for it by re-measuring the warp, not to argue with either critic.
+1. **The aim is on screen (iteration 8).** A lance out of the muzzle with a
+   crossbar at the distance the current charge throws, the loaded serving visible
+   in the breech through the whole reload, and a ring that fills as the reload
+   finishes. Agency went 5 → 8.
+2. **The capture harness stopped lying (iteration 8).** It replayed the bot's
+   commands by firing each on its tick, so the launcher teleported to its angle
+   on the frame it fired and every other frame showed a player doing nothing. It
+   now plays the wind-up — the sweep at the game's own aim rate, the charge
+   starting exactly as far back as the shot's power is worth — over the same
+   trace.
+3. **A shift may not end on a tick the player was locked out of (iteration 9).**
+   While the hatch is shut the hunger drain accumulates as a debt and is repaid
+   at triple rate the moment the launcher is available again. Nothing is
+   forgiven, so the economy is unchanged; only the tick the loss can land on has
+   moved.
+4. **THE LAST SERVING (iteration 10).** Once a shift, a serving already in the
+   air gets to land before the belly empties the run.
+5. **The third act arrives (iteration 10).** The stage marker was keyed to a size
+   the medians never reach, so act four existed and never appeared. It now
+   arrives when the shift is actually in trouble.
+6. **A readability pass (iteration 11).** The meters are no longer the smallest
+   type on screen, verdict pills can no longer sit on them, a mistake holds for a
+   beat instead of a second, the hatch says why it is shut and for how long, and
+   what a mutation DOES is drawn at a size a stream can read.
 
-### Recommended next step, in order
+Two duplicated draw blocks were found and removed along the way — the meters in
+iteration 6 and a 131-line block in iteration 8 containing the launcher, the
+hatch, the projectiles, the event labels and the craving ring, all of which were
+being executed twice per frame.
 
-1. **Give each mutation a silhouette a spectator can name at 960 px.** Metal
-   fangs and a halo of cutlery; a visible steam vent for pressure. The rig has
-   `magnetism`, `teethAlign`, `teethLong`, `taut`, `cheekMarks` and `exhale`
-   already; nothing new needs authoring, they need to be pushed much harder and
-   checked in the capture rather than in the editor. This is the lowest critic
-   score and the cheapest to move.
-2. **Make a good decision compound.** The craving's growth pause is the only
-   brake in the game and it is three seconds long. Lengthen it with the streak,
-   or let a satisfied craving shed a mutation level. That is the death-spread
-   gate's actual fix, and it also gives the score a reason to reward play rather
-   than time.
-3. **Put the aim on screen.** The barrel's angle stub and the charge along it
-   were added late and have not been through a critic. Agency is still 4 largely
-   because *"the launcher barrel sits at the same angle in every sampled
-   frame"* — which is partly true and partly the harness sampling 1.2 seconds
-   out of a four-second cadence.
-4. **Then re-run the loop properly**, one stage's worth of change per measured
-   iteration, until the gates and the rubric hold twice.
-5. Only then the rig's per-ingredient material pass from the previous loop's
-   final report, and the minimal chain layer.
+### What did not pass, and it is the most important thing in this report
 
-### Open faults named by the final critic and not yet fixed
+**The render is over budget with mutations on, and always has been.**
+`scripts/loop-shots.mjs` measures the draw on a full-size creature with *no
+mutations*, which is not a state a shift spends much time in. A new standalone
+profiler, `scripts/render-budget.mjs`, measures each state on its own with a
+warm-up pass discarded:
 
-- Toasts do not link to the projectile that caused them; two verdicts can appear
-  in the same frame with no way to tell which shot earned which.
-- The coach line and the craving chip are ~8–10 px at stream scale.
-- Late in a run the creature's head reaches the band the mutation chips occupy.
-- The aim preview, in the first shift where it exists, fades out about a fifth of
-  the way to the creature.
+| state | mean draw at 1920×1080 |
+|---|---|
+| bare, ×2.4 | **3.80 ms** |
+| metal 3 | 5.74 ms |
+| balloon 3 | 5.03 ms |
+| pepper 3 | 5.04 ms |
+| typical 2 / 2 / 1 at ×2.0 | **7.34 ms** |
+| worst 3 / 3 / 3 at ×2.4 | **7.89 ms** |
 
-Fixed after that critic ran and therefore not yet re-judged: the unlabelled
-striped panel above the launcher (the hatch, now bolted to the counter, lit and
-captioned), the duplicated fullness/irritation meters (one pair, on the canvas,
-with numbers), the end card naming a size-based ending without the cause of
-death, and hard-edged rectangular tearing on an inflated belly (the warp grid
-had been cut too far, and the balloon's swell was slamming the scale ceiling).
+The budget is 4 ms average. A typical mid-shift state costs nearly twice it. Note
+that two mutations at level 2 cost about the same as three at level 3, which says
+the cost is not the overlays scaling with level but something that switches on
+when more than one pose channel is displaced at once — the warp grid is the
+obvious suspect, since it is priced per cell drawn and a cell is skipped only
+when its displacement is under a third of a pixel. **This should be the next
+iteration, before anything else.** It was invisible for eleven iterations because
+the harness never measured the state the game is actually in.
+
+### Also not passed
+
+- **No critic has scored every criterion ≥ 7.** Iteration 10 came closest, with
+  Readability at 6 the only one short.
+- The title, mid-run and ending screens have been re-captured every iteration and
+  are in `docs/qa/loop/iter-11/`, but they have not been judged side by side
+  against `docs/qa/title.png` / `docs/qa/survival.png`.
+- `npm run test:contract` still cannot run: `binaries.soliditylang.org` is
+  blocked by this environment's egress policy, so the Solidity compiler cannot be
+  downloaded. No chain code was touched on this branch.
+
+### The open faults, in the order I would fix them
+
+1. **The draw is over budget with mutations on.** Above. Everything else on this
+   list is cosmetic by comparison, because a stream that drops frames is
+   unreadable whatever is drawn on it.
+2. **The mouth wind-up arc and the irritation flush are the same value.** The arc
+   that closes about 400 ms before the mouth opens is the only timing tell in the
+   game, and it is drawn in pale lime on a belly that rising irritation flushes to
+   pale pink-tan. The danger cue erases the timing cue exactly when the danger is
+   highest. Redraw it in a colour that never appears on the creature.
+3. **The size number and the picture disagree.** The HUD says ×1.82; a critic
+   measured the silhouette and found it about 3 % wider than at ×1.28. The rig
+   has a hard scale ceiling for texture quality, so either the drawn growth has to
+   find another channel — the creature filling more of the frame, or the frame
+   coming to it — or the HUD has to stop printing a multiplier the art cannot
+   honour.
+4. **The mutation banner collides with the verdict pills.** Iteration 11
+   introduced the banner and suppressed the duplicate mutation pill, but a
+   critic still caught a banner stacked over TOO LATE over TASTY +100 in one
+   300 px band. The banner needs its own reserved band, the way the meters now
+   have one.
+5. **"THE CUTLERY IS MOVING" is a caption on something that does not move.** The
+   toast fires when the room's metal flies at the mouth; the cutlery stuck to the
+   body is a static decal. Either animate the decals or stop claiming they move.
+6. **There is no death beat.** Every ending clip cuts from play to the report
+   card. The loss is the punchline of the whole run and it is not on screen.
+7. **"HELD" reads as a broken promise at stream sampling.** The belly really does
+   hold while the hatch is shut, but two HELD frames six seconds apart bracket a
+   fall from 28 % to 10 % because the drain resumed in between. The badge needs
+   to make the held quantity visible — a frozen notch on the bar — rather than
+   just asserting the freeze.
+8. **The naive cliff.** 78.5 % of naive runs die in one 30-second bucket having
+   landed zero servings, so the least skilled judge never sees a mutation. The
+   naive bot never aims at all, which is not what a beginner does, so the number
+   probably overstates it — but nothing in the game currently teaches aim inside
+   the first thirty seconds.
+
+### Recommended next step
+
+Fix the render budget first — measure with `scripts/render-budget.mjs`, not with
+the capture harness, and make the cell-skip threshold and the warp grid pay for
+the mutation states rather than only the bare one. Then take faults 2 and 3
+together as one iteration: they are both "the creature's state is not legible on
+the creature", which is the single theme every critic in both blocks has
+independently landed on.
 
 ---
-
-Branch `feat/creature-loop`, cut from `feat/creature-rig`.
-
-The brief: turn the clicker in `lib/game/arcade.ts` into "feed it → it changes →
-adapt", in eight stages, measuring first. Diagnosis and target loop are in
-`docs/dnfi-loop-redesign.md`. Exit criteria, numeric gates and the critic rubric
-are restated at the bottom of this file so an iteration can be judged without
-leaving it.
 
 ## How an iteration is measured
 
@@ -1049,6 +1056,38 @@ appears at full strength and only fades out.
 Byte-identical to iteration 10, as intended: naive 28.6 s, moderate 133.8 s at a
 38 % worst bucket, good 183.7 s = 6.4×, density 127/min. **All five gates pass —
 fifth consecutive iteration.**
+
+### Critic — iteration 11
+
+| | Agency | Consequence | Tension | Readability | Comedy | Fairness |
+|---|---|---|---|---|---|---|
+| iteration 10 | 8 | 9 | 7 | 6 | 7 | 8 |
+| **iteration 11** | 8 | 6 | 7 | **4** | 6 | 7 |
+
+Readability went down, not up, which is the opposite of what this iteration was
+for. The faults the critic named are mostly not things this iteration touched,
+and they are worth more than the number:
+
+- *"The mouth wind-up arc is drawn in pale lime on a belly that rising irritation
+  flushes to pale pink-tan. The danger cue erases the timing cue exactly when the
+  danger is highest."* The only timing tell in the game becomes invisible at
+  precisely the moment it matters. No previous critic had looked for it.
+- *"ITS SIZE ×1.82 is a number with no picture behind it — I measured the
+  silhouette at 726 px at ×1.28 and 751 px at ×1.82, about 3 % against a claimed
+  42 %."* The rig has a hard scale ceiling for texture quality, so the HUD is
+  printing a multiplier the art cannot honour.
+- *"THE CUTLERY IS MOVING"* is a caption on decals that move by ≤ 14 px over
+  twenty seconds.
+- The banner this iteration added still stacks with verdict pills in one band:
+  it fixed the collision with the meters and introduced a smaller one of its own.
+
+And the thing it did fix, it fixed: the meters and their numerals are legible at
+960 px in `docs/qa/loop/iter-11/hud-0200.jpg`, with `ONE MORE CHANCE` pushed
+clear above them on the frame the player starves — which is the exact frame the
+iteration-10 critic called unacceptable.
+
+**No cheap death** — the third consecutive critic to look for one and report
+none.
 
 ---
 

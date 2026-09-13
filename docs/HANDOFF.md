@@ -84,11 +84,16 @@ choice was made is in `docs/DECISION_REGISTER.md` (D36–D53); the evidence is i
 `docs/qa/loop/ITERATION_LOG.md`, whose final report is the first thing to read.
 
 **Read the final report before changing anything.** It states what passed, what
-did not, and the next step in order. The short version: four of five numeric
-gates pass, the naive "press Space on cooldown" strategy went from surviving
-119.2 s of a 120 s shift to dying in 12.4 s, and the standing failures are the
-death-spread gate and the critic's Readability score — the mutations are named in
-HUD chips rather than in the creature's body.
+did not, and the next step in order. The short version after two blocks of work:
+**all five numeric gates pass and have passed on five consecutive iterations**,
+the naive "press Space on cooldown" strategy went from surviving 119.2 s of a
+120 s shift to dying in 28.6 s of an endless one, and no cheap-death finding is
+open. Two things stop it exiting: no single critic has scored all six rubric
+criteria at 7 or above, and — the one to fix first — **the draw is roughly twice
+its 4 ms budget once the creature carries two mutations**, which went unnoticed
+for eleven iterations because the capture harness only ever timed a creature with
+none. Measure that with `scripts/render-budget.mjs`, not with the capture
+harness.
 
 Do not merge this branch. Nothing in `contracts/`, `worker/` or `db/` was
 touched.
@@ -120,26 +125,42 @@ mainnet transactions, outreach or contest submission.
 
 ## What is now implemented
 
-- Illustrated game-native title, a single start action, responsive canvas kitchen,
-  original creature/environment, food and launcher artwork.
-- Physical food aiming/launching, travel, mouth catches, floor rebounds, misses,
-  bounded projectile lifetimes and counts. Logical arena 1200×700 at 60Hz.
-- Three mechanical mutations: metal attraction, global food buoyancy, periodically
-  warned pepper headwinds. Third accepted serving triggers 90-tick warning and
-  480-tick active effect. One mutation at a time; no stacking.
-- A full 120-second shift, early grace period, cravings, precision/assisted/rebound
-  bonuses, streaks, fullness, irritation, explicit failure causes and restart.
-- A moving vent flap warns at 38 seconds, becomes solid at 40, and creates a timed
-  obstruction. Preview uses the same future physics as launched food.
-- Canvas creature breathing/chewing/deformation, mutation overlays, event particles,
-  projectile trails, animated launcher recoil, score pops and reload indicator.
-- Pointer drag aiming plus explicit launch, keyboard aim/food/fire/pause/restart,
-  narrow-screen aim slider, visible mute/master, fullscreen, guide, pause, results.
-- Original procedural music, ventilation hum and layered game cues. All mixer buses
-  work; lazy gesture unlock, pause/blur lifecycle, mute and settings persistence.
-- Reduced-motion setting/system default and versioned device-local personal best.
-- Pure local replay and 15 physical simulation tests. Legacy harness and V0 chain
-  foundation are retained separately and are not used to validate arcade scores.
+The eight stages of `docs/dnfi-loop-redesign.md`, in `lib/game/arcade.ts`:
+
+1. **Growth.** Every serving makes it bigger; the hunger drain scales with size
+   and a permanent, uncapped appetite multiplier. The shift is endless — size is
+   a plateau, appetite is the ramp, so a better player scores more rather than
+   reaching a ceiling sooner.
+2. **Mouth rhythm.** Food is only accepted through a mouth that opens and closes
+   on a seeded cycle whose open window shrinks as it grows, with tracking and
+   lunging. `projectMouth` predicts it exactly, which is what the bots aim at.
+3. **Mutations, permanent and stacking.** Three servings of an ingredient is a
+   level, three levels each. Metal is a magnetic mouth that drags the kitchen's
+   own cutlery into itself and clogs; balloon inflates and lifts; pepper spits
+   servings back. Each pair has one escape rule.
+4. **Cravings as dilemmas.** Seeded, with a visible shrinking ring. Satisfied: a
+   bonus, it calms, growth pauses — and the pause and the appetite relief both
+   compound with the run of cravings met in a row. Ignored: rage and a tantrum.
+   Off-menu is eaten anyway and still counts toward that mutation.
+5. **A held charge.** Power 9–16 over 40 ticks, drawn on the launcher as a lance
+   with a crossbar at the distance the current charge throws. The trajectory
+   preview is a first-shift aid and then it is gone.
+6. **One reaction verb.** Slam the hatch. It blocks what is coming back at you
+   and costs you the launcher for 84 ticks — during which the belly runs a tab
+   rather than emptying, so a shift cannot end on a tick you were locked out of.
+7. **Autonomous seeded beats.** A sneeze that scatters the bench, a telegraphed
+   lunge that bites the extractor vent off the wall and never repairs, drool that
+   makes the floor slick and the bank shot better. Each is a physics event and a
+   line.
+8. **Four endings by size**, plus THE LAST SERVING — once a shift, a serving
+   already in the air gets to land before the belly empties the run.
+
+Around that, from the earlier scaffold and the rig branch: an illustrated
+game-native title and result screen, a canvas kitchen and a warp-based creature
+rig cut from the same painting, pointer and keyboard input with a narrow-screen
+aim slider, original procedural music and layered cues with a working mixer,
+reduced-motion support, a device-local personal best, and a pure local replay.
+Presentation reads `ArcadeState` and decides nothing.
 
 ## Main files
 
@@ -179,6 +200,21 @@ Development URL is `http://localhost:3000/` when started normally.
 
 ## Next meaningful work
 
+0. **Bring the draw back inside its 4 ms budget with mutations on.** Do this
+   before anything else. `node --experimental-strip-types
+   scripts/render-budget.mjs` measures each state on its own; a typical mid-shift
+   creature (two mutations at level 2, size 2.0) currently costs 7.34 ms against a
+   3.80 ms bare one. Two mutations at level 2 cost about the same as three at
+   level 3, so the cost is not the overlays scaling with level — start at the warp
+   grid's cell-skip threshold in `lib/render/creature/warp.ts`, which is priced
+   per cell drawn. Fold a mutation-loaded state into the capture harness's own
+   timing afterwards so the manifest stops reporting a state the game is rarely in.
+0b. **Make the creature's state legible on the creature.** Two faults, one theme,
+   and every critic across both blocks has landed on it independently: the mouth's
+   wind-up arc is drawn in pale lime on a belly that rising irritation flushes to
+   pale pink-tan, so the danger cue erases the only timing tell exactly when the
+   danger is highest; and the HUD prints a size multiplier of ×1.82 against a
+   silhouette a critic measured as 3 % wider than at ×1.28.
 1. Observe uncoached players: first catch, first mutation, understanding the vent,
    adapting aim, perceived fairness, restart intent and accessibility needs.
 2. Tune the provisional shift and expand creature reactions based on observations,

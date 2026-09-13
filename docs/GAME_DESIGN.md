@@ -278,7 +278,7 @@ mutation and changes their next action because of it. An observer understands
 the resulting success or failure. If that does not happen, change the mechanic
 or presentation before adding a chain layer or more ingredients.
 
-## The loop that now exists — `feat/creature-loop`, GAME_VERSION 2
+## The loop that now exists — `feat/creature-loop`, GAME_VERSION 3
 
 This section describes the game as implemented, not as planned. Everything above
 it is the original brief and some of it has been superseded; where the two
@@ -391,10 +391,26 @@ door. Which of four endings you get is decided by **how big you let it become**:
 
 > Shift over. It has eaten the employee handbook.
 > Shift over. It has eaten the shift supervisor.
-> Shift over. It has eaten the kitchen.
+> Shift over. It no longer fits behind the counter.
 > Shift over. It no longer fits through the door. It has been promoted.
 
+The cause of death is a separate sentence in front of it — "Empty belly." or
+"Too many missed shots." — and **no ending may name a cause**. The third line
+used to be "It has eaten the kitchen.", chosen on size alone, so a shift that
+ended on an empty belly announced the other failure state's own name in the same
+sentence as the meters that contradicted it.
+
 **STILL EMPLOYED** is kept for a run that beats the player's own best time.
+
+A shift may not end on a tick the player was locked out of. While the hatch is
+shut — the player's own reaction verb, which costs them the launcher for 84
+ticks — the hunger drain accumulates as a debt instead of being applied, and is
+taken back at triple rate the moment the launcher is available again; the bar
+reads HELD and then CATCHING UP. Nothing is forgiven, so the economy over a shift
+is unchanged. And once a shift, **THE LAST SERVING**: if the belly empties while
+one of the player's servings is still in the air, the shift waits for it to land.
+Once, because granting it on every crossing was measured and it rewarded firing
+on every cooldown, which is the strategy this whole redesign exists to kill.
 
 ### Determinism
 
@@ -406,6 +422,17 @@ a draw in one place cannot shift the sequence in another. A command trace of
 launches (ingredient, angle, power) and hatches replays to a byte-identical final
 state; three bot traces are frozen in `tests/fixtures/loop-traces.json` and the
 test suite fails loudly whenever a rule changes without them being regenerated.
+
+### What the player is choosing, drawn where they are looking
+
+The two choices — where the launcher points and how hard it throws — are one
+drawing on the launcher itself: a lance out of the muzzle with a crossbar at the
+distance the current charge stands for. The loaded serving sits in the breech
+whether or not it can be fired, dimmed over a dark pocket while a ring fills
+around it through the reload, so the wait is an event with a visible end rather
+than an empty counter. The two meters that end a shift own a band on the counter
+that no verdict label may enter. What a mutation *does* is a three-second banner
+across the top in that ingredient's colour, not nine-pixel text in a corner.
 
 ### The numbers
 
