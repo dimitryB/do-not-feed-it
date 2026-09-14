@@ -692,7 +692,8 @@ export function createScene(){
       ctx.save();
       // Sized up: at 960 px these were the smallest type on screen and they are
       // the only two numbers that end a shift.
-      ctx.fillStyle='#040909b0';ctx.beginPath();ctx.roundRect(x-14,y-24,w+28,70,11);ctx.fill();
+      // The plate grew by a row, because each meter now says what it DOES.
+      ctx.fillStyle='#040909b0';ctx.beginPath();ctx.roundRect(x-14,y-24,w+28,92,11);ctx.fill();
       ctx.strokeStyle='#5d6b5540';ctx.lineWidth=1;ctx.stroke();
       // Measured by a critic: the fill-to-track contrast was 10.5:1 for fullness
       // and 3.96:1 for irritation — the meter that ends the shift was the quieter
@@ -718,8 +719,13 @@ export function createScene(){
           // "CATCHING UP" sat on a bar that was falling faster than usual,
           // because catching up is the debt being repaid. A reassuring word next
           // to a collapsing number is the only place the HUD actively misled.
-          const label=held?'HELD':state.hungerDebt>0.01?'PAYING IT BACK':'PAY STALLED';
-          const tint=held?'#9bd7c4':label==='PAY STALLED'?'#ff8a6a':'#eea66d';
+          // "PAY STALLED" inside a row labelled FULLNESS read as a claim about
+          // fullness — a critic called the placement actively misleading. The
+          // badge belongs here, because this bar is the cause, so it now states
+          // the cause and points at the tick drawn on this bar rather than
+          // announcing the effect from inside the wrong row.
+          const label=held?'HELD':state.hungerDebt>0.01?'PAYING IT BACK':'BELOW PAY LINE';
+          const tint=held?'#9bd7c4':label==='BELOW PAY LINE'?'#ff8a6a':'#eea66d';
           const lw=ctx.measureText(label).width+16;
           ctx.fillStyle='#0c1a16';ctx.beginPath();ctx.roundRect(x+w/2-lw/2,by-23,lw,17,8);ctx.fill();
           ctx.strokeStyle=tint;ctx.lineWidth=1;ctx.stroke();
@@ -733,10 +739,35 @@ export function createScene(){
           ctx.fillRect(x+w*(TUNING.payFloor/100)-1,by-7,2,17);
         }
       }
+      // WHAT THE BAR DOES TO YOU, on the bar.
+      //
+      // A critic reading only the captures found the loop's oldest and worst
+      // fault here: "a player watching a bar labelled IRRITATION has no reason
+      // to know it is a structural HP bar for a building they cannot see."
+      // `kitchen-destroyed` is 101 of 200 moderate runs — the majority failure
+      // at ordinary skill — and what the bar does at 100 was stated exactly
+      // once, in the smallest text on screen, in the corner nobody watches.
+      // IRRITATION is the mechanic's name; it is not the consequence's name.
+      //
+      // The consequence appears on whichever meter is in its dangerous half, so
+      // it is a warning rather than permanent furniture, and it names the thing
+      // that actually happens rather than the emotion that causes it.
+      {
+        const doom=irritation>=0.5?{text:'FULL — IT WRECKS THE KITCHEN',tint:'#ff8a6a',lvl:irritation}
+                  :fullness<=0.5?{text:'EMPTY — IT EATS YOU',tint:fullness<0.25?'#ff8a6a':'#eea66d',lvl:1-fullness}
+                  :null;
+        if(doom){
+          ctx.font="700 14px ui-monospace,monospace";ctx.textAlign='center';
+          ctx.globalAlpha=reduced?1:.72+.28*Math.min(1,(doom.lvl-.5)*2);
+          ctx.fillStyle=doom.tint;
+          ctx.fillText(doom.text,x+w/2,y+56);
+          ctx.globalAlpha=1;
+        }
+      }
       if(fullness<0.25&&!reduced){
         ctx.globalAlpha=.35+.35*Math.abs(Math.sin(time*7));
         ctx.strokeStyle='#ff6a4d';ctx.lineWidth=2.5;
-        ctx.beginPath();ctx.roundRect(x-14,y-24,w+28,70,11);ctx.stroke();
+        ctx.beginPath();ctx.roundRect(x-14,y-24,w+28,92,11);ctx.stroke();
       }
       ctx.restore();
     }

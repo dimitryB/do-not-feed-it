@@ -21,6 +21,8 @@ const STATES = [
   { name: "pay-above", hunger: 55, rage: 40, paidTicks: 4200 },
   { name: "pay-below", hunger: 18, rage: 40, paidTicks: 4200 },
   { name: "pay-edge", hunger: 28, rage: 30, paidTicks: 4200 },
+  // Irritation in its dangerous half, so the OTHER consequence line shows.
+  { name: "rage-high", hunger: 72, rage: 78, paidTicks: 4200 },
   // Aimed at the mouth and held to full charge, so the arrival marker and the
   // window fuse — the two readouts that only exist while a shot is being set
   // up — are actually on screen to be checked.

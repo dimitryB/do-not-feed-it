@@ -2137,6 +2137,92 @@ non-monotonic — and "THE LAST SERVING" was demonstrably not the last, twice.
 
 ---
 
+## Iteration 31 — the bar says what it does to you
+
+The best finding any critic has made against this build, and it had been true
+since stage one:
+
+> **CHEAP DEATH.** *"`kitchen-destroyed` is 101/200 moderate runs and 58/200 good
+> runs — more than half of all non-naive losses... there is no kitchen health
+> bar, no structural damage indicator, nothing. A player watching a bar labelled
+> IRRITATION has no reason to know it is a structural HP bar for a building they
+> cannot see."*
+
+Thirty iterations read that meter as the rage meter its name promises. It is not.
+It is one of the two things that end a shift, it ends **more** of them than
+starving does at ordinary skill, and what it does at 100 was stated exactly once,
+in the smallest text on screen, in the corner nobody watches. IRRITATION is the
+mechanic's name. It is not the consequence's name, and the consequence is the
+part the player needs.
+
+**So each meter now says what it does, on the meter.** The bar in its dangerous
+half carries one line under the plate at 14 px: `FULL — IT WRECKS THE KITCHEN`,
+or `EMPTY — IT EATS YOU`. It appears only past the halfway mark, so it is a
+warning rather than furniture, and it fades up with the danger. Checked at 960 px
+before being believed.
+
+This is the counterpart to D75 and the same principle as D68: **a readout may
+name a mood, but something on screen has to name the outcome.** Every previous
+fix in this area made the meters *bigger*, *brighter*, *better contrasted* — six
+iterations of making an unlabelled thing more visible. None of them made it say
+what it was.
+
+**The stage counter ran backwards.** `04 / THE LAST SERVING` at 1:20, `03 / IT NO
+LONGER FITS` at 1:41, `04` again at 2:00 — caught only because a critic reads the
+frames in time order. D59 keyed act four to a condition rather than the clock,
+which fixed act four never appearing and quietly made the ordinal non-monotonic;
+and "THE LAST SERVING" was demonstrably not the last, twice in one run. The three
+acts are keyed to growth and stay monotonic; the danger state has stopped wearing
+an ordinal and reads `!! ON THE BRINK`, which is a state and is allowed to come
+and go.
+
+**`PAY STALLED` moved out of the wrong row.** The badge sat inside the row
+labelled FULLNESS, and the critic called the placement *"actively misleading"* —
+correctly, since a badge about pay in a row about fullness reads as a claim about
+fullness. It belongs on that bar, because that bar is the cause, so it now states
+the cause: `BELOW PAY LINE`, pointing at the tick D70 drew on the same bar.
+
+**The strip was left alone.** The critic asked for it off the belly and at harsher
+contrast; looking at the actual iteration-30 captures rather than the description,
+it draws on an opaque black plate with a bright lime fill and is already the
+highest-contrast object in the frame. The fair half of the note — that it now
+rhymes with the reload bar — is recorded rather than acted on, because moving it
+would undo the one thing that made it decode: it sits under the mouth it is about.
+
+**All five gates pass — twenty-fourth consecutive iteration**, identical for the
+fifth running. Render: 3.89 and 4.24 ms on two runs of this build, the same
++/-0.2 ms noise D62 was re-opened over, with `rig` alone moving 3.30 to 3.53
+between them.
+
+**Critic: Agency 8, Consequence 9, Tension 8, Readability 4, Comedy 7,
+Fairness 6.**
+
+**The cheap death is closed.** Asked directly what happens when each meter runs
+out, the critic answered both, and named where it learned them: *"IRRITATION:
+full = it wrecks the kitchen... FULLNESS: empty = it eats you"* — read off the
+new caption row. And on the ending: *"No cheap death in the ending clip — the
+score is frozen at 10909 from 111.5s to 121.7s with FULLNESS visibly draining to
+2%, so the starvation was on screen for ten seconds."*
+
+**And the new caption has a bug, found in the same breath.** It picks the wrong
+meter:
+
+> *"hud-0200: FULLNESS **2%**, IRRITATION 80%, caption reads 'FULL — IT WRECKS
+> THE KITCHEN' — and roughly one second later the run ends with 'IT WENT
+> HUNGRY'... The one line telling a stranger which way the player is about to die
+> is anti-correlated with actual danger in 2 of 3 samples."*
+
+Irritation was tested first and won whenever it was past half, whatever fullness
+was doing. Both meters compute a danger already; the caption just has to take the
+**larger** one. Iteration 32.
+
+Readability fell 5 to 4 on this build, which is the loop's lowest score to date
+and the thing to be honest about: the caption fault above is a fault I
+introduced, and the timing strip remains *"the best mechanic here"* and *"the
+worst-served element on screen"* in the same paragraph.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s

@@ -53,3 +53,4 @@
 
 .result-cause{font:700 clamp(26px,3.1vw,40px)/1.1 var(--font-display);letter-spacing:.01em;color:#ff9c72;margin:0 0 14px;text-shadow:0 3px 18px #0006}
 @media(max-width:650px){.result-cause{font-size:22px;margin-bottom:10px}}
+.shift-phase.brink{color:#ff8a6a!important;font-weight:700}
