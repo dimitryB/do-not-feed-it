@@ -23,6 +23,9 @@ const STATES = [
   { name: "pay-edge", hunger: 28, rage: 30, paidTicks: 4200 },
   // Irritation in its dangerous half, so the OTHER consequence line shows.
   { name: "rage-high", hunger: 72, rage: 78, paidTicks: 4200 },
+  // Both meters past half, starving the nearer of the two. The caption must
+  // name STARVING here; naming the kitchen is the fault this checks for.
+  { name: "both-bad", hunger: 2, rage: 80, paidTicks: 4200 },
   // Aimed at the mouth and held to full charge, so the arrival marker and the
   // window fuse — the two readouts that only exist while a shot is being set
   // up — are actually on screen to be checked.

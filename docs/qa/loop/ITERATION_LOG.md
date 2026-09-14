@@ -2223,6 +2223,85 @@ worst-served element on screen"* in the same paragraph.
 
 ---
 
+## Iteration 32 — the caption follows the danger, and the track gets an address
+
+Two faults, both found by a critic reading only the frames, both mine.
+
+**The caption named the wrong death.** Iteration 31 put the consequence on the
+meter and then chose between the two by testing irritation first: past half, it
+won, whatever fullness was doing. So a run at **2 % fullness and 80 % irritation**
+was told the kitchen was in danger and was eaten a second later. Measured:
+*"anti-correlated with actual danger in 2 of 3 samples."*
+
+The fix is not a reordering, it is removing the ordering. Both bars already know
+their own distance to their own lethal end; the caption takes the **larger**.
+There is no precedence left to get wrong, which is the only kind of fix worth
+making to a bug of this shape. Verified at 2 % / 80 %: it reads `EMPTY — IT EATS
+YOU`.
+
+**The track was anchored to the wrong thing.** Three critics running called the
+timing strip both the best idea on screen and the worst-served element on it. The
+last one said why:
+
+> *"It is simultaneously the smallest, lowest-contrast, least-labelled thing on
+> screen and sits over the busiest art... I reverse-engineered the game's core
+> skill expression from a death message."*
+
+The contrast complaint was already wrong by iteration 30 — it draws on an opaque
+plate. The real fault was the anchor. The track hung off the creature, so it
+**moved** as the creature moved and **grew** as the creature grew: the two
+properties a thing you must read in a third of a second must not have. It is now
+the third row of the plate the player already reads the other two numbers off,
+labelled `MOUTH`, 296 px instead of 118, in the same place in every frame of
+every shift.
+
+Which settles an argument this loop had with itself at iteration 31, when I
+declined to move it on the grounds that *"it sits under the mouth it is about"*.
+That was true and it was the weaker consideration. Adjacency is worth something;
+a fixed address is worth more, and a HUD row can be learned once and then read
+without looking for it.
+
+**All five gates pass — twenty-fifth consecutive iteration**, identical for the
+sixth running. Render 4.08/4.15 ms on this build, inside the same +/-0.2 ms noise
+band D62 is re-opened over.
+
+**Critic: Agency 8, Consequence 9, Tension 7, Readability 5, Comedy 7,
+Fairness 4.** Readability recovered a point; **Fairness lost two**, and the reason
+is worth more than the number.
+
+Both fixes worked and both were judged insufficient for the same structural
+reason. The caption is now correct — at 2 % fullness and 80 % irritation it names
+starvation, and the run ends of starvation a second later, which the critic
+verified. But:
+
+> *"It is only ever right about one of the two deaths. At hud-0200 IRRITATION is
+> at 80 % with the bar nearly full, and the only full-width red text on screen is
+> pointing at the other meter."*
+
+**One caption slot and two ways to die means one of them is always unannounced**,
+and D78 only chose which. `kitchen-destroyed` is the plurality ending across the
+whole population — 200/200 naive, 101/200 moderate, 58/200 good — and it is the
+one that loses the slot whenever starvation is worse. The fix is not a better
+rule for picking; it is two captions. There is a row for each meter already.
+
+Second, the threshold is too low to mean anything: *"that same banner was already
+on screen at hud-0140 when FULLNESS was 45 % **and rising**. A warning displayed
+identically at 45 %-and-climbing and at 2 %-and-dying carries no information at
+the moment it matters."* Binary and sticky.
+
+And a third fault this loop has been walking past for thirty-two iterations,
+caught by comparing a timestamp against the bot table:
+
+> *"The rule that kills the entire naive cohort is first shown at 01:41 — 2.8x
+> longer than a naive run survives... Every one of those 200 kitchen-destroyed
+> runs ended from a mechanic the game had not yet mentioned."*
+
+The coaching line naming irritation's consequence sits below the opening aim tips
+in the priority chain, and the opening tips hold the slot for the first fifteen
+seconds — which for a naive player is half their life. Iteration 33.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s
