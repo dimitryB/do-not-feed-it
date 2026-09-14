@@ -23,8 +23,13 @@
    960 and a critic called the control "pixel-identical across all six frames" —
    correct: nothing it did was visible at the resolution it is judged at. The
    face stays bright; the bar is 14px and dark against it, and it retreats. */
-.launch-button:disabled:after{content:'';position:absolute;left:0;right:0;bottom:0;height:14px;background:#1c2a1b;opacity:.9}
-.launch-button:disabled:before{content:'';position:absolute;left:0;bottom:0;height:14px;width:var(--reload);background:var(--accent);z-index:1}
+/* A full-height wipe across the face, not a bar on the bottom edge. The button
+   sits at the very bottom of the frame, so a 14px strip on its bottom edge was
+   clipped by the viewport — a critic found it "present only as a sliver", which
+   is the third time this control has been correct in code and absent from the
+   picture. A wipe is 28px tall, cannot be cropped, and reads as filling. */
+.launch-button:disabled:after{content:'';position:absolute;inset:0;background:#2f4026;opacity:.85}
+.launch-button:disabled:before{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--reload);background:var(--accent);z-index:1}
 /* Charging, never disabled-looking. Removing the word "Reloading" left the
    greyed STYLING, and a critic found the pill dimmed on the frame immediately
    before the player starved: "a fire button that goes grey while the player is

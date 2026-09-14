@@ -1,27 +1,30 @@
 # Feeding-loop iteration log
 
-## FINAL REPORT — through iteration 25
+## FINAL REPORT — through iteration 38
 
 **Status: all eight stages implemented and reachable, all five numeric gates
-passing on eighteen consecutive iterations, no open cheap-death finding, the
-target ring measured correct to two pixels, the render regression found and
-mostly paid down, and the creature has a temper.** Four of the six critic
-criteria sit at 7 or above; Readability is at 6 and climbing, Comedy at 7.
+passing on thirty-two consecutive iterations, no open cheap-death finding, and
+Fairness at its highest recorded value (8).** The exit bar asks for every criterion
+at 7 on two consecutive iterations; Readability is the one still short, sitting at
+5-6, and the section below says exactly why and what is left.
 
 ### The gates
 
-| gate | ceiling / floor | iteration 26 | verdict |
+| gate | ceiling / floor | iteration 39 | verdict |
 |---|---|---|---|
 | naive median survival | ≤ 45 s | 28.6 s | pass |
-| moderate median | 90–150 s | 133.8 s | pass |
+| moderate median | 90-150 s | 133.8 s | pass |
 | moderate death spread | no 30 s bucket > 40 % | 38 % | pass |
 | good ÷ naive | ≥ 2.5× | 6.4× | pass |
-| decision density (moderate) | ≥ 6 changes/min | 127/min | pass |
+| decision density (moderate) | ≥ 6 changes/min | 126.9/min | pass |
 | replay fixtures | exact | exact | pass |
 
-Iterations 7 through 26 — **nineteen consecutive**, against an exit bar of two.
-Twelve to twenty-one changed no rule at all; twenty-two and twenty-three changed
-only the reward curve, and survival came back identical to the second.
+**Iterations 7 through 39 — thirty-one consecutive passes, against an exit bar of
+two.** Twelve of the last thirteen changed no rule at all: the whole stretch from
+iteration 27 has been presentation, and the bot table has come back identical to
+the decimal twelve times running. That is the proof it should be — a readout
+cannot move a number no bot can see — and it is also the limit of the instrument,
+which D73 records.
 
 ### The critic
 
@@ -29,69 +32,91 @@ only the reward curve, and survival came back identical to the second.
 |---|---|---|---|---|---|---|
 | 0 (baseline) | 2 | 2 | 2 | 2 | 4 | 1 |
 | 11 | 8 | 6 | 7 | 4 | 6 | 7 |
-| 17 | 8 | 8 | 7 | 6 | 7 | 6 |
-| 18 (kitchen destroyed) | — | — | — | 5 | — | 6 |
-| 22 | 6 | 8 | 6 | 5 | 7 | 7 |
-| **24** | **7** | **8** | **8** | **6** | **7** | **7** |
+| 24 | 7 | 8 | 8 | 6 | 7 | 7 |
+| 27 | 9 | 9 | 8 | 6 | 8 | 7 |
+| 29 (window drawn) | 7 | 9 | 8 | 5 | 8 | 7 |
+| 32 | 8 | 9 | 7 | 5 | 7 | 4 |
+| 35 | 9 | 9 | 8 | 6 | 8 | 7 |
+| 37 | 9 | 9 | 9 | 5 | 8 | 7 |
+| **38** | **8** | **9** | **8** | **5** | **7** | **6** |
 
-Twelve critics, each a fresh context shown only pictures and numbers. Treat the
-row-to-row wobble as noise and the named faults as signal.
+Twenty-four critics, each a fresh context shown only pictures and numbers, never
+the code or these notes. The row-to-row wobble is noise; the named faults are
+signal, and the named faults are what this log records.
 
-### What the last stretch did
+### What iterations 26-39 actually did
 
-1. **The render regression, found and mostly paid down** (iteration 12). The
-   capture harness had only ever timed a creature with no mutations and reported
-   ~4 ms for eleven iterations while a typical mid-shift creature cost 9.6. One
-   unblended composite instead of four blended ones took the worst state from
-   **9.72 ms to 4.52** and the mutation surcharge from **+5.3 ms to +1.5**.
-2. **The target ring, true at last** (iterations 14–17). Four iterations, and the
-   calibration instrument had to be rebuilt twice: it measured only a bare
-   creature, then had no projectile in its probes and so was blind to the
-   creature's *tracking*, which moves the mouth up to 46 px on most of the frames
-   a player aims on. Measured result: **+2 px at ×1.28 and +2 px at ×1.82.**
-3. **The other ending, filmed and judged** (iterations 18–19). "Kitchen
-   destroyed" is every naive death and half a moderate shift's, and four critics
-   had said they could not judge it. `--cause kitchen-destroyed` fixed that and
-   produced the sharpest review of the project.
-4. **A temper** (iterations 20–21), to the limit of the rig — and
-   `scripts/pose-probe.mjs`, which reads the pose the animator settled on and
-   answered in three minutes what three sixteen-minute captures had not.
-5. **A reward curve** (iterations 22–23). Moderate and good players scored 60.8
-   and 61.1 points a second — identical. Paying by size did nothing, because size
-   plateaus; paying by **time kept fed** took the score ratio to **1.65× against
-   a survival ratio of 1.37×**, with survival untouched to the second.
-6. **An opening with a stake, and the HUD's lies removed** (iterations 24–25).
+The stretch began with a player report — teeth growing out of the tongue — and
+became, without anyone planning it, **an audit of everything the game knew and
+did not say.**
 
-### What is left, in the order I would do it
+**Two cheap deaths were found and closed.** The first: the rules bill a shot by
+where the mouth is when it *arrives*, and a serving is most of a second in the
+air, so the timing skill was leading a target whose future nothing drew. The
+game's own tip said *"you have to catch the window"* and the game did not render
+the window. It does now (D72), and the next critic reported none. The second:
+IRRITATION is a kitchen-destruction bar wearing an emotion's name, it ends more
+runs than starving does at ordinary skill, and what it did at 100 was stated once,
+in the smallest text on screen. Each meter now names its own consequence (D76,
+D80), and the rule is taught inside the lifetime of the player it kills (D81).
 
-**1. The ring's shape.** The rules accept food inside an axis-aligned ellipse and
-the painted mouth is a rotated wedge, so the ring is truthful about the rules and
-still claims some cheek and misses some gullet. Give the collision the mouth's
-axis and taper — a rule change, gates to re-measure — or redraw the mouth
-rounder. It is a design decision before it is any work.
+**The belly got a future.** The mouth had one and the belly did not, and the belly
+is the majority death — 142 of 200 good-bot runs. Worse, the drain is not
+constant: it climbs with the size and appetite the player raises by playing well,
+so the bar falls faster the better the run has gone and nothing said so. The row
+reads `BELLY 51% -> 23%` (D82, D85).
 
-**2. The creature still does not perform.** The temper reached the limit of what
-the corner channel can do to a painted grin; the mouth flattens and will not
-invert. Every critic across four blocks has named some version of this. Finishing
-it means authoring a snarl into the mouth drawing itself.
+**And a great deal of vocabulary was wrong.** A caption borrowed the other meter's
+word and inverted its own rule (D83). The meter itself was the outlier in a
+vocabulary every warning, hint and ending card already shared, so the meter was
+renamed rather than the six things agreeing with each other (D84). A marker spoke
+in the past tense about a prediction (D83). A badge sounded like a reward while
+the number under it collapsed (D75).
 
-**3. The consequence ladder saturates.** Both moderate and good bots finish at
-exactly ×1.96, and `ITS SIZE` is frozen for the last twenty seconds of a captured
-run. Iteration 22 bent the reward curve past that ceiling; the *visual* ceiling
-is still there.
+### What is left, honestly
 
-**4. The render is 13–25 % over budget with mutations on** — 4.52 ms against
-4 ms, measured with `scripts/render-budget.mjs`, never with the capture harness.
-The rest is the warp grid's floor; a coarser grid fits and tears.
+**Readability is the open criterion and the reason is structural.** Three
+iterations running produced the same class of fault: an element correct in the
+code and absent from the picture — a 1 px pay line, a 3 px charge bar, a 1 px
+overlap. The rig captures at 960 px and D74 already requires checking there;
+checking is not enough, because a thing can be checked and still sit at the edge
+of visible. D92 makes it arithmetic instead of a glance.
 
-**5. The naive tier is a strawman and the opening is untested.** The naive bot
-never aims at all, so its 200-run, zero-feed record says less about beginners
-than it looks like it does — but "nothing in the first thirty seconds teaches
-aim" is true of the game too, and no capture set contains the first twenty
-seconds of a shift. Film the opening.
+**The render sits AT the 4 ms budget, not inside it, and D62 is re-opened.** Six
+measurements of one build gave 4.13 / 3.87 / 4.01 / 4.05 / 3.92 / 4.00, with the
+`rig` term alone swinging 3.04-3.53 ms across runs of identical code. The
+arithmetic says where the remaining work is and it is not in the HUD: the warp is
+3.3 ms of the 4 ms and everything drawn over it is about 0.6 ms together. The warp
+grid is the term, and D64 records that 29x23 tears.
 
-**6. `npm run test:contract` still cannot run** — `binaries.soliditylang.org` is
-blocked by this environment's egress policy. No chain code was touched.
+**The consequence ladder still saturates at x1.96** for both moderate and good
+bots, so a merely competent player reaches the escalation ceiling and everything
+an expert earns past that point is invisible in the stat the whole visual language
+is built around. Four critics have named it independently. It is a rule change and
+was out of scope for a presentation stretch.
+
+**And the first thirty seconds still show a beginner none of the game.** The naive
+tier lands zero feeds in 200 runs: a player who cannot yet catch the mouth window
+never sees a mutation, never sees the creature grow, never learns what the other
+two ammo types do. The window readout (D72) is the first thing built that might
+change that, and no bot can tell us whether it did.
+
+### Five things this loop learned that generalise
+
+1. **When three fixes in a row fail, the model is wrong — build the instrument.**
+   One `return` statement and one sprite dump found in ten minutes what four
+   visual fixes had not: the teeth were baked into the tongue's cut (D69).
+2. **A fault three independent readers keep reporting is a fault** (D89). The
+   reload label was explained away once, with reasoning that happened to defend
+   work already done. Measuring took ten minutes and proved the critics right.
+3. **A readout may name a mood, but something has to name the outcome** (D76).
+   Six iterations made the meters bigger, brighter and better contrasted without
+   making either of them *say* anything.
+4. **A correct decision can be invalidated by a later correct one, and only a
+   reader notices** (D91). Nothing in `npm run check`, the five gates or the
+   fixture replay can catch a layout claim going stale.
+5. **The outlier in a vocabulary is the thing that changes** (D84). When six
+   elements say "belly" and one says "FULLNESS", the fix is one word, not six.
 
 ---
 
@@ -2779,6 +2804,48 @@ because half of it is what the audience gets.**
 
 **All five gates pass — thirty-first consecutive iteration**, identical for the
 twelfth running.
+
+---
+
+## Iteration 39 — the fairness is finished; the legibility is not
+
+**Critic: Agency 8, Consequence 7, Tension 8, Readability 5, Comedy 7,
+Fairness 8.** Fairness is the highest this loop has recorded, and the closing
+sentence is the one to carry forward:
+
+> *"**No CHEAP DEATH observed.** Both endings are named in plain text inside the
+> panel before they trigger, every irritation penalty is labelled with its cause
+> and magnitude at the moment it lands, and the ending card states the reason in a
+> full sentence... On fairness this game is in good shape; **on legibility it is
+> throwing that fairness away, because a stranger on a stream cannot see any of
+> the warnings it is so carefully giving.**"*
+
+That is the whole state of the build in one line.
+
+**The control fix worked.** *"It reads live in every single frame, never
+greyed."* Three iterations to get there — a misleading word, then a mask over the
+face, then a bar too short to see — and this pass found the fourth form of the
+same bug: the 14 px bar sat on the button's bottom edge, the button sits at the
+bottom of the frame, and the viewport cropped it. *"Present only as a sliver."*
+It is a full-height wipe across the face now: 28 px, uncroppable, unmistakably
+filling.
+
+**And the other two fixes were right in kind and too small in degree.** The pay
+line became a 3 px notch in a dark cut and is still reported as *"~2px, unlabelled,
+rendered in the same green as the fill"*; the badge cleared the bar by 2 px and is
+still *"touching the top of the belly bar"*. Both are the D92 lesson — the
+audience gets half of what is authored — applied by me, one iteration after I
+wrote it down, at not quite twice.
+
+**This is the readability wall, and it is a sizing problem, not a design one.**
+Every named element is now correct: it exists, it says the right thing, it names
+the right meter, it appears at the right moment. The critic can decode each one
+when shown a close-up and cannot read most of them on a strip. The remaining work
+is not another round of markers — it is the HUD's type and stroke scale as a
+whole, which is a deliberate pass, not a fix.
+
+**All five gates pass — thirty-second consecutive iteration**, identical for the
+thirteenth running. 36 tests green, fixtures byte-identical.
 
 ---
 
