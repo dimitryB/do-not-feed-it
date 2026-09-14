@@ -2302,6 +2302,92 @@ seconds — which for a naive player is half their life. Iteration 33.
 
 ---
 
+## Iteration 33 — two deaths, two warnings, and the words written down
+
+Three faults, all from the same critic pass, all structural rather than cosmetic.
+
+**One caption slot could not serve two deaths, so there are two.** D76 put the
+consequence on the meter; D78 then had to *choose* between them, and choosing is
+what the fault was:
+
+> *"It is only ever right about one of the two deaths. At hud-0200 IRRITATION is
+> at 80 % with the bar nearly full, and the only full-width red text on screen is
+> pointing at the other meter."*
+
+No rule for picking fixes that. `kitchen-destroyed` is the plurality ending
+across the whole population — 200/200 naive, 101/200 moderate, 58/200 good — and
+under D78 it lost the slot every time starvation was worse, which is exactly the
+end of a long run. There are two bars, so there are two captions, and at 2 %
+fullness and 80 % irritation **both are true and both are shown**. That is not a
+compromise; it is the honest reading of the state.
+
+**The thresholds were too low to carry information.** *"That same banner was
+already on screen at hud-0140 when FULLNESS was 45 % and rising. A warning
+displayed identically at 45 %-and-climbing and at 2 %-and-dying carries no
+information at the moment it matters."* Halfway is not trouble. They start at
+35 % fullness and 65 % irritation, and the alpha tracks how far past the line the
+run has gone, so the warning gets louder the way the danger does.
+
+**The rule that kills the naive cohort arrived after the naive cohort was dead.**
+Found by holding a frame's timestamp against the bot table, which no previous
+critic had done:
+
+> *"The rule that kills the entire naive cohort is first shown at 01:41 — 2.8x
+> longer than a naive run survives. Every one of those 200 kitchen-destroyed runs
+> ended from a mechanic the game had not yet mentioned."*
+
+The coaching line naming irritation's consequence waited for rage 35. A naive run
+is over at a median 28.6 seconds, and the aim tips hold the slot until then. It
+now arrives at 20, which is early enough that a player who is missing hears why
+while they can still act on it.
+
+**And the track stopped asking to be inferred.** Three critics decoded it three
+ways; the last could not reconcile the marker with the creature's visible mouth
+at all, which is fair, because the marker is not the mouth — it is the serving,
+and the track is the future. Rather than redraw it a fourth time, the row now
+says so: `NOW -> 1.5s` across the track, and the marker carries `LANDS` or
+`TOO LATE` in the same words the game already uses when it charges you for
+getting it wrong. Two labels replaced two iterations of redrawing.
+
+**All five gates pass — twenty-sixth consecutive iteration**, identical for the
+seventh running.
+
+**Critic: Agency 8, Consequence 9, Tension 7, Readability 5, Comedy 7,
+Fairness 5.** Fairness recovered a point and the floor rose from 4 to 5.
+
+Two of the three faults are **my words colliding with the game's own vocabulary**,
+which is a better class of problem than the last two iterations had, and both are
+cheap:
+
+> *"`hud-0200` prints **FULL — IT WRECKS THE KITCHEN** directly beneath
+> **FULLNESS 2% · BELOW PAY LINE**."*
+
+Both captions were correct and both dangers were live — that is D80 working. But
+"FULL" is the name of the *other meter*, so a caption about irritation reads as a
+caption about fullness. Same mistake in the other row: `EMPTY` and `FULL` are
+states of a bar called FULLNESS. The captions have to name their own meter.
+
+> *"`hud-0120`: MOUTH row reads **TOO LATE** while the creature's mouth is
+> rendered fully open."*
+
+Correct behaviour, unreadable wording. `TOO LATE` is past tense, and the marker is
+a *prediction* — it is where the serving arrives, not where the mouth is. Borrowed
+from the miss label, it says "you already missed" about a shot not yet fired. The
+words have to be future tense.
+
+**And one real finding, the strongest in several passes:**
+
+> *"Empty-belly is 142/200 good-bot deaths... fullness drops 43 points in 19
+> seconds and the run ends at 02:01. **Nothing anywhere on screen states that
+> drain rate, or how many seconds of belly you have left.** The player is given a
+> percentage with no derivative."*
+
+That is exactly the fault iteration 29 fixed for the mouth and never noticed
+applied here too. The mouth got a future; the belly has only a present. And the
+majority death is the belly.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s

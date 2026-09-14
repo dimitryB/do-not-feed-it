@@ -615,7 +615,7 @@ export function createScene(){
       // The plate grew twice: once for the row where each meter says what it
       // DOES, and once for MOUTH — the timing track, which used to float under
       // the creature's chin.
-      ctx.fillStyle='#040909b0';ctx.beginPath();ctx.roundRect(x-14,y-56,w+28,124,11);ctx.fill();
+      ctx.fillStyle='#040909b0';ctx.beginPath();ctx.roundRect(x-14,y-76,w+28,162,11);ctx.fill();
       ctx.strokeStyle='#5d6b5540';ctx.lineWidth=1;ctx.stroke();
       // ---- MOUTH: the next second and a half of the swallow window ----
       //
@@ -633,9 +633,17 @@ export function createScene(){
       // reads the other two numbers off: fixed place, fixed width, labelled, and
       // 296 px instead of 118.
       {
-        const SPAN=90;const CELL=3;const my=y-40;const H=13;
+        const SPAN=90;const CELL=3;const my=y-30;const H=13;
         ctx.font="700 14px ui-monospace,monospace";ctx.textAlign='left';
-        ctx.fillStyle='#dbe5d3';ctx.fillText('MOUTH',x,my-11);
+        ctx.fillStyle='#dbe5d3';ctx.fillText('MOUTH',x,my-28);
+        // The row is read wrong without words on it. Three critics decoded the
+        // track three different ways, and the last one could not reconcile the
+        // marker with the creature's visible mouth at all — because the marker
+        // is not the mouth, it is the SERVING, and the track is the future. Two
+        // labels say so: the left end is NOW, the marker LANDS. Everything the
+        // reader was being asked to infer is now written down.
+        ctx.font="700 14px ui-monospace,monospace";ctx.textAlign='right';
+        ctx.fillStyle='#93a58c';ctx.fillText('NOW \u2192 1.5s',x+w,my-28);
         ctx.fillStyle='#101a14';ctx.beginPath();ctx.roundRect(x,my-H/2,w,H,4);ctx.fill();
         ctx.save();
         ctx.beginPath();ctx.roundRect(x,my-H/2,w,H,4);ctx.clip();
@@ -665,6 +673,11 @@ export function createScene(){
           ctx.fillStyle=COLORS[selected];
           ctx.beginPath();ctx.arc(mx,my-H/2-14,6,0,Math.PI*2);ctx.fill();
           ctx.strokeStyle=lands?'#0f2018':'#ff9c72';ctx.lineWidth=2;ctx.stroke();
+          // What the dot IS, in one word, on the side of the track it fits.
+          ctx.font="700 14px ui-monospace,monospace";
+          ctx.textAlign=mx>x+w*0.62?'right':'left';
+          ctx.fillStyle=lands?'#d8f896':'#ff9c72';
+          ctx.fillText(lands?'LANDS':'TOO LATE',mx+(mx>x+w*0.62?-13:13),my-H/2-10);
           if(!lands){
             // A shape, not only a hue. Every gameplay-critical cue here has a
             // visual twin, and a colour is not one on a compressed stream of a
@@ -721,46 +734,46 @@ export function createScene(){
           ctx.fillRect(x+w*(TUNING.payFloor/100)-1,by-7,2,17);
         }
       }
-      // WHAT THE BAR DOES TO YOU, on the bar.
+      // WHAT EACH BAR DOES TO YOU, ON EACH BAR.
       //
-      // A critic reading only the captures found the loop's oldest and worst
-      // fault here: "a player watching a bar labelled IRRITATION has no reason
-      // to know it is a structural HP bar for a building they cannot see."
-      // `kitchen-destroyed` is 101 of 200 moderate runs — the majority failure
-      // at ordinary skill — and what the bar does at 100 was stated exactly
-      // once, in the smallest text on screen, in the corner nobody watches.
-      // IRRITATION is the mechanic's name; it is not the consequence's name.
+      // D76 put the consequence on the meter, and D78 then had to CHOOSE between
+      // the two because there was one slot. A critic found what choosing costs:
+      // "it is only ever right about one of the two deaths... IRRITATION is at
+      // 80 % with the bar nearly full, and the only full-width red text on
+      // screen is pointing at the other meter." `kitchen-destroyed` is the
+      // plurality ending across the whole population and it is the one that
+      // loses the slot whenever starvation is worse.
       //
-      // The consequence appears on whichever meter is in its dangerous half, so
-      // it is a warning rather than permanent furniture, and it names the thing
-      // that actually happens rather than the emotion that causes it.
+      // There is no rule for picking that fixes that. There are two bars, so
+      // there are two captions, and both can be true at once — which at 2 %
+      // fullness and 80 % irritation is exactly the situation.
+      //
+      // The thresholds moved up, too. At the old halfway mark the banner was on
+      // at 45 % fullness AND RISING and identical at 2 % and dying: "a warning
+      // displayed identically at 45 %-and-climbing and at 2 %-and-dying carries
+      // no information at the moment it matters." They now start where the run
+      // is actually in trouble, and the alpha tracks how much trouble.
       {
-        // WHICHEVER IS NEARER KILLING YOU, not whichever was tested first.
-        //
-        // The first version asked "is irritation past half?" and only then
-        // looked at fullness, so a run at 2 % fullness and 80 % irritation was
-        // told the kitchen was in danger and was eaten a second later. A critic
-        // measured it: the one line naming how the player is about to die was
-        // "anti-correlated with actual danger in 2 of 3 samples". Both bars
-        // already compute a distance to their own lethal end; the caption takes
-        // the larger, and there is no precedence to get wrong.
-        const starving=1-fullness;
-        const doom=Math.max(irritation,starving)<0.5?null
-                  :starving>=irritation
-                    ?{text:'EMPTY — IT EATS YOU',tint:starving>0.75?'#ff8a6a':'#eea66d',lvl:starving}
-                    :{text:'FULL — IT WRECKS THE KITCHEN',tint:irritation>0.75?'#ff8a6a':'#eea66d',lvl:irritation};
-        if(doom){
-          ctx.font="700 14px ui-monospace,monospace";ctx.textAlign='center';
-          ctx.globalAlpha=reduced?1:.72+.28*Math.min(1,(doom.lvl-.5)*2);
-          ctx.fillStyle=doom.tint;
-          ctx.fillText(doom.text,x+w/2,y+56);
-          ctx.globalAlpha=1;
+        ctx.font="700 14px ui-monospace,monospace";ctx.textAlign='center';
+        const warn=[
+          {on:fullness<=0.35,text:'EMPTY — IT EATS YOU',lvl:(0.35-fullness)/0.35},
+          {on:irritation>=0.65,text:'FULL — IT WRECKS THE KITCHEN',lvl:(irritation-0.65)/0.35},
+        ];
+        let slot=0;
+        for(const wrn of warn){
+          if(!wrn.on)continue;
+          const heat=Math.max(0,Math.min(1,wrn.lvl));
+          ctx.globalAlpha=reduced?1:.62+.38*heat;
+          ctx.fillStyle=heat>0.5?'#ff8a6a':'#eea66d';
+          ctx.fillText(wrn.text,x+w/2,y+56+slot*19);
+          slot+=1;
         }
+        ctx.globalAlpha=1;
       }
       if(fullness<0.25&&!reduced){
         ctx.globalAlpha=.35+.35*Math.abs(Math.sin(time*7));
         ctx.strokeStyle='#ff6a4d';ctx.lineWidth=2.5;
-        ctx.beginPath();ctx.roundRect(x-14,y-56,w+28,124,11);ctx.stroke();
+        ctx.beginPath();ctx.roundRect(x-14,y-76,w+28,162,11);ctx.stroke();
       }
       ctx.restore();
     }
