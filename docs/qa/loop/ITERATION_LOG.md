@@ -2746,6 +2746,42 @@ whichever side has room.
 
 ---
 
+## Iteration 38 — three markers that did not survive the downscale
+
+The critic's per-frame table was the useful thing, not its scores:
+
+> *"The Launch pill is **pixel-identical across all six frames** — 101 seconds
+> apart, across three mutations, a size change from x1.28 to x1.82, an irritation
+> swing from 2 % to 80 %."*
+
+Iteration 38 had already made the reload an inset bar rather than a mask over the
+face — the right fix. The bar was 7 px, which is **3 px at 960**, so nothing it
+did was visible at the resolution the game is judged at. The control was correct
+and mute. It is 14 px now, and it fills in the accent colour against a dark
+channel, so the state it reports can actually be seen.
+
+Same fault, twice more, both found by a reader and neither by any check I run:
+
+- **The pay line was a hairline.** D70 drew it at 2 px, which is 1 px at 960, and
+  the critic — looking at the frame where SHIFT PAY reads `STALLED` — reported that
+  the game *"penalises you against a threshold it refuses to draw."* It was drawn.
+  It was invisible, which is the same thing. It is a 3 px notch in a dark cut, with
+  a chevron cap, and it survives the downscale.
+- **The badge was kissing the bar's top edge** by a single pixel, which the critic
+  measured and reported as covering it. Moved clear.
+
+**Three faults, one shape.** Every one was an element that was *correct in the
+code and absent from the picture* — a 1 px tick, a 3 px bar, a 1 px overlap. This
+loop has a 960 px capture rig, a downscaled check habit since D74, and it still
+authored three markers at 1920 px and shipped them. The habit has to be arithmetic,
+not a glance: **anything load-bearing gets drawn at twice what looks sufficient,
+because half of it is what the audience gets.**
+
+**All five gates pass — thirty-first consecutive iteration**, identical for the
+twelfth running.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s

@@ -19,8 +19,12 @@
    charge, which is the instant after every shot, so the control spent most of
    a shift dark olive with grey text and a critic read it as disabled in five
    of six frames. The face stays bright accent at all times. */
-.launch-button:disabled:after{content:'';position:absolute;left:0;right:0;bottom:0;height:7px;background:#20301f;opacity:.85}
-.launch-button:disabled:before{content:'';position:absolute;left:0;bottom:0;height:7px;width:var(--reload);background:#2b3a2b;z-index:1}
+/* The charge bar is tall enough to survive the downscale. At 7px it was 3px at
+   960 and a critic called the control "pixel-identical across all six frames" —
+   correct: nothing it did was visible at the resolution it is judged at. The
+   face stays bright; the bar is 14px and dark against it, and it retreats. */
+.launch-button:disabled:after{content:'';position:absolute;left:0;right:0;bottom:0;height:14px;background:#1c2a1b;opacity:.9}
+.launch-button:disabled:before{content:'';position:absolute;left:0;bottom:0;height:14px;width:var(--reload);background:var(--accent);z-index:1}
 /* Charging, never disabled-looking. Removing the word "Reloading" left the
    greyed STYLING, and a critic found the pill dimmed on the frame immediately
    before the player starved: "a fire button that goes grey while the player is
