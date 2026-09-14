@@ -1,4 +1,4 @@
-import { ARENA, FOODS, MUTATION_NAMES, MUTATION_RULES, TUNING, apertureAhead, getHazard, previewFlight, type ArcadeState, type Ingredient } from '../game/arcade';
+import { ARENA, FOODS, MUTATION_NAMES, MUTATION_RULES, TUNING, apertureAhead, drainPerTick, getHazard, previewFlight, type ArcadeState, type Ingredient } from '../game/arcade';
 import { CreatureAnimator } from './creature/pose';
 import { buildRig, type CreatureRig } from './creature/rig';
 import { drawCreature } from './creature/draw';
@@ -677,7 +677,11 @@ export function createScene(){
           ctx.font="700 14px ui-monospace,monospace";
           ctx.textAlign=mx>x+w*0.62?'right':'left';
           ctx.fillStyle=lands?'#d8f896':'#ff9c72';
-          ctx.fillText(lands?'LANDS':'TOO LATE',mx+(mx>x+w*0.62?-13:13),my-H/2-10);
+          // Future tense, because the marker is a PREDICTION. Borrowed from the
+          // miss label, "TOO LATE" is past tense and says "you already missed"
+          // about a shot not yet fired — a critic read it as the panel
+          // contradicting a visibly open mouth. It is not about now.
+          ctx.fillText(lands?'OPEN THEN':'SHUT THEN',mx+(mx>x+w*0.62?-13:13),my-H/2-10);
           if(!lands){
             // A shape, not only a hue. Every gameplay-critical cue here has a
             // visual twin, and a colour is not one on a compressed stream of a
@@ -726,6 +730,38 @@ export function createScene(){
           ctx.strokeStyle=tint;ctx.lineWidth=1;ctx.stroke();
           ctx.textAlign='center';ctx.fillStyle=tint;ctx.fillText(label,x+w/2,by-11);
         }
+        // WHERE THE BELLY WILL BE IN TEN SECONDS if nothing lands.
+        //
+        // D72 gave the mouth a future and the belly kept only a present, and the
+        // belly is the majority death — 142 of 200 good-bot runs. A critic named
+        // the gap: "the player is given a percentage with no derivative... no
+        // visible way to know they have 19 seconds to live." The drain is not
+        // even constant; it climbs with the size and appetite the player has
+        // spent all shift raising, so the bar falls faster the better the run
+        // has gone, and nothing said so.
+        //
+        // It is the same grammar the MOUTH row uses — a hollow "then" against a
+        // solid "now" — and it is the rules' own expression, asked for rather
+        // than reimplemented. Ten seconds is about one reload plus one flight,
+        // which is the shortest interval a player can actually do anything in.
+        if(i===0){
+          const soon=Math.max(0,fullness-drainPerTick(state)*10*ARENA.tickRate/100);
+          if(soon<fullness-0.004){
+            // An arrowhead pointing back down the bar, not another vertical
+            // tick: the pay line is already a vertical tick on this same bar,
+            // and two thin uprights a few pixels apart is how a reader gets a
+            // forecast confused with a threshold. A chevron says "heading this
+            // way"; a line says "a boundary is here".
+            const sx=x+w*soon;
+            ctx.save();
+            ctx.fillStyle=soon<=0.02?'#ff8a6a':'#f0d9a0';
+            ctx.strokeStyle='rgba(6,16,14,.8)';ctx.lineWidth=2.5;
+            ctx.beginPath();
+            ctx.moveTo(sx,by+3);ctx.lineTo(sx+8,by-5);ctx.lineTo(sx+8,by+11);
+            ctx.closePath();ctx.stroke();ctx.fill();
+            ctx.restore();
+          }
+        }
         // The pay line is drawn on the fullness bar at all times, not only once
         // it has been crossed. A threshold you can only see after you have
         // fallen through it is a warning that arrives too late to act on.
@@ -755,9 +791,14 @@ export function createScene(){
       // is actually in trouble, and the alpha tracks how much trouble.
       {
         ctx.font="700 14px ui-monospace,monospace";ctx.textAlign='center';
+        // Each caption names ITS OWN meter. "FULL" and "EMPTY" are states of a
+        // bar called FULLNESS, so a caption reading "FULL — IT WRECKS THE
+        // KITCHEN" under a bar reading FULLNESS 2 % was read by a critic as a
+        // claim about fullness — which is the opposite of what was happening.
+        // Both captions were correct and the vocabulary was not.
         const warn=[
-          {on:fullness<=0.35,text:'EMPTY — IT EATS YOU',lvl:(0.35-fullness)/0.35},
-          {on:irritation>=0.65,text:'FULL — IT WRECKS THE KITCHEN',lvl:(irritation-0.65)/0.35},
+          {on:fullness<=0.35,text:'BELLY EMPTY — IT EATS YOU',lvl:(0.35-fullness)/0.35},
+          {on:irritation>=0.65,text:'IRRITATION FULL — IT WRECKS THE KITCHEN',lvl:(irritation-0.65)/0.35},
         ];
         let slot=0;
         for(const wrn of warn){

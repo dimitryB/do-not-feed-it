@@ -44,6 +44,12 @@ try {
     await page.evaluate((s) => {
       const play = window.__dnfi.play;
       play.start();
+      // Past the opening grace period, or the belly does not drain yet and the
+      // ten-second forecast has nothing to forecast.
+      play.manual(true);
+      play.step(360);
+      play.manual(false);
+      play.setSize(s.size ?? 1.6);
       play.vitals({ hunger: s.hunger, rage: s.rage, paidTicks: s.paidTicks });
       if (s.aim !== undefined) play.point(s.aim);
       if (s.hold) play.hold(true);

@@ -478,6 +478,25 @@ export const MUTATION_RULES: Record<Ingredient, string> = {
 };
 
 /** The shift's pay rate: everything scored is multiplied by this. */
+/**
+ * How much fullness the belly loses per tick, right now.
+ *
+ * The mouth got a future at D72 and the belly never did, and the belly is the
+ * majority death: 142 of 200 good-bot runs and 99 of 200 moderate ones. A critic
+ * put the gap precisely — "the player is given a percentage with no derivative...
+ * a player watching FULLNESS 45 % has no visible way to know they have 19 seconds
+ * to live." The drain is not a constant: it scales with size and appetite, both
+ * of which the player has been raising all shift by doing the only thing that
+ * keeps them alive.
+ *
+ * A readout, not a rule. It computes exactly the expression `stepArcade` applies,
+ * from the same fields, so the two cannot disagree.
+ */
+export function drainPerTick(state: ArcadeState): number {
+  if (state.tick <= TUNING.graceTicks) return 0;
+  return quantize((TUNING.drainBase + (state.creature.size - 1) * TUNING.drainPerSize) * state.appetite);
+}
+
 export function payRate(paidTicks: number): number {
   return quantize(1 + (paidTicks / (60 * ARENA.tickRate)) * TUNING.payPerMinute);
 }

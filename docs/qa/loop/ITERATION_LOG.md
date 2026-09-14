@@ -2388,6 +2388,98 @@ majority death is the belly.
 
 ---
 
+## Iteration 34 — the belly gets a future, and the captions stop borrowing words
+
+**The majority death had no derivative.** Iteration 29 gave the mouth a future
+because the rules bill by where it will be, not where it is; thirty-three
+iterations later a critic pointed out that the belly never got the same
+treatment, and the belly is what kills most runs — 142 of 200 good-bot shifts and
+99 of 200 moderate:
+
+> *"Fullness drops 43 points in 19 seconds and the run ends at 02:01. **Nothing
+> anywhere on screen states that drain rate, or how many seconds of belly you
+> have left.** The player is given a percentage with no derivative."*
+
+Worse than missing: misleading, because the drain is not a constant. It scales
+with size and appetite, both of which the player has spent the whole shift
+raising by doing the only thing that keeps them alive. So the bar falls faster
+the better the run has gone, and nothing said so.
+
+The fullness bar now carries a chevron at the level the belly reaches in **ten
+seconds if nothing lands** — the same now-against-then grammar the MOUTH row
+uses, one reload plus one flight, which is the shortest interval a player can
+actually act inside. `drainPerTick` is exported from the rules and computes the
+exact expression `stepArcade` applies, so the forecast cannot drift from the
+drain.
+
+It is a chevron and not a tick deliberately: the pay line is already a vertical
+tick on that same bar, and two thin uprights a few pixels apart is precisely how
+a reader confuses a forecast with a threshold. A chevron says *heading this way*;
+a line says *a boundary is here*.
+
+**Two captions were borrowing each other's vocabulary.** Both were correct, and
+both read wrong:
+
+- `FULL — IT WRECKS THE KITCHEN` under a bar reading `FULLNESS 2%`. "FULL" is the
+  name of the other meter, so a caption about irritation parsed as a claim about
+  fullness — the exact inversion of what was happening. They now name their own
+  meter: `BELLY EMPTY — IT EATS YOU`, `IRRITATION FULL — IT WRECKS THE KITCHEN`.
+- `TOO LATE` on the arrival marker, borrowed from the miss label. That label is
+  past tense and the marker is a *prediction*, so the panel appeared to say "you
+  already missed" about a shot not yet fired, over a visibly open mouth. It reads
+  `OPEN THEN` or `SHUT THEN`, which is the tense it was always reporting in.
+
+Three iterations of redrawing the track were beaten by putting the right two
+words on it. That is worth recording as a habit and not just a fix.
+
+**One reported fault was a sampling artefact and is recorded rather than acted
+on.** The critic found `Reloading` in 6 of 6 close-ups and inferred the launcher
+might be permanently busy. The button does read `Launch` when ready, is disabled
+and dimmed when not, and the launcher carries a ring that fills as the reload
+finishes (D55) — but every HUD capture is taken at a feed or mutation event,
+which is always moments after a shot. The harness chooses the worst possible
+moment to ask "can I fire?", six times out of six. Nothing is wrong with the
+game; the instrument is aimed badly, and that is a note for the capture script.
+
+**All five gates pass — twenty-seventh consecutive iteration**, identical for the
+eighth running.
+
+**Critic: Agency 8, Consequence 9, Tension 8, Readability 5, Comedy 8,
+Fairness 7.** The best pass since iteration 29: **"No cheap death."** Fairness up
+two, Tension up one, Comedy up one, nothing down.
+
+The critic decoded the new belly forecast correctly — and only by measuring six
+frames against their printed percentages:
+
+> *"It is a projection... it consistently sits 18-33 percentage points below the
+> stated figure... The growing gap (18 -> 33) as ITS SIZE grows (1.28 -> 1.82)
+> fits a drain-rate projection... **Could I work that out from the captures? No.**
+> It is rendered in the same green as the fill it sits on top of."*
+
+The reasoning is right, the information is there, and it is invisible — a chevron
+in the fill's own colour, unlabelled. Same mistake as the mouth track made twice:
+the readout works and does not say what it is.
+
+**And the meter has the wrong name.** This is the sharpest observation in
+thirty-four iterations of criticism:
+
+> *"`BELLY EMPTY — IT EATS YOU` and `IRRITATION FULL — IT WRECKS THE KITCHEN`
+> render in identical red, stacked, immediately below a meter labelled
+> **FULLNESS**. Neither belly warning ever uses the word FULLNESS; the irritation
+> warning does use the word FULL. **A stranger reading upward concludes that
+> filling the belly wrecks the kitchen — the precise inverse of the rule.**"*
+
+Iteration 34 renamed the captions to stop them borrowing each other's words, and
+picked the wrong side. Every warning, the coaching line and the ending card all
+say *belly*; only the meter says FULLNESS. The meter is the outlier, and renaming
+it is one word.
+
+Third: the irritation caption is silent at 56 % and first speaks at 80 %. D80
+moved the threshold up because halfway carried no information; 65 % went too far
+for the meter that fills in a hurry.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s
