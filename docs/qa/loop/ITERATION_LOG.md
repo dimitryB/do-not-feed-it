@@ -2042,6 +2042,101 @@ low-contrast colours on pale flesh. That is iteration 30.
 
 ---
 
+## Iteration 30 — making the instrument readable, and an honest number
+
+Iteration 29 closed the cheap death and the thing that closed it became the top
+fault. The critic's words: *"~130 px of olive-yellow and dull red painted on a
+pale-green belly, unlabelled, no legend... At stream scale this element transmits
+zero bits."* And the specific decode failure, worth quoting because it is the
+whole lesson:
+
+> *"hud-0120: tick right of the lit segment, mouth **wide open**. hud-0140: tick
+> right of the lit segment, mouth **closed**. Same bar state, opposite mouth
+> state. I cannot build a rule that survives all four."*
+
+That is not a contradiction in the widget. The strip is the **future**: its left
+edge is *now*, and the critic was reading the notch against the lit segment as
+the present. But a careful reader who decodes a widget backwards has found a
+defect in the widget, not in themselves. Three things were missing and are now
+there:
+
+- **A plate.** The strip drew straight onto whatever the creature had mutated
+  into, which by the second minute is pale. It sits on its own near-opaque dark
+  plate, so it is never olive on olive.
+- **A NOW mark.** A caret at the left edge, pointing right. Without one, a strip
+  of lit and dark blocks is a bar chart of nothing — and that single missing
+  glyph is what made the reading reversible.
+- **A serving, not a playhead.** The marker is a dot in the loaded ingredient's
+  own colour on a stem, which is the grammar a serving in flight already uses
+  (D67). It reads "my food lands here" rather than "a cursor is at this time".
+
+Checked at the resolution it is judged at: the frame was downscaled to 960 px
+before looking at it, which is the only honest way to check a readability fix and
+is not what the previous two iterations did.
+
+**The silent meter got its label.** The critic, again correctly: irritation fell
+nine points between two sampled moments with *"no banner, no floating number, no
+colour flash, in a game that otherwise annotates a 2.5-point increase with a
+full-width label."* A feed calms it, and that was the one movement on the doom
+meter carrying no number. It now reads `-N IRRITATION` in the same breath as the
+label, on the rules' own figure — and because a craved serving is worth more of
+it, the argument for honouring a craving is now made visible at the moment it
+pays.
+
+### The render number, stated properly
+
+This iteration's honest figure is **not** the passing run. Six measurements of
+the same build, worst state: **4.13, 3.87, 4.01, 4.05, 3.92, 4.00** — a median at
+the line, not under it, with run-to-run noise of about +/-0.13 ms. The `rig` term
+alone swung 3.04-3.45 ms across runs of *identical code*, which is larger than
+anything the strip could cost, so three rounds of cutting my own draw calls moved
+nothing measurable. Some of the spread was a machine with stale dev servers on
+it, and a clean machine reads 3.92/3.96 — but reporting that run alone would be
+choosing the number rather than measuring it.
+
+So: **D62 is re-opened.** The build sits AT the 4 ms budget, not inside it. The
+arithmetic says where the remaining work is and it is not in the HUD: the warp is
+3.3 ms of a 4 ms budget, and everything drawn on top of it — meters, labels,
+mutations, ring, strip — is about 0.6 ms together. No further HUD cut can buy
+meaningful headroom. The warp grid is the term, D64 already recorded that 29x23
+tears, and that is the next real piece of work rather than another round of
+shaving rectangles.
+
+**All five gates pass — twenty-third consecutive iteration**, identical to the
+decimal for the fourth running.
+
+**Critic: Agency 9, Consequence 9, Tension 8, Readability 5, Comedy 7,
+Fairness 6.**
+
+The strip now decodes. Iteration 29's critic got *"zero bits"*; this one read it
+straight off the frames — *"a swallow-window timing track... the coloured dot is
+the predicted arrival time of the food currently in flight. You want the dot to
+land on a lit segment"* — and called the idea *"the best on the screen"*. It
+still wants it off the creature's mottled belly and at brutal contrast, and it is
+right that it now rhymes with the reload bar at the bottom of the frame.
+
+**But a new cheap death, and it has been true since stage one.** This is the best
+finding any critic has made against this build:
+
+> **CHEAP DEATH — the kitchen has no meter, and it kills half your runs.**
+> *"`kitchen-destroyed` is 101/200 moderate runs and 58/200 good runs... there is
+> no kitchen health bar, no structural damage indicator, nothing. A player
+> watching a bar labelled IRRITATION has no reason to know it is a structural HP
+> bar for a building they cannot see."*
+
+Every iteration of this loop has read that bar as the rage meter it is named
+after. It is not. It is one of the two things that end a shift, it ends more of
+them than starving does at moderate skill, and what it does at 100 is stated once,
+in the smallest text on the screen, in the corner nobody looks at. Iteration 31.
+
+And a plain bug, found only because the critic reads the frames in order:
+**the stage counter runs backwards.** `04 / THE LAST SERVING` at 1:20, `03 / IT
+NO LONGER FITS` at 1:41, `04` again at 2:00. D59 keyed act four to a condition
+rather than the clock, which fixed act four never appearing and made the ordinal
+non-monotonic — and "THE LAST SERVING" was demonstrably not the last, twice.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s

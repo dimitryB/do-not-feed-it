@@ -249,45 +249,57 @@ export function createScene(){
       // the fault a critic named a cheap death. `untilOpen` is negative while
       // the mouth is open and counts the ticks remaining, so the fuse is a
       // reading of the rules' own field, not a second clock.
-      // THE WINDOW, as a strip of the next second.
+      // THE WINDOW, as a strip of the next second and a half.
       //
       // The rules bill a shot by the aperture at the moment it ARRIVES, and a
-      // serving is most of a second in the air — so the whole timing skill was
+      // serving is most of a second in the air — so the timing skill was
       // leading a target whose future nothing on screen showed. The game's own
       // tip says "you have to catch the window"; it never drew the window. A
-      // critic given nothing but the captures called that a cheap death, and it
-      // was one.
+      // critic given nothing but the captures called that a cheap death; the
+      // next critic, shown this, reported none.
       //
-      // This is the next 90 ticks laid out left to right: lit where the rules
-      // say the mouth will be open wide enough to swallow, dark where it will
-      // not. The notch is where the serving currently aimed would land. The
-      // player reads one question off it — does my shot land in the light? —
-      // and the answer is the rules' own, asked through `apertureAhead`, not
-      // a second clock the renderer keeps for itself.
+      // The first version of the strip then became the top fault itself, and
+      // deservedly: two low-contrast colours painted straight onto pale flesh,
+      // nothing saying which end was NOW, and a careful reader decoded it
+      // backwards. Every fix below is aimed at that.
       //
-      // It replaces nothing. The brackets still say "about to open" and the
-      // ring still says "open now"; this says WHEN, which neither could.
+      //   - It sits on its own near-opaque plate, so it is never olive on
+      //     olive whatever the creature has mutated into.
+      //   - The left edge is marked NOW, with the arrow that says time runs to
+      //     the right. Without it the strip is a bar chart of nothing.
+      //   - The marker is the SERVING — a dot in the loaded ingredient's own
+      //     colour, the same grammar a serving in flight already uses — so it
+      //     reads as "my food lands here" rather than as a playhead.
       {
         const SPAN=90;const CELL=3;
-        const fw=Math.max(104,c.rx*1.25);
-        const fy=c.y+Math.max(c.ry*Math.max(.3,c.open),20)+18;
+        const fw=Math.max(118,c.rx*1.3);
+        const fy=c.y+Math.max(c.ry*Math.max(.3,c.open),20)+26;
         const x0=c.x-fw/2;
+        const H=11;
         ctx.setLineDash([]);
-        ctx.fillStyle='rgba(6,16,14,.62)';
-        ctx.beginPath();ctx.roundRect(x0,fy-5,fw,10,5);ctx.fill();
+        // The plate. Near-opaque and wider than the track, because the whole
+        // fault was contrast against whatever the belly happens to be today.
+        // One opaque plate and no outline on it. Measured: the outline, the
+        // track's own background fill and the marker's second stroke together
+        // put the frame back over budget, and an opaque plate against the
+        // creature needs none of them to separate.
+        ctx.fillStyle='rgba(4,12,10,.94)';
+        ctx.beginPath();ctx.roundRect(x0-16,fy-H/2-5,fw+22,H+10,7);ctx.fill();
+        // NOW, and the direction time runs. A caret at the left edge.
+        ctx.fillStyle='#eff4bd';
+        ctx.beginPath();ctx.moveTo(x0-13,fy-6);ctx.lineTo(x0-5,fy);ctx.lineTo(x0-13,fy+6);ctx.closePath();ctx.fill();
+        // The track: lit where the rules say it will be open wide enough to
+        // swallow. One fill per open RUN, not one per sampled tick — cell by
+        // cell this cost 0.14 ms a frame and put the render over budget.
         ctx.save();
-        ctx.beginPath();ctx.roundRect(x0,fy-5,fw,10,5);ctx.clip();
-        // One fill per open RUN, not one per sampled tick. Drawn cell by cell
-        // this cost 0.14 ms a frame and put the whole render over budget; the
-        // windows are two or three unbroken stretches, so that is two or three
-        // rectangles.
+        ctx.beginPath();ctx.roundRect(x0,fy-H/2,fw,H,3);ctx.clip();
         ctx.fillStyle='#d8f896';
         let runStart=-1;
         for(let t=0;t<=SPAN;t+=CELL){
           const lit=t<SPAN&&apertureAhead(c,t)>=TUNING.openMin;
           if(lit&&runStart<0)runStart=t;
           else if(!lit&&runStart>=0){
-            ctx.fillRect(x0+fw*(runStart/SPAN),fy-5,fw*((t-runStart)/SPAN),10);
+            ctx.fillRect(x0+fw*(runStart/SPAN),fy-H/2,fw*((t-runStart)/SPAN),H);
             runStart=-1;
           }
         }
@@ -295,21 +307,27 @@ export function createScene(){
         if(flight.settled){
           const lands=apertureAhead(c,flight.ticks)>=TUNING.openMin;
           const mx=x0+fw*Math.min(1,flight.ticks/SPAN);
-          ctx.fillStyle=lands?'#16301f':'#7a1f0f';
-          ctx.fillRect(mx-1.5,fy-9,3,18);
+          // A stem down to the track, so the dot is tied to a position on it
+          // and not floating over the creature.
+          // One stem, drawn as a dark-cored bar rather than two strokes: a
+          // 4 px dark rect with a 2 px bright one inside it reads the same and
+          // costs two fills instead of two paths and two strokes.
+          ctx.fillStyle='rgba(4,12,10,.92)';ctx.fillRect(mx-2.5,fy-H/2-11,5,H+11);
+          ctx.fillStyle=lands?'#eff4bd':'#ff9c72';ctx.fillRect(mx-1,fy-H/2-11,2,H+11);
+          ctx.fillStyle=COLORS[selected];
+          ctx.beginPath();ctx.arc(mx,fy-H/2-13,5.5,0,Math.PI*2);ctx.fill();
+          ctx.strokeStyle=lands?'#0f2018':'#ff9c72';ctx.lineWidth=2;ctx.stroke();
           if(!lands){
             // A shape, not only a hue. Every gameplay-critical cue here has a
             // visual twin, and a colour is not one on a compressed stream of a
             // kitchen already lit orange.
-            ctx.strokeStyle='#f6a074';ctx.lineWidth=2;ctx.lineCap='round';
+            ctx.strokeStyle='#ff9c72';ctx.lineWidth=2.4;ctx.lineCap='round';
             ctx.beginPath();
-            ctx.moveTo(mx-4,fy-15);ctx.lineTo(mx+4,fy-7);
-            ctx.moveTo(mx+4,fy-15);ctx.lineTo(mx-4,fy-7);
+            ctx.moveTo(mx-4,fy-H/2-17);ctx.lineTo(mx+4,fy-H/2-9);
+            ctx.moveTo(mx+4,fy-H/2-17);ctx.lineTo(mx-4,fy-H/2-9);
             ctx.stroke();
           }
         }
-        ctx.strokeStyle='rgba(6,16,14,.8)';ctx.lineWidth=1;
-        ctx.beginPath();ctx.roundRect(x0,fy-5,fw,10,5);ctx.stroke();
       }
       // The gap: where a snack will actually go in. Lit only while it is open
       // wide enough to accept one, and exactly the shape the rules test.
@@ -571,7 +589,20 @@ export function createScene(){
         // 8 % irritation had no way to learn they were twenty seconds from 100.
         // The costs are the rules' own: a snub 2.5, a miss 5.
         const cost=e.type==='snub'?TUNING.snubRage:e.type==='miss'?TUNING.missRage:0;
-        const text=cost>0?`${e.label}  +${cost} IRRITATION`:e.label;
+        // And what it BOUGHT BACK, on the same terms.
+        //
+        // A feed calms it, and that was the one movement on the doom meter with
+        // no label: a critic watching the captures saw irritation fall nine
+        // points between two sampled moments with "no banner, no floating
+        // number, no colour flash, in a game that otherwise annotates a
+        // 2.5-point increase with a full-width label", and could only guess a
+        // feed had caused it. A meter that relaxes in silence is a weaker
+        // threat and an unteachable one. The relief is the rules' own figure,
+        // and the craved serving is worth more of it — which is the whole
+        // argument for honouring a craving, made visible at the moment it pays.
+        const calm=e.type==='feed'?(e.craved?TUNING.cravingCalm:TUNING.feedRage):0;
+        const text=cost>0?`${e.label}  +${cost} IRRITATION`
+                  :calm>0?`${e.label}  −${calm} IRRITATION`:e.label;
         const w=ctx.measureText(text).width+22;
         let y=good?Math.max(74,86-(reduced?0:age*.4)):Math.max(70,e.y-46-(reduced?0:age*.55));
         const x=Math.max(w/2+16,Math.min(1184-w/2,e.x));
