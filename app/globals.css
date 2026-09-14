@@ -14,8 +14,21 @@
    whole shift, and four critics running read it as a broken gun. The label names
    the action and stays put; the fill says when. A 3px hairline was invisible at
    960px, so the fill sweeps the whole button. */
-.launch-button:disabled:after{content:'';position:absolute;inset:0;width:var(--reload);background:linear-gradient(90deg,#7f9358,#a9c46d);opacity:.55}
-.launch-button:disabled{opacity:1;background:#2b3a2b;border-color:#4a5a42;color:#c6d4b8}
+/* The reload is an inset bar along the bottom that FILLS. It is never a mask
+   over the button's face: the previous version covered the whole face at zero
+   charge, which is the instant after every shot, so the control spent most of
+   a shift dark olive with grey text and a critic read it as disabled in five
+   of six frames. The face stays bright accent at all times. */
+.launch-button:disabled:after{content:'';position:absolute;left:0;right:0;bottom:0;height:7px;background:#20301f;opacity:.85}
+.launch-button:disabled:before{content:'';position:absolute;left:0;bottom:0;height:7px;width:var(--reload);background:#2b3a2b;z-index:1}
+/* Charging, never disabled-looking. Removing the word "Reloading" left the
+   greyed STYLING, and a critic found the pill dimmed on the frame immediately
+   before the player starved: "a fire button that goes grey while the player is
+   dying is indistinguishable from the game having stopped accepting input."
+   The button keeps its full brightness and its colour at all times; the fill
+   sweeping across it is the only thing that changes. A charging thing fills. A
+   dead thing dims. It must never do the second. */
+.launch-button:disabled{opacity:1;background:var(--accent);border-color:var(--accent);color:#1b2519}
 .launch-button>*{position:relative;z-index:1}
 @media(min-width:651px) and (max-width:1000px){.vitals{display:grid}.ingredient{min-width:108px;padding-right:8px}.item-art{width:38px;height:42px}.ingredient-name{font-size:12px}.ingredient-desc{font-size:10px}.control-deck{gap:12px}.launch-area .primary-control{min-width:125px;padding:12px;gap:8px}.underbar-right>span{max-width:160px}.keyboard-guide{gap:8px}.brand p{display:none}.start-copy .lede{font-size:13px}.start-copy h2{margin:16px 0}.start-copy .primary-control{padding:11px 18px}}
 @media(max-width:650px){.stage{aspect-ratio:6/5}.start-copy{top:31%;left:6%;width:62%}.start-copy h2{font-size:clamp(36px,9vw,54px);margin:12px 0}.start-copy .lede{font-size:12px;line-height:1.4;max-width:200px;margin-bottom:14px}.start-copy .primary-control{padding:10px 14px;font-size:12px}.start-copy .section-tag{font-size:8px}.start-note{display:none}.scene-caption{display:none}.preflight{padding:10px 13px;gap:8px;min-height:58px}.preflight>span{font-size:9px;letter-spacing:.06em}.preflight-foods .item-art{width:30px;height:30px}.preflight-foods p{display:none}.preflight .text-button{font-size:11px}.hud-value{font-size:22px}.vitals{display:grid;grid-template-columns:1fr 1fr;max-width:none;gap:20px}.vital-row{font-size:10px;margin-bottom:4px}.ingredients .item-art{width:39px;height:44px}.ingredient-name{font-size:12px}.ingredient-desc{font-size:9px}.ingredient{min-height:55px}.control-deck{gap:10px}.craving{left:17px;right:auto;top:75px;padding:7px 10px}.craving:after{display:none}.craving strong{font-size:12px}.craving small{font-size:9px}.mutation-banner{top:auto;bottom:55px;min-width:230px}.mutation-banner small{font-size:11px}.live-caption{bottom:12px}.hint{font-size:10px}.result-copy{top:27%;width:80%}.result-copy h2{font-size:37px}.result-copy .lede{font-size:11px;margin:8px 0}.result-score{font-size:25px;margin-bottom:8px}.result-stats{gap:18px;margin-bottom:13px}.result-stats small{font-size:8px}.result-stats strong{font-size:14px}.record{font-size:10px;margin-bottom:6px}.header-actions .icon-button{min-width:40px;height:40px}.brand p{display:none}.brand h1{font-size:12px}.underbar-right{flex-wrap:wrap}.underbar{min-height:26px}}

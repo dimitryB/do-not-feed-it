@@ -2669,6 +2669,83 @@ timing readout.
 
 ---
 
+## Iteration 37 — nothing covers the bar that kills you
+
+Three placement faults, all of them things that were correct when they were
+written and became wrong when something moved in beside them.
+
+**The badge was blinding the bar it reports on.** `DRAINING FASTER` and `BELOW
+PAY LINE` were centred over the belly fill, which was empty space back when this
+row had nothing above it; the MOUTH row moved in there at D79 and nobody moved
+the badge. The critic found what that costs:
+
+> *"The chip appears **because** the belly is in trouble, so the display reliably
+> blinds the player at exactly the moment the information matters most."*
+
+In all four frames it appeared in. It rides the label line now, left of the
+number, where the row has always had room — and the bar under it is whole.
+
+**The reserved band had the same shape of error.** A verdict pill may never sit on
+the meters, and the band that enforces that still described the two bars it
+enforced for at iteration 11. So `ONE MORE CHANCE` landed squarely on the timing
+readout in both frames it appeared in: the loop's own banner covering the loop's
+own instrument. The band is the whole plate.
+
+**And the control I fixed last iteration went grey at the wrong moment.**
+Iteration 36 removed the word `Reloading` and left the greyed *styling*:
+
+> *"A fire button that goes grey while the player is dying is indistinguishable
+> from the game having stopped accepting input."*
+
+Found on the frame immediately before a starvation death. The button keeps its
+full brightness and its colour at all times now, and the reload is a dark mask
+retreating across it rather than a dimming of the whole thing. **A charging thing
+fills; a dead thing dims; this must never do the second.** Two iterations to
+learn that the word and the styling were the same bug told twice.
+
+There is a pattern under all three, and it is worth naming because it will happen
+again: **every one was a correct decision that a later correct decision invalidated
+without anyone re-checking it.** The badge, the band and the button were each
+right when written. Nothing in `npm run check`, the five gates or the fixture
+replay can catch a layout claim going stale — only a reader looking at a frame.
+
+**All five gates pass — thirtieth consecutive iteration**, identical for the
+eleventh running.
+
+**Critic: Agency 9, Consequence 9, Tension 9, Readability 5, Comedy 8,
+Fairness 7.** Fairness recovered the two points it lost, Tension reached 9 for
+the first time, and Agency, Consequence and Comedy all rose. Five of six criteria
+are at 8 or better.
+
+**Two of its three faults were misreads, and I checked before believing them.**
+The critic reported `BELOW PAY LINE` still covering the belly track at `hud-0200`
+and gave pixel spans for it. I cropped that exact frame: the badge is on the label
+line, beside the number, and the belly bar is unobstructed — the fix landed, and
+the horizontal span the critic measured was a badge sitting *above* the track, not
+on it. `ONE MORE CHANCE` had likewise moved clear of the panel. Recorded and not
+acted on, which is the other half of D89: **a reported fault is a reason to
+measure, and the measurement can come back either way.**
+
+**The third was real and it was mine.** The launch control still reads dark:
+
+> *"In five of six captures the `Launch` control is a dark olive-grey pill with
+> muted grey text... the resting state of the single most important control in
+> the game is 'greyed out'."*
+
+Iteration 36 replaced the misleading word; iteration 37 replaced the dimming with
+a dark mask across the button's face — and at zero charge, which is the instant
+after every shot, that mask covers the whole face. So the button went dark for
+most of every shift, again, by a third mechanism. **Three iterations to stop a
+control from looking broken, because each fix treated the symptom the previous
+one had left behind.** The reload is now an inset bar along the bottom edge that
+fills; the face stays bright at all times and nothing is ever drawn over it.
+
+And the marker label touched the marker whenever it slid left — which is exactly
+when the window is closing and the read matters most. It clears it by 22 px on
+whichever side has room.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s

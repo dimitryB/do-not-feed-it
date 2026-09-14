@@ -489,7 +489,11 @@ export function createScene(){
       // them: a critic caught ONE MORE CHANCE covering the fullness number on
       // the frame the player starved. The band is reserved before anything is
       // placed, and pills are pushed clear of it upward.
-      const band=state?{top:METER_Y-26,bottom:METER_Y+44,x:state.creature.x,w:METER_W+30}:null;
+      // The band is the WHOLE plate, not the two bars it used to be. The MOUTH
+      // row moved in above them at D79 and the reserved band did not follow, so
+      // ONE MORE CHANCE landed on the timing readout in both frames it appeared
+      // in — the loop's own banner covering the loop's own instrument.
+      const band=state?{top:METER_Y-80,bottom:METER_Y+90,x:state.creature.x,w:METER_W+34}:null;
       pills.forEach((e)=>{const age=tick-e.tick;
         const good=e.type==='feed'||e.type==='sneeze'||e.type==='burp';
         const loud=e.type==='hit'||e.type==='spit';
@@ -681,7 +685,10 @@ export function createScene(){
           // miss label, "TOO LATE" is past tense and says "you already missed"
           // about a shot not yet fired — a critic read it as the panel
           // contradicting a visibly open mouth. It is not about now.
-          ctx.fillText(lands?'OPEN THEN':'SHUT THEN',mx+(mx>x+w*0.62?-13:13),my-H/2-10);
+          // Well clear of the dot, on whichever side has room. At 13 px the label
+          // touched the marker whenever the marker slid left, which is precisely
+          // when the window is closing and the read matters most.
+          ctx.fillText(lands?'OPEN THEN':'SHUT THEN',mx+(mx>x+w*0.55?-22:22),my-H/2-10);
           if(!lands){
             // A shape, not only a hue. Every gameplay-critical cue here has a
             // visual twin, and a colour is not one on a compressed stream of a
@@ -717,15 +724,18 @@ export function createScene(){
         // bar with room and contrast — the first attempt drew "IN 10s" amber on
         // the lime fill, which is the same green-on-green mistake the chevron
         // was being fixed for.
+        const nowText=`${Math.round(row[1]*100)}%`;
+        let valueW=ctx.measureText(nowText).width;
         if(i===0&&drainPerTick(state)>0){
           const soon=Math.max(0,fullness-drainPerTick(state)*10*ARENA.tickRate/100);
           if(soon<fullness-0.004){
             const tail=` \u2192 ${Math.round(soon*100)}%`;
             const tw=ctx.measureText(tail).width;
+            valueW+=tw;
             ctx.fillStyle=soon<=0.02?'#ff8a6a':'#ffd08a';ctx.fillText(tail,x+w,by-11);
-            ctx.fillStyle=row[2];ctx.fillText(`${Math.round(row[1]*100)}%`,x+w-tw,by-11);
-          } else ctx.fillText(`${Math.round(row[1]*100)}%`,x+w,by-11);
-        } else ctx.fillText(`${Math.round(row[1]*100)}%`,x+w,by-11);
+            ctx.fillStyle=row[2];ctx.fillText(nowText,x+w-tw,by-11);
+          } else ctx.fillText(nowText,x+w,by-11);
+        } else ctx.fillText(nowText,x+w,by-11);
         // The belly stops emptying whenever the launcher is taken away. The
         // rule is only fair if it is visible, so the bar says so while it holds.
         // The pay multiplier stalls below a line on THIS bar, so the bar is
@@ -753,9 +763,19 @@ export function createScene(){
           // it now says what is happening to the bar.
           const tint=fullness<=0.35?'#ff8a6a':held?'#9bd7c4':label==='BELOW PAY LINE'?'#ff8a6a':'#eea66d';
           const lw=ctx.measureText(label).width+16;
-          ctx.fillStyle='#0c1a16';ctx.beginPath();ctx.roundRect(x+w/2-lw/2,by-23,lw,17,8);ctx.fill();
+          // The badge sits BESIDE the bar, never on it.
+          //
+          // It was centred over the fill, from back when this row had empty space
+          // above it; the MOUTH row moved in there and nobody moved the badge.
+          // A critic found the consequence: the badge appears BECAUSE the belly is
+          // in trouble, so the display "reliably blinds the player at exactly the
+          // moment the information matters most" — in all four frames it appeared
+          // in. It rides the label line now, left of the number, where the row has
+          // always had room.
+          const bx2=x+w-valueW-12;
+          ctx.fillStyle='#0c1a16';ctx.beginPath();ctx.roundRect(bx2-lw,by-21,lw,17,8);ctx.fill();
           ctx.strokeStyle=tint;ctx.lineWidth=1;ctx.stroke();
-          ctx.textAlign='center';ctx.fillStyle=tint;ctx.fillText(label,x+w/2,by-11);
+          ctx.textAlign='center';ctx.fillStyle=tint;ctx.fillText(label,bx2-lw/2,by-9);
         }
         // WHERE THE BELLY WILL BE IN TEN SECONDS if nothing lands.
         //
