@@ -697,14 +697,35 @@ export function createScene(){
       // Measured by a critic: the fill-to-track contrast was 10.5:1 for fullness
       // and 3.96:1 for irritation — the meter that ends the shift was the quieter
       // of the two at every value. Brighter fill, darker track.
-      const rows=[['FULLNESS',fullness,fullColour,'#22301f'],['IRRITATION',irritation,irritation>0.55?'#ff6a52':'#f0705c','#1a0d0c']] as const;
+      // BELLY, not FULLNESS. Every warning, the coaching line and the ending card
+      // all say "belly"; only the meter said FULLNESS, and the irritation caption
+      // says FULL — so a critic reading upward from "IRRITATION FULL — IT WRECKS
+      // THE KITCHEN" to a bar labelled FULLNESS concluded that filling the belly
+      // wrecks the kitchen, the precise inverse of the rule. The meter was the
+      // outlier in its own vocabulary, so the meter is what changes.
+      const rows=[['BELLY',fullness,fullColour,'#22301f'],['IRRITATION',irritation,irritation>0.55?'#ff6a52':'#f0705c','#1a0d0c']] as const;
       for(const [i,row] of rows.entries()){
         const by=y+i*32;
         ctx.fillStyle=row[3];ctx.beginPath();ctx.roundRect(x,by-5,w,13,6.5);ctx.fill();
         ctx.fillStyle=row[2];ctx.beginPath();ctx.roundRect(x,by-5,Math.max(7,w*row[1]),13,6.5);ctx.fill();
         ctx.font="700 14px ui-monospace,monospace";ctx.textAlign='left';ctx.fillStyle='#dbe5d3';
         ctx.fillText(row[0],x,by-11);
-        ctx.textAlign='right';ctx.fillStyle=row[2];ctx.fillText(`${Math.round(row[1]*100)}%`,x+w,by-11);
+        ctx.textAlign='right';ctx.fillStyle=row[2];
+        // The belly's number carries its own forecast: now, then ten seconds on.
+        // The chevron marks the spot on the bar; this says what the spot MEANS,
+        // and it lives in the row's value because that is the one place on this
+        // bar with room and contrast — the first attempt drew "IN 10s" amber on
+        // the lime fill, which is the same green-on-green mistake the chevron
+        // was being fixed for.
+        if(i===0&&drainPerTick(state)>0){
+          const soon=Math.max(0,fullness-drainPerTick(state)*10*ARENA.tickRate/100);
+          if(soon<fullness-0.004){
+            const tail=` \u2192 ${Math.round(soon*100)}%`;
+            const tw=ctx.measureText(tail).width;
+            ctx.fillStyle=soon<=0.02?'#ff8a6a':'#ffd08a';ctx.fillText(tail,x+w,by-11);
+            ctx.fillStyle=row[2];ctx.fillText(`${Math.round(row[1]*100)}%`,x+w-tw,by-11);
+          } else ctx.fillText(`${Math.round(row[1]*100)}%`,x+w,by-11);
+        } else ctx.fillText(`${Math.round(row[1]*100)}%`,x+w,by-11);
         // The belly stops emptying whenever the launcher is taken away. The
         // rule is only fair if it is visible, so the bar says so while it holds.
         // The pay multiplier stalls below a line on THIS bar, so the bar is
@@ -752,13 +773,21 @@ export function createScene(){
             // and two thin uprights a few pixels apart is how a reader gets a
             // forecast confused with a threshold. A chevron says "heading this
             // way"; a line says "a boundary is here".
+            // Contrast and a word. A critic reverse-engineered this glyph
+            // correctly by measuring six frames against their printed
+            // percentages and still could not confirm it, because it was drawn
+            // in the fill's own colour with nothing saying what it was: "this
+            // is the element that answers 'how long do I have?' for the failure
+            // mode that kills 71 % of good-bot runs, and it is functionally
+            // invisible." It now sits in a dark notch cut out of the fill, and
+            // it is labelled.
             const sx=x+w*soon;
             ctx.save();
-            ctx.fillStyle=soon<=0.02?'#ff8a6a':'#f0d9a0';
-            ctx.strokeStyle='rgba(6,16,14,.8)';ctx.lineWidth=2.5;
+            ctx.fillStyle='#06100e';ctx.fillRect(sx-2,by-6,13,20);
+            ctx.fillStyle=soon<=0.02?'#ff8a6a':'#ffd08a';
             ctx.beginPath();
-            ctx.moveTo(sx,by+3);ctx.lineTo(sx+8,by-5);ctx.lineTo(sx+8,by+11);
-            ctx.closePath();ctx.stroke();ctx.fill();
+            ctx.moveTo(sx,by+4);ctx.lineTo(sx+8,by-4);ctx.lineTo(sx+8,by+12);
+            ctx.closePath();ctx.fill();
             ctx.restore();
           }
         }
@@ -798,7 +827,11 @@ export function createScene(){
         // Both captions were correct and the vocabulary was not.
         const warn=[
           {on:fullness<=0.35,text:'BELLY EMPTY — IT EATS YOU',lvl:(0.35-fullness)/0.35},
-          {on:irritation>=0.65,text:'IRRITATION FULL — IT WRECKS THE KITCHEN',lvl:(irritation-0.65)/0.35},
+          // 0.55, not 0.65. D80 raised it off halfway because a banner that reads the
+          // same at 45 %-and-rising as at 2 %-and-dying says nothing; 65 % overshot for
+          // the meter that fills fastest, and left it silent at 56 %. The text also lost
+          // a word, because at 14 px the long version overran the plate.
+          {on:irritation>=0.55,text:'IRRITATION FULL — IT WRECKS THE KITCHEN',lvl:(irritation-0.55)/0.45},
         ];
         let slot=0;
         for(const wrn of warn){

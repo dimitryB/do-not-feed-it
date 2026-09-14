@@ -51,8 +51,17 @@ const FRAME_PAGE = `
 const SHELL_HEIGHT = 1320;
 const STRIP_EVERY = 20 * TICKS;
 const MAX_STRIPS = 7;
-const STRIP_FRAMES = 12;
-const STRIP_GAP = 6;            // 100 ms
+// Six frames, not twelve.
+//
+// The strips exist to be read at 960 px, which is what the game is judged at on
+// a stream — and at twelve frames across 960 px each frame is about 68 px wide,
+// at which nothing but "green creature or pale creature" survives. Four critics
+// running reported drawing nothing from them that the close-ups did not give
+// better, and the last one said to cut the count. Six frames at 160 px each is
+// still a sequence and is wide enough to show a mouth opening and a serving
+// arriving, which is the only thing a strip is for.
+const STRIP_FRAMES = 6;
+const STRIP_GAP = 10;           // 167 ms — same span covered, half the frames
 /** How long before a shot the launcher starts moving towards it. */
 const AIM_LEAD = 44;
 /** Canvas filling exactly 1920x1080, which is where the render budget is set. */
@@ -109,11 +118,11 @@ function buildSchedule(run) {
     // to show the aim being set before it shows the shot, or the choice the
     // player made is off-camera and only its result is on it.
     const nearest = launches.find((tick) => tick >= slot) ?? slot;
-    const start = Math.max(0, Math.min(nearest - 5 * STRIP_GAP, lastStrip - STRIP_FRAMES * STRIP_GAP));
+    const start = Math.max(0, Math.min(nearest - 3 * STRIP_GAP, lastStrip - STRIP_FRAMES * STRIP_GAP));
     for (let i = 0; i < STRIP_FRAMES; i += 1) {
       shots.push({ tick: start + i * STRIP_GAP, group: `strip-${stamp(slot)}`, kind: "strip", index: i });
     }
-    shots.push({ tick: start + 6 * STRIP_GAP, group: `hud-${stamp(slot)}`, kind: "still", index: 0 });
+    shots.push({ tick: start + 3 * STRIP_GAP, group: `hud-${stamp(slot)}`, kind: "still", index: 0 });
   }
   const clips = [
     { name: "first-mutation", at: run.markers.firstMutation },

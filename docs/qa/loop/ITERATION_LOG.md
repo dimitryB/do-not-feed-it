@@ -2480,6 +2480,102 @@ for the meter that fills in a hurry.
 
 ---
 
+## Iteration 35 — the meter takes the name everything else was already using
+
+The sharpest observation any critic has made about this build, and it is about
+one word:
+
+> *"`BELLY EMPTY — IT EATS YOU` and `IRRITATION FULL — IT WRECKS THE KITCHEN`
+> render in identical red, stacked, immediately below a meter labelled
+> **FULLNESS**. Neither belly warning ever uses the word FULLNESS; the irritation
+> warning does use the word FULL. **A stranger reading upward concludes that
+> filling the belly wrecks the kitchen — the precise inverse of the rule.**"*
+
+Iteration 34 noticed the two captions were borrowing each other's vocabulary and
+fixed the captions. It fixed the wrong side. Every warning says *belly*; the
+coaching line says *belly*; the ending card says `IT WENT HUNGRY / Empty belly`.
+Only the meter said FULLNESS, and it was the meter that shared a word with the
+other meter's warning. **The outlier in a vocabulary is the thing that changes.**
+The bar reads `BELLY`.
+
+**The forecast was green on green.** The critic worked out what the chevron meant
+by pixel-measuring six frames against their printed percentages — got it exactly
+right, drain-rate projection and all — and still could not confirm it:
+
+> *"This is the element that answers 'how long do I have?' for the failure mode
+> that kills 71 % of good-bot runs, and it is functionally invisible."*
+
+The chevron now sits in a dark notch cut out of the fill, and the row's own value
+carries the number: `BELLY 51% → 23%`. Now, and ten seconds from now. The first
+attempt at labelling it drew `IN 10s` in amber **on the lime fill** — the same
+green-on-green mistake, committed while fixing the green-on-green mistake, which
+is worth writing down. The row's value is the one place on that bar with both
+room and contrast.
+
+**The irritation warning was silent at 56 %.** D80 raised the threshold off
+halfway because a banner reading the same at 45 %-and-rising as at 2 %-and-dying
+says nothing; 65 % overshot for the meter that fills fastest, so the bar could sit
+more than half spent without a word. It speaks at 55 %, and the alpha still
+tracks how far past the line the run has gone.
+
+**And the strips were fixed, not the game.** Four critics running reported that
+the contact sheets carry nothing the close-ups do not carry better, and the last
+one did the arithmetic: twelve frames across 960 px is 68 px each, at which the
+only surviving information is whether the creature is green or pale. They are six
+frames at a wider gap — same span of time, half the frames, 160 px each, wide
+enough to show a mouth opening and a serving arriving. **An instrument that has
+been reporting nothing for thirty-four iterations is a fault in the instrument.**
+
+**All five gates pass — twenty-eighth consecutive iteration**, identical for the
+ninth running.
+
+**Critic: Agency 9, Consequence 9, Tension 8, Readability 6, Comedy 8,
+Fairness 7.** **No cheap death.** Readability 6 is the highest this loop has ever
+recorded; Agency rose to 9; nothing fell. Every criterion is now at 6 or better,
+which has not been true before.
+
+The renamed meter and the forecast both landed, and the arrow convention turned
+out to be doing more work than it was built for:
+
+> *"The MOUTH row uses the identical arrow form (`NOW -> 1.5s`) and literally
+> labels the right-hand side with the word `THEN` — so the arrow is a consistent
+> 'now -> then' convention across the panel, which is genuinely good design...
+> the gap widens as the creature grows: 20 points at ×1.28, 34 points at ×1.82 —
+> bigger thing, faster drain. **It's the best-designed element in the HUD.**"*
+
+Read unaided this time, in one pass, with the accelerating drain inferred
+correctly from two frames. And on the vocabulary: *"Exact lexical match in both
+directions... This is done properly."*
+
+**The reload prompt is a real bug, and I was wrong to wave it away.** Iteration 34
+recorded it as a sampling artefact on the grounds that captures fire moments after
+a shot. The critic found it in six close-ups *and essentially every frame of all
+six strips*, across 200 seconds, and refused the explanation. So I measured it:
+
+> a player firing on every cooldown is in the `ready` state **2.2 % of the time.**
+
+The cooldown is 80 ticks, the ready window is the single tick before firing
+resets it, and so the most prominent control in the frame reads `Reloading`
+permanently. The label is technically correct and practically useless — *"the
+obvious reading is that the gun is broken."* Four critics reported it; I explained
+it away once. **A fault three independent readers keep reporting is a fault, and
+the right response to reporting it a fourth time was to go and measure, not to
+reason about the harness.**
+
+Two more, both cheap and both about the remedy rather than the punishment:
+
+- **Nothing says what LOWERS irritation.** Every message is a cost — `+5 ON THE
+  FLOOR`, `+2.5 TOO LATE`, "Every miss raises IRRITATION". It demonstrably falls
+  (56 % to 47 % between two frames) and no line says why. *"The single most common
+  cause of death for the average player has a stated punishment, a visible meter,
+  a named lose condition, and a completely undocumented remedy."*
+- **`PAYING IT BACK` is green while the run dies.** Same green badge at 60 % belly
+  and climbing pay, and at 22 % belly with pay stalled and `ONE MORE CHANCE` on
+  screen. *"I cannot tell you whether that badge is good news or bad news, and
+  I've now looked at it in three frames."*
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s
