@@ -1916,6 +1916,132 @@ seconds show a beginner none of the game (naive: 0 feeds in 200 runs), and
 
 ---
 
+## Iteration 28 — the score's own rule, said out loud
+
+The critic given only iteration 27's captures put this first, and it was right:
+
+> *"Every other punishing state in this game gets a plain-English line. The
+> multiplier that the entire run is built on gets nothing."*
+
+SHIFT PAY turned red at 1:20 and 2:00 but not at 1:41 at the same creature size,
+so it toggled on a condition nothing on screen named. The condition is the belly:
+pay only accrues above 30 % fullness. Three things were wrong with how that was
+carried.
+
+**The number was a literal in two places and a third copy in the HUD.** It is now
+`TUNING.payFloor`, so the rules own it and the renderer reads it. A threshold the
+UI has to memorise is a threshold that can silently disagree with the simulation.
+
+**The badge named the state and not the cause.** The fullness bar now lights
+`PAY STALLED` at the same moment the corner badge strikes through the multiplier.
+Two badges, one rule, lit together — the eye connects the number to the bar it
+depends on without being told.
+
+**The line itself was invisible.** There is now a tick on the fullness bar at
+30 %, drawn *always*, not only once it has been crossed. A threshold you can only
+see after falling through it is a warning that arrives too late to act on.
+
+And the caption states the rule in the voice the other rules use, in the band
+between 25 % and 30 % — above the "Empty belly soon" warning, which is more
+urgent and keeps precedence: **"Under 30 % your pay stops climbing. Feed it to
+start earning again."**
+
+**The end card now names what killed the run.** The critic: *"the end card does
+not name which failure state fired, so the player cannot learn from the loss."*
+`failureReason` was in the state all along and drawn nowhere. D57 says no *ending*
+may name a cause of death, and that stands — the headline still describes only how
+big it got. The cause is a separate line: "IT WENT HUNGRY." or "YOU MISSED TOO
+OFTEN." Those are different claims and they belong in different sentences.
+
+`scripts/hud-state.mjs` (new) photographs the HUD either side of a threshold by
+setting the vitals directly. Checking a change to the meters used to require a
+twenty-five-minute capture run to reach a state deep in a shift; it is now one
+minute, which is the difference between verifying a HUD change and hoping.
+
+**All five gates pass — twenty-first consecutive iteration**, numbers identical
+to iterations 26 and 27 to the decimal, which is the proof that `payFloor: 30`
+replaced the literal `30` and changed nothing. 36 tests green, fixtures
+byte-identical.
+
+---
+
+## Iteration 29 — the window, drawn
+
+A critic given only iteration 28's captures found the thing this loop had been
+missing for twenty-eight iterations, and called it by name:
+
+> **CHEAP DEATH.** *"The game charges `TOO LATE +2.5 IRRITATION`. The projectile
+> is mid-flight, roughly 380px from the target... nothing on screen shows how
+> long the mouth will stay open. The game's own tip is 'Shut. You have to catch
+> the window.' It knows this is the core skill. It does not render the window."*
+
+That is exactly right, and it had been true since stage 2. The rules bill a shot
+by the aperture at the moment it **arrives**, a serving is most of a second in
+the air, and the only mouth information on screen was the mouth *now*: the ring
+while open, and brackets counting down while shut. Neither answers the one
+question the player is actually being asked — *will it still be open when this
+lands?*
+
+**The window is now drawn.** A strip under the mouth lays out the next ninety
+ticks left to right, lit where the rules say the mouth will be open wide enough
+to swallow and dark where it will not, with a notch at the tick the serving
+currently aimed would arrive. Fire now or wait: the answer is on the strip.
+
+Two exports carry it, and both are readouts rather than rules:
+
+- `apertureAhead(creature, ticks)` runs the same `apertureAt` the simulation
+  runs, off the same cycle fields, so the strip cannot drift from the mechanic it
+  draws. It refuses to look more than one cycle out, because the next window's
+  length is a seeded roll the renderer has no business reaching for, and reports
+  the shortest window the rules can make instead of guessing: a lead that is
+  right for a short window is right for a long one, never the reverse.
+- `previewFlight` is `trajectoryPreview` with the two facts the points alone
+  cannot carry — how many ticks the serving is airborne, and whether the walk
+  actually **ended** in that time.
+
+**`settled` was the whole difficulty.** The first version marked the last point
+of the guide as the arrival, which is only true if the walk finished; a preview
+that merely ran out of steps looks identical to one that arrived, and the first
+capture showed a cheerful green ring hanging in mid-air over a shot that fell
+forty pixels short of the counter. The second difficulty was worse and would have
+shipped: the dotted guide is deliberate **training wheels** — `guideSteps` runs
+34, then 10, then 8, then 0 by the third shift — so anything hung off the guide
+would have vanished for exactly the players who no longer have it. The flight
+walk now always runs far enough to settle, and `guideSteps` governs only how much
+of it is **drawn**.
+
+**It cost the budget and had to be bought back twice.** Thirty rectangles a frame
+plus a 96-step walk every sixth tick put the worst state at 4.08 ms. One fill per
+open *run* rather than per sampled tick recovered part of it; halving the walk's
+cadence to twelve ticks recovered the rest, and costs a fifth of a second of
+staleness on a readout spanning a second and a half — while any change the player
+**makes** is in the cache key and refreshes at once. Worst state 3.89 ms.
+
+**All five gates pass — twenty-second consecutive iteration**, numbers identical
+to the decimal for the third iteration running, which is what a readout should do
+to bots that do not read the screen. That cuts both ways, and it is worth saying
+plainly: **the gates are blind to this change.** No bot reads a strip, so nothing
+in the measured table can tell me whether the window makes the game fairer or
+merely easier. The critic is the only instrument pointed at it.
+
+**Critic: Agency 7, Consequence 9, Tension 8, Readability 5, Comedy 8,
+Fairness 7.** The verdict that mattered: **"I see no CHEAP DEATH."** Fairness rose
+and the finding closed.
+
+But the instrument that closed it is now the top fault, and fairly:
+
+> *"~130 px of olive-yellow and dull red painted on a pale-green belly,
+> unlabelled, no legend... identical widget state, opposite game state. At stream
+> scale this element transmits zero bits."*
+
+The reported contradiction is a misreading — the strip is the **future**, so its
+left edge is *now*, and the critic read the notch's position against the lit
+segment as the present state. But a widget a careful observer decodes wrongly is
+not a widget that works. Nothing marks which end is now, and it is drawn in two
+low-contrast colours on pale flesh. That is iteration 30.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s

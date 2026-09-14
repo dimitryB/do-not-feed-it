@@ -101,6 +101,18 @@ export const TUNING = Object.freeze({
    * It changes no difficulty. Survival is untouched; only the reward bends.
    */
   payPerMinute: 0.75,
+  /**
+   * The belly line the pay multiplier climbs above and stalls below.
+   *
+   * It was an inline `30` at the two places the score is paid, which meant the
+   * HUD had to repeat the number to draw its STALLED badge and nothing on
+   * screen said what the number was. A critic watching only the captures put it
+   * first: the payout turns red twice in a run and the game never says why, so
+   * the one figure the whole score is built on is the one state with no
+   * plain-English line. It is a rule, so it lives with the rules, and the HUD
+   * reads it from here.
+   */
+  payFloor: 30,
   restore: 10,
   restoreCraved: 14,
   /**
@@ -551,6 +563,35 @@ function apertureAt(cycleTick: number, openTicks: number): number {
   if (cycleTick < ramp + openTicks) return 1;
   if (cycleTick < ramp * 2 + openTicks) return quantize(1 - (cycleTick - ramp - openTicks) / ramp);
   return 0;
+}
+
+/**
+ * What the aperture will be `ticksAhead` from now, if the rhythm holds.
+ *
+ * A serving is in the air for the better part of a second, and the rules bill a
+ * shot by where the mouth is when it *arrives* — so the whole timing skill is
+ * leading a target whose future the player could not see. A critic given only
+ * the captures called that a cheap death, and it was: "the game's own tip says
+ * you have to catch the window. It does not render the window."
+ *
+ * This is a readout, not a rule. It runs the same `apertureAt` the simulation
+ * runs, from the same cycle fields, so the renderer cannot drift from the
+ * mechanic it is drawing. It looks only as far as the current cycle plus one —
+ * beyond that the next cycle's shape is a seeded roll the renderer has no
+ * business reaching for, and it returns the shut value rather than guessing.
+ */
+export function apertureAhead(creature: Creature, ticksAhead: number): number {
+  if (!Number.isFinite(ticksAhead) || ticksAhead < 0) return creature.open;
+  const total = TUNING.rampTicks * 2 + creature.openTicks + creature.shutTicks;
+  const at = creature.cycleTick + Math.round(ticksAhead);
+  if (at >= total * 2) return 0;
+  const clogged = 1 - creature.clog;
+  if (at < total) return quantize(apertureAt(at, creature.openTicks) * clogged);
+  // One cycle on, the open stretch is a fresh roll. The ramps and the shut
+  // stretch are not, so the honest answer for the part that is knowable is the
+  // aperture of the *shortest* window the rules can produce: a lead that is
+  // right for a short window is right for a long one, never the reverse.
+  return quantize(apertureAt(at - total, 6) * clogged);
 }
 
 /** Ticks from `cycleTick` until the aperture next passes `openMin`. */
@@ -1310,8 +1351,8 @@ export function stepArcade(state: ArcadeState): void {
   // Time *kept fed*, which is what the score claims to measure. It used to tick
   // up regardless, so the biggest number on screen kept climbing through a run
   // that was visibly falling apart.
-  if (state.hunger > 30) state.paidTicks += 1;
-  if (state.tick % 10 === 0 && state.hunger > 30) {
+  if (state.hunger > TUNING.payFloor) state.paidTicks += 1;
+  if (state.tick % 10 === 0 && state.hunger > TUNING.payFloor) {
     state.score += Math.max(1, Math.round(payRate(state.paidTicks)));
   }
 
@@ -1475,12 +1516,35 @@ export function probeFlight(state: ArcadeState, ingredient: Ingredient, angle: n
 /** Partial guide: predicts `steps` ticks of the actual rules without changing state. */
 export function trajectoryPreview(state: ArcadeState, ingredient: Ingredient, angle: number,
                                   power = ARENA.defaultPower, steps = 36): { x: number; y: number }[] {
-  if (!FOODS.includes(ingredient) || !Number.isFinite(angle)) return [];
+  return previewFlight(state, ingredient, angle, power, steps).points;
+}
+
+/**
+ * The same forward run as `trajectoryPreview`, with the two facts the renderer
+ * needs and the points alone cannot carry: how many ticks the serving is in the
+ * air, and whether the run actually ENDED in that time.
+ *
+ * Without `settled`, a preview that simply ran out of steps looks identical to
+ * one that arrived, and the arrival marker ends up floating in mid-air over a
+ * shot that falls short — which is what the first version of this drew. It is a
+ * readout: the walk is the simulation's own, on a projected copy, and decides
+ * nothing.
+ */
+export function previewFlight(state: ArcadeState, ingredient: Ingredient, angle: number,
+                              power = ARENA.defaultPower, steps = 36):
+                              { points: { x: number; y: number }[]; ticks: number; settled: boolean;
+                                arrival: { x: number; y: number } | null } {
+  const empty = { points: [] as { x: number; y: number }[], ticks: 0, settled: false, arrival: null };
+  if (!FOODS.includes(ingredient) || !Number.isFinite(angle)) return empty;
   const food = makeProjectile(0, ingredient,
     Math.round(clamp(angle, ARENA.minAngle, ARENA.maxAngle)), cleanPower(power));
   const creature = projectCreature(state);
   const points = [{ x: food.x, y: food.y }];
+  let ticks = 0;
+  let settled = false;
+  let arrival: { x: number; y: number } | null = null;
   for (let i = 1; i <= steps; i++) {
+    if (!settled) ticks = i;
     stepCreature(creature, state.seed, state.rage, state.hunger, food, state.mutations);
     const env: Env = {
       tick: state.tick + i, mouthX: creature.x, mouthY: creature.y,
@@ -1491,11 +1555,16 @@ export function trajectoryPreview(state: ArcadeState, ingredient: Ingredient, an
     };
     const outcome = moveFood(food, env);
     if (i % 3 === 0) points.push({ x: food.x, y: food.y });
+    // A snub and a block are arrivals too — the serving reached the face and was
+    // refused — but the bounce is still worth drawing, because a snub can be
+    // banked back in. So the first contact settles the *timing*, and the walk
+    // carries on to show where the thing goes afterwards.
+    if (!settled && outcome !== "flying") { settled = true; ticks = i; arrival = { x: food.x, y: food.y }; }
     if (outcome === "fed" || outcome === "missed") break;
     if (outcome === "snubbed") bounceOffFace(food, env);
     if (outcome === "blocked") bounceOffFace(food, env, true);
   }
-  return points;
+  return { points, ticks, settled, arrival };
 }
 
 /** Strict local replay. Rejected launches and hatches must not enter the trace. */

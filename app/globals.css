@@ -50,3 +50,6 @@
 .trait-chip .item-art{width:32px;height:32px}
 .trait-chip{padding:7px 13px 7px 6px}
 @media(max-width:650px){.trait-chip strong{font-size:12px}.trait-chip em{font-size:14px}}
+
+.result-cause{font:700 clamp(26px,3.1vw,40px)/1.1 var(--font-display);letter-spacing:.01em;color:#ff9c72;margin:0 0 14px;text-shadow:0 3px 18px #0006}
+@media(max-width:650px){.result-cause{font-size:22px;margin-bottom:10px}}
