@@ -744,8 +744,14 @@ export function createScene(){
           // badge belongs here, because this bar is the cause, so it now states
           // the cause and points at the tick drawn on this bar rather than
           // announcing the effect from inside the wrong row.
-          const label=held?'HELD':state.hungerDebt>0.01?'PAYING IT BACK':'BELOW PAY LINE';
-          const tint=held?'#9bd7c4':label==='BELOW PAY LINE'?'#ff8a6a':'#eea66d';
+          const label=held?'HELD':state.hungerDebt>0.01?'DRAINING FASTER':'BELOW PAY LINE';
+          // The badge takes its colour from the RUN, not from its own wording.
+          // `PAYING IT BACK` was the same green at 60 % belly with pay climbing and
+          // at 22 % with pay stalled and ONE MORE CHANCE on screen — a critic looked
+          // at it in three frames and could not say whether it was good news. The
+          // phrase also reads like a reward while the number under it collapses, so
+          // it now says what is happening to the bar.
+          const tint=fullness<=0.35?'#ff8a6a':held?'#9bd7c4':label==='BELOW PAY LINE'?'#ff8a6a':'#eea66d';
           const lw=ctx.measureText(label).width+16;
           ctx.fillStyle='#0c1a16';ctx.beginPath();ctx.roundRect(x+w/2-lw/2,by-23,lw,17,8);ctx.fill();
           ctx.strokeStyle=tint;ctx.lineWidth=1;ctx.stroke();
@@ -839,6 +845,12 @@ export function createScene(){
           const heat=Math.max(0,Math.min(1,wrn.lvl));
           ctx.globalAlpha=reduced?1:.62+.38*heat;
           ctx.fillStyle=heat>0.5?'#ff8a6a':'#eea66d';
+          // Shrink to fit rather than overrun: the long caption was clipped by the
+          // plate's right edge in both frames it appeared in.
+          const avail=w+18;
+          let size=14;
+          ctx.font=`700 ${size}px ui-monospace,monospace`;
+          while(size>11&&ctx.measureText(wrn.text).width>avail){size-=1;ctx.font=`700 ${size}px ui-monospace,monospace`;}
           ctx.fillText(wrn.text,x+w/2,y+56+slot*19);
           slot+=1;
         }

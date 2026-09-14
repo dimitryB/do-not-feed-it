@@ -2576,6 +2576,99 @@ Two more, both cheap and both about the remedy rather than the punishment:
 
 ---
 
+## Iteration 36 — the control names the action, and the game states the cure
+
+**The reload prompt was a real bug and I had explained it away.** Four critics
+reported `Reloading` sitting dead centre at the bottom of the frame; at iteration
+34 I recorded it as a sampling artefact, reasoning that captures fire moments
+after a shot. The fifth critic found it in six close-ups **and essentially every
+frame of all six strips**, across 200 seconds, and refused the explanation. So I
+stopped reasoning and measured:
+
+> A player firing on every cooldown is in the `ready` state **2.2 % of the time.**
+
+The cooldown is 80 ticks and the ready window is the single tick before firing
+resets it. The label was correct and useless: the most prominent control in the
+frame read `Reloading` for an entire shift, and *"the obvious reading is that the
+gun is broken."*
+
+The button names the **action** now and keeps it — `Launch`, always — and the
+reload is a fill that sweeps the whole button rather than a 3 px hairline that
+was invisible at 960 px. A control should say what you do with it; the state
+belongs in the fill.
+
+The lesson costs more than the fix: **a fault three independent readers keep
+reporting is a fault.** The right response the fourth time was to go and measure,
+not to produce a better explanation of why the instrument was wrong. The whole
+loop is built on instrumenting before guessing and I guessed anyway, because the
+guess defended work I had already done.
+
+**The game only ever taught the punishment.** Every message about irritation was
+a cost — `+5 ON THE FLOOR`, `+2.5 TOO LATE`, "Every miss raises IRRITATION" — and
+the meter demonstrably *falls* when you land food, which nothing said:
+
+> *"The single most common cause of death for the average player has a stated
+> punishment, a visible meter, a named lose condition, and a completely
+> undocumented remedy."*
+
+101 of 200 moderate runs end `kitchen-destroyed`. Both coaching lines now name the
+cure in the same breath as the cost: *"Every miss raises IRRITATION — a landed
+snack takes it back down."*
+
+**`PAYING IT BACK` was still a reassuring word on a falling bar.** D68 replaced
+`CATCHING UP` with it for exactly that reason and did not go far enough — a critic
+found the same green badge at 60 % belly with pay climbing and at 22 % with pay
+stalled and `ONE MORE CHANCE` on screen, and could not tell whether it was good
+news. It reads `DRAINING FASTER`, which is what is happening, and the badge takes
+its colour from the state of the **run** rather than from its own wording.
+
+**And the caption that overran its plate now shrinks to fit** rather than being
+clipped by the border, which is where it had been cut off in both frames it
+appeared in.
+
+**All five gates pass — twenty-ninth consecutive iteration**, identical for the
+tenth running.
+
+**Critic: Agency 8, Consequence 8, Tension 8, Readability 5, Comedy 6,
+Fairness 5.** Fairness lost two and a **CHEAP DEATH re-opened**, and the honest
+reading is that I caused part of it.
+
+The fix worked and then over-shot. The button no longer says `Reloading`, and the
+critic confirms it reads cleanly in five of six frames — *"a bright teal pill:
+`Launch [HOLD SPACE]`, white text, unambiguous."* But in the sixth:
+
+> *"In hud-0200 it is dimmed dark-green with the text greyed out. That state is
+> undecidable from the frame... it reads as **broken**, and it is in that state on
+> the frame immediately preceding the run's death. A fire button that goes grey
+> while the player is dying is indistinguishable from the game having stopped
+> accepting input."*
+
+I removed the misleading word and left the misleading *styling* — the control is
+still `disabled`, so it dims, and it dims hardest at the only moment the player
+is desperate to press it. **Iteration 36 traded "the gun looks permanently
+broken" for "the gun looks broken exactly when you are dying", which is a worse
+trade.** The reload has to read as *charging*, which is a bright thing filling,
+never as *disabled*, which is a dark thing.
+
+**And the best free finding in several passes**, which has been true since the
+meters were built:
+
+> *"The BELLY bar is hidden by its own status chip precisely when the belly is
+> what kills you. The chip appears **because** the belly is in trouble, so the
+> display reliably blinds the player at exactly the moment the information
+> matters most."*
+
+`DRAINING FASTER` and `BELOW PAY LINE` are drawn over the bar fill, in all four
+frames they appear in. The badge was placed centred-on-the-bar when the row had
+nothing above it; the MOUTH row now sits there and nobody moved the badge.
+Zero systems cost, and it is a direct contributor to the cheap death.
+
+Third: `ONE MORE CHANCE` overlaps the MOUTH row at 1:20 and 2:00, covering
+`SHUT THEN` and the lookahead — the loop's own banner landing on the loop's own
+timing readout.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s
