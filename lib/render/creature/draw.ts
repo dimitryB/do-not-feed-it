@@ -343,7 +343,17 @@ function drawMouth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
       context.fill();
     }
 
-    // Tongue on the floor of the mouth, then the teeth in front of it.
+    // Lower teeth, then the tongue, then the upper teeth.
+    //
+    // The tongue used to go on first with every tooth in front of it, which is
+    // right at the corners of the jaw and wrong everywhere else: the lower teeth
+    // in the middle of the arc landed on the tongue's body and read as teeth
+    // growing out of it. A tongue sits on top of the lower jaw and in front of
+    // the teeth rooted in it; only the upper row hangs in front of everything.
+    // So the order is the anatomy's, and the corners still show their fangs
+    // because the tongue is narrower than the mouth.
+    drawTeeth(context, rig, pose, shape, time, false, reduced);
+
     const tongueWidth = Math.max(46, (shape.rightX - shape.leftX) * 0.46);
     const tongueHeight = Math.max(16, Math.min(40, gap * 0.36));
     context.save();
@@ -352,7 +362,6 @@ function drawMouth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
     context.drawImage(rig.tongue.canvas, -tongueWidth / 2, -tongueHeight, tongueWidth, tongueHeight * 2);
     context.restore();
 
-    drawTeeth(context, rig, pose, shape, time, false, reduced);
     drawTeeth(context, rig, pose, shape, time, true, reduced);
 
     // Gum ridges, drawn over the tooth roots so the row is seated in flesh

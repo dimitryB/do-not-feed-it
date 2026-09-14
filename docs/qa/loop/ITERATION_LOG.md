@@ -10,7 +10,7 @@ criteria sit at 7 or above; Readability is at 6 and climbing, Comedy at 7.
 
 ### The gates
 
-| gate | ceiling / floor | iteration 25 | verdict |
+| gate | ceiling / floor | iteration 26 | verdict |
 |---|---|---|---|
 | naive median survival | ≤ 45 s | 28.6 s | pass |
 | moderate median | 90–150 s | 133.8 s | pass |
@@ -19,7 +19,7 @@ criteria sit at 7 or above; Readability is at 6 and climbing, Comedy at 7.
 | decision density (moderate) | ≥ 6 changes/min | 127/min | pass |
 | replay fixtures | exact | exact | pass |
 
-Iterations 7 through 25 — **eighteen consecutive**, against an exit bar of two.
+Iterations 7 through 26 — **nineteen consecutive**, against an exit bar of two.
 Twelve to twenty-one changed no rule at all; twenty-two and twenty-three changed
 only the reward curve, and survival came back identical to the second.
 
@@ -1819,6 +1819,30 @@ usual. It reads `PAYING IT BACK` now.
 
 **All five gates pass — eighteenth consecutive iteration**, fixtures
 byte-identical, 36 tests green.
+
+---
+
+## Iteration 26 — teeth were growing out of the tongue
+
+Reported by the player, and true: on a wide-open mouth the lower teeth in the
+middle of the arc were drawn on top of the tongue's body, so they read as teeth
+growing out of it.
+
+The comment on the code said what it was doing — *"Tongue on the floor of the
+mouth, then the teeth in front of it"* — and that order is right at the corners
+of the jaw and wrong everywhere else. A tongue sits on top of the lower jaw and
+in front of the teeth rooted in it; only the upper row hangs in front of
+everything. So the order is now the anatomy's: **lower teeth, then the tongue,
+then the upper teeth.** The corners still show their fangs, because the tongue is
+narrower than the mouth.
+
+`scripts/mouth-calibrate.mjs --shot <file>` now saves a still of the mouth at its
+widest, which is the only state where the interior is fully visible and therefore
+the only one worth checking a draw order against. It is how this was verified,
+and it costs three minutes rather than a sixteen-minute capture.
+
+**All five gates pass — nineteenth consecutive iteration**, fixtures
+byte-identical, 36 tests green. Nothing here touches a rule; it is a draw order.
 
 ---
 

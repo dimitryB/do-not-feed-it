@@ -26,10 +26,11 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SIZES = [1, 1.35, 1.7, 2.05, 2.4];
 
 function parseArgs(argv) {
-  const args = { port: 4405, inset: 0.86 };
+  const args = { port: 4405, inset: 0.86, shot: null };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === "--port") args.port = Number(argv[++i]);
     else if (argv[i] === "--inset") args.inset = Number(argv[++i]);
+    else if (argv[i] === "--shot") args.shot = argv[++i];
   }
   return args;
 }
@@ -136,6 +137,26 @@ async function main() {
       console.log(`  ${live.name.padEnd(18)} drawn y ${n(d.y)} ry ${n(d.ry)}`
         + `   rule y ${n(r.y)} effRy ${n(effRy)}   open ${n(r.open)}`
         + `   dy ${n(r.y - d.y)}  dry ${n(effRy - d.ry)}`);
+    }
+
+    if (args.shot) {
+      // A still of the mouth at its widest, which is the one state where the
+      // interior is fully visible and therefore the only one worth checking the
+      // tongue, the teeth and their draw order against.
+      await page.evaluate(async () => {
+        const play = window.__dnfi.play;
+        play.start(4242);
+        play.manual(true);
+        for (let i = 0; i < 900; i += 1) {
+          play.setSize(1.45);
+          play.step(1);
+          const state = play.state();
+          if (state.creature && state.creature.aperture >= 0.999 && i > 120) break;
+        }
+        for (let i = 0; i < 40; i += 1) await new Promise((r) => requestAnimationFrame(() => r(null)));
+      });
+      await page.screenshot({ path: args.shot });
+      console.log(`wrote ${args.shot}`);
     }
 
     const fx = fit(samples, (s) => s.x);
