@@ -468,7 +468,7 @@ export function buildRig(image: HTMLImageElement): CreatureRig {
     lipShade: sample(artContext, 840 * HI, 386 * HI, 3),
     cavity: "rgb(46,16,14)",
     cavityDeep: "rgb(9,3,3)",
-    tongue: sample(artContext, 833 * HI, 312 * HI, 4),
+    tongue: sample(artContext, TONGUE.x * HI, TONGUE.y * HI, 4),
     toothIvory: sample(artContext, 786 * HI, 200 * HI, 2),
     scleraWarm: sample(artContext, 760 * HI, 150 * HI, 3),
   };

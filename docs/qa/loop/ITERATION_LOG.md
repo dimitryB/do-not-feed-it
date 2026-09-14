@@ -1846,6 +1846,76 @@ byte-identical, 36 tests green. Nothing here touches a rule; it is a draw order.
 
 ---
 
+## Iteration 27 — the teeth were inside the tongue sprite
+
+The player looked again after iteration 26 and said the tongue *"still shows some
+residual teeth and is now split in half."* Both halves of that were right, and
+neither had the cause I had assumed.
+
+**The split** was two tongues. The lolling-tongue sprite, meant for a lazy
+open-mouthed pant, was being drawn over the in-mouth tongue at full jaw, so the
+two overlapped offset and read as one tongue cut down the middle. It is now gated
+on `pose.jawOpen < 0.4` — a tongue lolls out of a *slack* mouth, not a gaping one.
+
+**The residual teeth** took four failed fixes before I stopped guessing. Draw
+order was already correct. Adding a general rule — *no tooth may end inside the
+tongue's ellipse* — culled the teeth that crossed the flesh and was worth keeping,
+but a pale nub still rode the tongue's right edge. So I made the measurement
+decisive: a temporary `return` at the top of `drawTeeth`, drawing **zero** teeth.
+The nub was still there. It was never a drawn tooth.
+
+`scripts/rig-part.mjs` (new) dumps a single sprite out of the built rig as a PNG,
+and the tongue patch showed it outright: **three of the painting's lower teeth are
+inside the cut.** `TONGUE` was traced around the whole painted tongue, so its
+lower rim crossed the teeth rooted in front of it and its top-right caught the
+dark cavity behind. Those ivory tips were baked into the texture and travelled
+with it, which is why no amount of draw-order or culling work could move them.
+
+The fix is the cut, not the draw: `TONGUE` is now `(815, 308, 40x16)`, an ellipse
+sitting entirely on flesh. It is smaller than the painted tongue, which costs
+nothing — the sprite is stretched to the drawn tongue's size either way.
+
+The lesson is the one this loop keeps re-learning: **when three fixes in a row
+fail, the model of the problem is wrong, so build the instrument instead of
+trying a fourth.** One `return` statement and one sprite dump found in ten minutes
+what four visual fixes had not.
+
+**Render fell inside budget in every state for the first time.** Worst case was
+4.52 ms at iteration 26; it is now **3.94 ms mean / 3.77 ms median** (typical
+2/2/1 at x2.0), with the heaviest state, three-of-everything at x2.4, at 3.87 ms
+mean / 3.80 ms median. The smaller tongue patch and the teeth the new rule no
+longer draws account for it. That closes a standing open item.
+
+| state | mean | median | p95 |
+|---|---|---|---|
+| balloon 3 | 3.64 | 3.60 | 3.90 |
+| balloon 3 x2.0 lift | 3.67 | 3.43 | 4.60 |
+| pepper 3 | 3.59 | 3.57 | 4.10 |
+| typical 2/2/1 x2.0 | 3.94 | 3.77 | 4.90 |
+| worst 3/3/3 x2.4 | 3.87 | 3.80 | 5.90 |
+
+**All five gates pass — twentieth consecutive iteration.** naive 28.6 s, moderate
+133.8 s (worst bucket 38 %), good 183.7 s, density 126.91/min. Identical to
+iteration 26, as they must be: nothing here touches a rule.
+
+**Critic: Agency 9, Consequence 9, Tension 8, Readability 6, Comedy 8,
+Fairness 7** (iteration 24 was 7/8/8/6/7/7). No criterion fell, and no cheap
+death: *"The 2:00 ending was telegraphed for at least 40 seconds."*
+
+Readability is the floor again, at 6, and its top fault is specific and fair:
+**the score economy shows two red badges and explains neither.** SHIFT PAY ·
+STALLED appears at 1:20 and 2:00 but not at 1:41 at the same size, so it toggles
+on a hidden condition; PAYING IT BACK sits on the fullness bar unexplained. The
+critic's own words: *"Every other punishing state in this game gets a
+plain-English line. The multiplier that the entire run is built on gets
+nothing."* That is iteration 28.
+
+The other two faults are the ones this loop already knows: the first thirty
+seconds show a beginner none of the game (naive: 0 feeds in 200 runs), and
+"Reloading" holds the centre-bottom of the HUD in 6 of 6 sampled frames.
+
+---
+
 ## Reference — the bar this loop has to clear
 
 **Numeric gates (hard).** naive median survival ≤ 45 s; moderate median 90–150 s

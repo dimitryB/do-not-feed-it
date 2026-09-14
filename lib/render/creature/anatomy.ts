@@ -65,7 +65,19 @@ export const MOUTH_PATCH = { x: 672, y: 132, width: 340, height: 292 };
 /** Clean skin below the mouth, the source for the rebuilt muzzle. */
 export const CHIN_SOURCE = { x: 730, y: 384, width: 220, height: 54 };
 
-export const TONGUE = { x: 833, y: 313, rx: 53, ry: 25 };
+/**
+ * The patch the tongue's texture is cut from.
+ *
+ * The previous ellipse (833, 313, 53x25) was traced around the *whole* painted
+ * tongue, which meant its lower rim crossed three of the painted lower teeth and
+ * its top-right caught the dark cavity behind them. Those ivory tips came along
+ * inside the sprite and then travelled with it, so a pale nub rode the tongue's
+ * right edge no matter what the tooth-drawing code did — the fix had to be the
+ * cut, not the draw. This smaller ellipse sits entirely on flesh: no ivory, no
+ * cavity, midline groove centred. It is stretched to the drawn tongue's size, so
+ * being smaller than the painted tongue costs nothing.
+ */
+export const TONGUE = { x: 815, y: 308, rx: 40, ry: 16 };
 
 /** Soft silhouette used only for colour grading, never for cutting. */
 export const BODY_OUTLINE: readonly (readonly [number, number])[] = [

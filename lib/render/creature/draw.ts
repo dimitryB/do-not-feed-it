@@ -186,7 +186,8 @@ const LOWER_TEETH: readonly (readonly [number, number])[] = [
 ];
 
 function drawTeeth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: CreaturePose,
-                   shape: Aperture, time: number, upper: boolean, reduced: boolean) {
+                   shape: Aperture, time: number, upper: boolean, reduced: boolean,
+                   tongue: { x: number; y: number; rx: number; ry: number } | null = null) {
   const visible = Math.max(Math.min(1, pose.jawOpen * 2.3), pose.teethBare);
   if (visible <= 0.02) return;
   const row = upper ? UPPER_TEETH : LOWER_TEETH;
@@ -207,7 +208,28 @@ function drawTeeth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
     // teeth are pasted on rather than in there.
     const height = Math.min(reach * size + root, gap * 0.52 + root);
     if (height < root + 2) continue;
+    // A lower tooth standing in the middle of the mouth stands in the tongue.
+    // The tongue covers its shaft and leaves the tip poking through the flesh,
+    // which reads as a tooth growing out of the tongue however the two are
+    // layered. The jaw keeps its fangs at the corners, where the tongue is not.
     const width = span * 0.052 * (0.72 + 0.4 * size) * (1 - align * 0.1);
+    // No tooth may end inside the tongue.
+    //
+    // Not "no lower tooth in the middle of the mouth", which is what this was
+    // first: the one that survived that test was an UPPER tooth rooted near the
+    // corner, where the lip dips, pointing down far enough to land on the
+    // tongue's edge. So the test is the real one — where does this tooth's tip
+    // actually finish — and it is the same test for both rows.
+    if (tongue) {
+      const lean0 = mix((upper ? spot.angle : spot.angle - Math.PI) * 0.42, 0, align);
+      const reachY = (upper ? 1 : -1) * (height - root) * Math.cos(lean0);
+      const reachX = (upper ? 1 : -1) * (height - root) * Math.sin(-lean0);
+      const tipX = spot.x + reachX;
+      const tipY = spot.y + reachY;
+      const nx = (tipX - tongue.x) / (tongue.rx + width * 0.6);
+      const ny = (tipY - tongue.y) / (tongue.ry + width * 0.6);
+      if (nx * nx + ny * ny < 1) continue;
+    }
     const quiver = reduced ? 0 : Math.sin(time * 24 + index * 1.9) * pose.teethQuiver * 2.2;
     const lean = mix((upper ? spot.angle : spot.angle - Math.PI) * 0.42, 0, align);
     context.save();
@@ -352,17 +374,28 @@ function drawMouth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
     // the teeth rooted in it; only the upper row hangs in front of everything.
     // So the order is the anatomy's, and the corners still show their fangs
     // because the tongue is narrower than the mouth.
-    drawTeeth(context, rig, pose, shape, time, false, reduced);
-
     const tongueWidth = Math.max(46, (shape.rightX - shape.leftX) * 0.46);
     const tongueHeight = Math.max(16, Math.min(40, gap * 0.36));
+    const tongueShape = {
+      x: shape.centerX - 2, y: shape.lowerApex - tongueHeight * 0.68,
+      rx: tongueWidth * 0.5, ry: tongueHeight,
+    };
+    drawTeeth(context, rig, pose, shape, time, false, reduced, tongueShape);
+
     context.save();
     context.translate(shape.centerX - 2, shape.lowerApex - tongueHeight * 0.68);
     context.rotate(pose.tongueOut * 0.05);
+    // The tongue patch is cut with a feathered edge, so anything behind it
+    // shows through its rim. An opaque floor under it in the mouth's own colour
+    // is what stops a tooth ghosting through the side of the tongue.
+    context.fillStyle = "rgba(58,18,18,1)";
+    context.beginPath();
+    context.ellipse(0, 0, tongueWidth * 0.54, tongueHeight * 0.96, 0, 0, Math.PI * 2);
+    context.fill();
     context.drawImage(rig.tongue.canvas, -tongueWidth / 2, -tongueHeight, tongueWidth, tongueHeight * 2);
     context.restore();
 
-    drawTeeth(context, rig, pose, shape, time, true, reduced);
+    drawTeeth(context, rig, pose, shape, time, true, reduced, tongueShape);
 
     // Gum ridges, drawn over the tooth roots so the row is seated in flesh
     // instead of ending on the straight edge where the clip cuts it.
@@ -396,7 +429,12 @@ function drawMouth(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cr
   drawLips(context, pose, shape);
 
   // Tongue lolling past the lip, for hunger and for heat.
-  if (pose.tongueOut > 0.04) {
+  //
+  // Only while the mouth is shut or nearly so. An open mouth already has a
+  // tongue on its floor, and drawing this second sprite over it gave the
+  // creature two overlapping tongues with a seam between them — which is what
+  // "the tongue is split in half" was.
+  if (pose.tongueOut > 0.04 && pose.jawOpen < 0.4) {
     const width = Math.max(52, (shape.rightX - shape.leftX) * 0.34);
     const height = 24 + pose.tongueOut * 30;
     context.save();
