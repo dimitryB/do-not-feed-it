@@ -16,13 +16,18 @@
  *   good      150 ms and +/-1.5 degrees, and goes looking for banks on purpose.
  *
  * Reported per bot: survival-time percentiles, feeds, accuracy, frenzies and
- * banks per run, score, cause of death, deaths per 30-second bucket. The
- * moderate bot additionally reports decision density — how often per minute
- * the best available action actually changes.
+ * banks per run, score, cause of death, deaths per 30-second bucket, and the
+ * pacing — when the first mutation level, size ×1.5, size ×2.0, the first
+ * ingredient at ×3 and all three at ×3 arrive. A run that never gets there is
+ * counted as "never", which sorts after every time, so a pacing median reads
+ * "never" when fewer than half the runs reached the mark. The moderate bot
+ * additionally reports decision density — how often per minute the best
+ * available action actually changes.
  *
  * Usage:
  *   node --experimental-strip-types scripts/loop-bots.mjs [--shifts 200]
- *        [--seed 1] [--density-shifts 8] [--json FILE] [--fixtures FILE]
+ *        [--seed 1] [--density-shifts 8] [--bots naive,moderate,good]
+ *        [--json FILE] [--fixtures FILE]
  */
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -263,7 +268,7 @@ function mutationCount(state) {
  * Plays one shift. `trackDensity` turns on the every-tick evaluation of the
  * best action, which is too slow to leave on for every run.
  */
-export function playShift(name, seed, { trackDensity = false } = {}) {
+export function playShift(name, seed, { trackDensity = false, timeline = false } = {}) {
   const config = BOTS[name];
   const noise = stream(seed ^ 0x5bf03635);
   const state = createArcade(seed);
@@ -276,7 +281,12 @@ export function playShift(name, seed, { trackDensity = false } = {}) {
   let counted = null;
   let pending = [];
   let cycle = 0;
-  const markers = { firstMutation: null, firstStack: null, firstFrenzy: null, end: null };
+  const samples = [];
+  const markers = {
+    firstMutation: null, firstStack: null, firstFrenzy: null, end: null,
+    // Pacing: the tick each mark was reached, or null if the run never got there.
+    firstLevel: null, size15: null, size20: null, firstMax: null, allMax: null,
+  };
 
   while (state.phase === "playing" && state.tick < MAX_TICKS) {
     history.push(viewOf(state));
@@ -326,6 +336,15 @@ export function playShift(name, seed, { trackDensity = false } = {}) {
     if (live >= 1 && markers.firstMutation === null) markers.firstMutation = state.tick;
     if (live >= 2 && markers.firstStack === null) markers.firstStack = state.tick;
     if (state.frenzies >= 1 && markers.firstFrenzy === null) markers.firstFrenzy = state.tick;
+    if (markers.firstLevel === null && arcade.mutationLoad(state.mutations) >= 1) markers.firstLevel = state.tick;
+    if (markers.size15 === null && state.size >= 1.5) markers.size15 = state.tick;
+    if (markers.size20 === null && state.size >= 2) markers.size20 = state.tick;
+    if (markers.firstMax === null && FOODS.some((food) => state.mutations[food] >= TUNING.maxLevel)) markers.firstMax = state.tick;
+    if (markers.allMax === null && FOODS.every((food) => state.mutations[food] >= TUNING.maxLevel)) markers.allMax = state.tick;
+    if (timeline && state.tick % TICKS === 0) {
+      samples.push({ t: state.tick / TICKS, size: state.size, hunger: Math.round(state.hunger), rage: Math.round(state.rage), feeds: state.totalFeeds,
+        appetite: state.appetite, frenzy: state.tick < state.frenzyUntil, levels: arcade.mutationLoad(state.mutations), drain: round(arcade.drainPerTick(state) * TICKS, 2) });
+    }
   }
   markers.end = state.tick;
 
@@ -349,6 +368,7 @@ export function playShift(name, seed, { trackDensity = false } = {}) {
     phase: state.phase,
     cause: state.failureReason ?? (state.phase === "playing" ? "hit-tick-cap" : state.phase),
     commands,
+    timeline: timeline ? samples : null,
     density: trackDensity && ticksObserved > 0 ? changes / (ticksObserved / TICKS / 60) : null,
   };
 }
@@ -375,6 +395,26 @@ function buckets(runs) {
   return [...out.entries()].sort((a, b) => a[0] - b[0])
     .map(([from, count]) => ({ bucket: `${from}-${from + 30}s`, count, share: round(count / runs.length * 100) }));
 }
+
+/**
+ * Percentiles of a time-to-mark, with the runs that never reached it counted
+ * as `Infinity` so that a median of "never" is reported as such rather than
+ * as the median of the lucky runs. `reached` is the share of runs that did.
+ */
+function pacing(runs, key) {
+  const times = runs.map((run) => (run.markers[key] === null ? Infinity : run.markers[key] / TICKS)).sort((a, b) => a - b);
+  const finite = times.filter(Number.isFinite);
+  const pick = (p) => { const value = percentile(times, p); return Number.isFinite(value) ? round(value) : null; };
+  return {
+    reached: round(finite.length / runs.length * 100),
+    p10: pick(0.1), median: pick(0.5), p90: pick(0.9),
+    medianOfReached: finite.length ? round(percentile(finite, 0.5)) : null,
+  };
+}
+
+const PACING_KEYS = ["firstLevel", "size15", "size20", "firstMax", "allMax"];
+const PACING_NAMES = { firstLevel: "first level", size15: "size ×1.5", size20: "size ×2.0", firstMax: "first ×3", allMax: "all three ×3" };
+const fmtTime = (value) => (value === null ? "never" : `${value}s`);
 
 function summarise(name, runs) {
   const seconds = runs.map((run) => run.seconds).sort((a, b) => a - b);
@@ -403,6 +443,7 @@ function summarise(name, runs) {
     score: { median: round(median(runs.map((r) => r.score))) },
     size: { median: round(median(runs.map((r) => r.size)), 2) },
     firstFrenzy: { median: round(median(runs.filter((r) => r.markers.firstFrenzy !== null).map((r) => r.markers.firstFrenzy / TICKS))) },
+    pacing: Object.fromEntries(PACING_KEYS.map((key) => [key, pacing(runs, key)])),
     causes,
     deathSpread: share,
     worstBucketShare: share.length ? Math.max(...share.map((item) => item.share)) : 0,
@@ -422,8 +463,19 @@ function table(rows) {
   return [line(head), `|${widths.map((width) => "-".repeat(width + 2)).join("|")}|`, ...body.map(line)].join("\n");
 }
 
+function pacingTable(rows) {
+  const head = ["bot", ...PACING_KEYS.map((key) => PACING_NAMES[key])];
+  const body = rows.map((row) => [row.bot, ...PACING_KEYS.map((key) => {
+    const p = row.pacing[key];
+    return `${fmtTime(p.median)} (p10 ${fmtTime(p.p10)}, p90 ${fmtTime(p.p90)}, ${p.reached}%)`;
+  })]);
+  const widths = head.map((_, index) => Math.max(head[index].length, ...body.map((row) => row[index].length)));
+  const line = (cells) => `| ${cells.map((cell, index) => cell.padEnd(widths[index])).join(" | ")} |`;
+  return [line(head), `|${widths.map((width) => "-".repeat(width + 2)).join("|")}|`, ...body.map(line)].join("\n");
+}
+
 function parseArgs(argv) {
-  const args = { shifts: 200, seed: 1, densityShifts: 8, json: null, fixtures: null };
+  const args = { shifts: 200, seed: 1, densityShifts: 8, json: null, fixtures: null, bots: ["naive", "moderate", "good"] };
   for (let i = 0; i < argv.length; i += 1) {
     const item = argv[i];
     if (item === "--shifts") args.shifts = Number(argv[++i]);
@@ -431,6 +483,7 @@ function parseArgs(argv) {
     else if (item === "--density-shifts") args.densityShifts = Number(argv[++i]);
     else if (item === "--json") args.json = argv[++i];
     else if (item === "--fixtures") args.fixtures = argv[++i];
+    else if (item === "--bots") args.bots = argv[++i].split(",");
   }
   return args;
 }
@@ -440,7 +493,7 @@ async function main() {
   const started = Date.now();
   const report = { generatedAt: new Date().toISOString(), gameVersion: arcade.GAME_VERSION, shifts: args.shifts, seedBase: args.seed, bots: [] };
 
-  for (const name of ["naive", "moderate", "good"]) {
+  for (const name of args.bots) {
     const runs = [];
     for (let i = 0; i < args.shifts; i += 1) runs.push(playShift(name, (args.seed + i * 7919) >>> 0));
     report.bots.push(summarise(name, runs));
@@ -448,7 +501,7 @@ async function main() {
   }
 
   const density = [];
-  for (let i = 0; i < args.densityShifts; i += 1) {
+  for (let i = 0; i < (args.bots.includes("moderate") ? args.densityShifts : 0); i += 1) {
     const run = playShift("moderate", (args.seed + i * 7919) >>> 0, { trackDensity: true });
     if (run.density !== null) density.push(run.density);
   }
@@ -460,17 +513,34 @@ async function main() {
     max: round(density[density.length - 1] ?? 0, 2),
   };
 
-  // Gates, from docs/FEAST_BRIEF.md, evaluated here so no report can quietly disagree with it.
+  // Gates, from docs/FEAST_BRIEF.md and the stage 3 pacing brief, evaluated
+  // here so no report can quietly disagree with them. A gate whose bot was not
+  // run is left out rather than failed.
   const byName = Object.fromEntries(report.bots.map((row) => [row.bot, row]));
+  const { naive, moderate, good } = byName;
+  const between = (value, low, high) => value !== null && value >= low && value <= high;
+  // "Not before N s" on a median that may be "never": never is after N.
+  const notBefore = (value, low) => value === null || value >= low;
   report.gates = {
-    naiveMedian40to80: byName.naive.survival.median >= 40 && byName.naive.survival.median <= 80,
-    naiveFeedsAtLeast6: byName.naive.feeds.median >= 6,
-    moderateMedian100to180: byName.moderate.survival.median >= 100 && byName.moderate.survival.median <= 180,
-    moderateAccuracyAtLeast55: byName.moderate.accuracy >= 55,
-    moderateFrenziesAtLeast1: byName.moderate.frenzies.mean >= 1,
-    moderateDeathSpread: byName.moderate.worstBucketShare <= 40,
-    goodAtLeast1p8xNaive: byName.good.survival.median >= byName.naive.survival.median * 1.8,
-    decisionDensityAtLeast6: report.decisionDensity.median >= 6,
+    ...(naive ? {
+      naiveMedian40to80: between(naive.survival.median, 40, 80),
+      naiveFeedsAtLeast6: naive.feeds.median >= 6,
+    } : {}),
+    ...(moderate ? {
+      moderateMedian100to180: between(moderate.survival.median, 100, 180),
+      moderateAccuracyAtLeast55: moderate.accuracy >= 55,
+      moderateFrenziesAtLeast1: moderate.frenzies.mean >= 1,
+      moderateDeathSpread: moderate.worstBucketShare <= 40,
+      // Pacing (stage 3): the escalation is the whole shift.
+      moderateFirstLevel25to45: between(moderate.pacing.firstLevel.median, 25, 45),
+      moderateSize15At60to90: between(moderate.pacing.size15.median, 60, 90),
+      moderateSize20At120to180: between(moderate.pacing.size20.median, 120, 180),
+      moderateFirstMaxNotBefore150: notBefore(moderate.pacing.firstMax.median, 150),
+      moderateAllMaxNotBefore240: notBefore(moderate.pacing.allMax.median, 240),
+      moderateFirstFrenzyInside40: moderate.firstFrenzy.median <= 40 && moderate.frenzies.withAtLeastOne >= 50,
+      decisionDensityAtLeast6: report.decisionDensity.median >= 6,
+    } : {}),
+    ...(naive && good ? { goodAtLeast1p8xNaive: good.survival.median >= naive.survival.median * 1.8 } : {}),
   };
   report.gatesPass = Object.values(report.gates).every(Boolean);
   report.elapsedSeconds = round((Date.now() - started) / 1000);
@@ -482,7 +552,10 @@ async function main() {
     console.log(`${"".padEnd(9)} deaths: ${row.deathSpread.map((b) => `${b.bucket} ${b.share}%`).join(", ")}`);
   }
   console.log("");
-  console.log(`decision density (moderate): median ${report.decisionDensity.median}/min over ${report.decisionDensity.shifts} shifts (${report.decisionDensity.min}-${report.decisionDensity.max})`);
+  console.log("pacing (median; p10, p90; share of runs that reached it):");
+  console.log(pacingTable(report.bots));
+  console.log("");
+  if (byName.moderate) console.log(`decision density (moderate): median ${report.decisionDensity.median}/min over ${report.decisionDensity.shifts} shifts (${report.decisionDensity.min}-${report.decisionDensity.max})`);
   console.log("");
   for (const [gate, ok] of Object.entries(report.gates)) console.log(`${ok ? "PASS" : "FAIL"}  ${gate}`);
   console.log(`\n${report.gatesPass ? "ALL GATES PASS" : "GATES FAILING"}  (${report.elapsedSeconds}s)`);

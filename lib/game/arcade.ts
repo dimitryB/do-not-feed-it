@@ -19,7 +19,7 @@ export type Ingredient = "metal" | "balloon" | "pepper";
 export const FOODS: readonly Ingredient[] = ["metal", "balloon", "pepper"];
 
 /** Bumped whenever a rule, the trace format or the scoring changes. */
-export const GAME_VERSION = 4;
+export const GAME_VERSION = 5;
 
 /**
  * A static kitchen collider. A serving that comes off one and is then caught is
@@ -71,11 +71,16 @@ export const ARENA = Object.freeze({
 export const TUNING = Object.freeze({
   /** Growth. The creature is the difficulty curve. */
   sizeMax: 2.4,
-  /** Front-loaded: the first servings visibly change it, the last ones creep. */
-  growthPerFeed: 0.05,
-  growthEarlyBoost: 0.9,
+  /**
+   * Stage 3 pacing: the escalation is the whole shift, not its first half
+   * minute. `growthShape` bends the curve: positive front-loads it (the first
+   * servings count most), negative back-loads it (a big creature grows
+   * faster). Back-loaded, because the first frenzy gorges it early anyway.
+   */
+  growthPerFeed: 0.014,
+  growthShape: -0.3,
   growthPauseTicks: 60,
-  growthPauseMax: 150,
+  growthPauseMax: 120,
   /** A `grow` event every time the size crosses one of these steps. */
   growStep: 0.2,
 
@@ -83,10 +88,10 @@ export const TUNING = Object.freeze({
   hungerStart: 70,
   graceTicks: 240,
   drainBase: 0.06,
-  drainPerSize: 0.005,
-  drainPerMinute: 0.08,
+  drainPerSize: 0.008,
+  drainPerMinute: 0.07,
   /** One number per seed: a hungrier or a lazier creature. Spreads the deaths. */
-  temperSpread: 0.8,
+  temperSpread: 1,
   /** Appetite never stops growing, even after the body does. */
   appetitePerFeed: 0.006,
   payPerMinute: 0.75,
@@ -95,7 +100,7 @@ export const TUNING = Object.freeze({
   restore: 8,
   restoreCraved: 18,
   /** A bigger belly gets less out of the same serving. */
-  restoreShrink: 0.6,
+  restoreShrink: 0.42,
   /** Feeding a creature that is not hungry: it swallows, gets little, grows double. */
   gorgeFrom: 85,
   gorgeRestore: 0.3,
@@ -146,8 +151,12 @@ export const TUNING = Object.freeze({
   mouthGrowY: 0.456,
   bodyGrow: 0.085,
 
-  /** Mutations: three servings a level, three levels, nothing wears off. */
-  servingsPerLevel: 3,
+  /**
+   * Mutations: a level lands when an ingredient's servings reach the next of
+   * these thresholds (cumulative, per ingredient). Rising, so the first level
+   * is quick and the third is a late-shift event. Nothing wears off.
+   */
+  levelServings: [10, 28, 70] as readonly number[],
   maxLevel: 3,
 
   /** METAL: a magnet mouth, and cutlery storms. */
@@ -183,7 +192,7 @@ export const TUNING = Object.freeze({
   /** Cravings, with a clock. */
   cravingTicks: 780,
   cravingTicksMin: 430,
-  cravingGap: 80,
+  cravingGap: 120,
   cravingBonus: 260,
   cravingCalm: 13,
   cravingFeed: 8,
@@ -1025,7 +1034,7 @@ function acceptFood(state: ArcadeState, food: Projectile) {
   // Growth. This is the whole point: the reward and the problem are the same event.
   if (state.tick >= state.growthPausedUntil) {
     const before = creature.size;
-    const step = TUNING.growthPerFeed * (1 + TUNING.growthEarlyBoost * (1 - sizeT(creature.size)))
+    const step = TUNING.growthPerFeed * (1 + TUNING.growthShape * (1 - sizeT(creature.size)))
       * (gorged ? TUNING.gorgeGrowth : 1);
     creature.size = quantize(Math.min(TUNING.sizeMax, creature.size + step));
     state.size = creature.size;
@@ -1080,9 +1089,8 @@ function acceptFood(state: ArcadeState, food: Projectile) {
     }
   }
 
-  // Three servings is a level, and a level never goes away.
-  const level = Math.min(TUNING.maxLevel,
-    Math.floor(state.servings[food.ingredient] / TUNING.servingsPerLevel));
+  // A level lands at each serving threshold, and a level never goes away.
+  const level = levelFor(state.servings[food.ingredient]);
   if (level > state.mutations[food.ingredient]) {
     // The first level starts its clock from now, so the first storm and the
     // first flame arrive a legible moment after the chip lights up.
@@ -1096,6 +1104,19 @@ function acceptFood(state: ArcadeState, food: Projectile) {
     event(state, "mutation", creature.x, creature.y - creature.ry - 60,
       `${MUTATION_NAMES[food.ingredient].toUpperCase()} ×${level}`, { ingredient: food.ingredient, value: level });
   }
+}
+
+/** The mutation level this many servings of one ingredient has earned. */
+export function levelFor(servings: number): number {
+  let level = 0;
+  for (const threshold of TUNING.levelServings) if (servings >= threshold) level += 1;
+  return Math.min(TUNING.maxLevel, level);
+}
+
+/** The fewest servings of one ingredient that earn `level`. Zero for level 0. */
+export function servingsForLevel(level: number): number {
+  if (level <= 0) return 0;
+  return TUNING.levelServings[Math.min(TUNING.levelServings.length, level) - 1];
 }
 
 /** Total mutation levels the creature is carrying. */

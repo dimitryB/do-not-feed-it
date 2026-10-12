@@ -5,7 +5,7 @@ import { AudioPanel } from './components/AudioPanel';
 import { useDialogFocusTrap } from './components/focusTrap';
 import { DEFAULT_AUDIO_SETTINGS,applyAudioPatch,readAudioSettings,writeAudioSettings,type AudioSettings } from './components/audioSettings';
 import { createAudioEngine,type MixerAudioEngine,type SfxId } from '../lib/engine/audio';
-import { ARENA,FOODS,TUNING,createArcade,inFrenzy,launchFood,slamHatch,stepArcade,type ArcadeEvent,type ArcadeState,type ArcadeCommand,type Ingredient } from '../lib/game/arcade';
+import { ARENA,FOODS,createArcade,servingsForLevel,inFrenzy,launchFood,slamHatch,stepArcade,type ArcadeEvent,type ArcadeState,type ArcadeCommand,type Ingredient } from '../lib/game/arcade';
 import { DEV_HOOKS,devHookBag } from '../lib/dev/hook';
 const LABELS:Record<Ingredient,string>={metal:'Tin can',balloon:'Air puff',pepper:'Hot pepper'};
 /** What three of a snack turn it into. The chip and the legend say only this. */
@@ -93,7 +93,7 @@ export default function Home(){
       setMutations:(levels:{metal?:number;balloon?:number;pepper?:number},extra?:{clog?:number;lift?:number;pressure?:number;track?:number})=>{
         const run=runRef.current;if(!run)return null;
         run.mutations.metal=levels.metal??0;run.mutations.balloon=levels.balloon??0;run.mutations.pepper=levels.pepper??0;
-        for(const food of FOODS)run.servings[food]=run.mutations[food]*TUNING.servingsPerLevel;
+        for(const food of FOODS)run.servings[food]=servingsForLevel(run.mutations[food]);
         if(extra?.lift!==undefined)run.creature.lift=extra.lift;
         if(extra?.track!==undefined)run.creature.track=extra.track;
         setView(clone(run));return snapshot();},

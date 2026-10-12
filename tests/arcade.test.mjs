@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   ARENA, BOUNCERS, FOODS, TUNING, GAME_VERSION, bankMultiplier, cooldownFor, createArcade, drainPerTick,
-  endingFor, flameCone, getHazard, launchFood, previewFlight, probeFlight, replayArcade, slamHatch, stepArcade,
+  endingFor, flameCone, getHazard, launchFood, levelFor, previewFlight, probeFlight, replayArcade, servingsForLevel, slamHatch, stepArcade,
 } from "../lib/game/arcade.ts";
 
 const GRAVITY = 0.16;
@@ -114,14 +114,15 @@ function makeFood(state, ingredient, x, y, vx, vy, extra = {}) {
 }
 
 function mutate(state, ingredient, level) {
-  for (let i = 0; i < level * TUNING.servingsPerLevel; i += 1) {
-    assert.ok(feedOnce(state, ingredient), `could not land serving ${i + 1} of ${ingredient}`);
-  }
+  // Jump to one serving short of the threshold, then land the one that counts,
+  // so a level test does not spend forty catches getting there.
+  state.servings[ingredient] = Math.max(state.servings[ingredient], servingsForLevel(level) - 1);
+  assert.ok(feedOnce(state, ingredient), `could not land the serving that makes ${ingredient} level ${level}`);
   assert.equal(state.mutations[ingredient], level);
 }
 
-test("the version is 4, the shift is endless, and the pillars' constants hold", () => {
-  assert.equal(GAME_VERSION, 4);
+test("the version is 5, the shift is endless, and the pillars' constants hold", () => {
+  assert.equal(GAME_VERSION, 5);
   assert.equal(ARENA.maxTicks, 43200);
   assert.equal(ARENA.cooldownTicks, 30);
   assert.equal(ARENA.frenzyCooldownTicks, 15);
@@ -444,13 +445,37 @@ test("a launcher inside the flame cone is singed; a shut hatch blocks it", () =>
   assert.equal(shielded.hatchSaves, 1);
 });
 
+test("mutation levels land at rising serving thresholds", () => {
+  const [first, second, third] = TUNING.levelServings;
+  assert.ok(first < second && second < third, "rising");
+  assert.ok(second - first <= third - second, "and the steps do not shrink");
+  assert.equal(levelFor(0), 0);
+  assert.equal(levelFor(first - 1), 0);
+  assert.equal(levelFor(first), 1);
+  assert.equal(levelFor(second - 1), 1);
+  assert.equal(levelFor(second), 2);
+  assert.equal(levelFor(third), 3);
+  assert.equal(levelFor(third * 3), TUNING.maxLevel);
+  assert.equal(servingsForLevel(1), first);
+  assert.equal(servingsForLevel(TUNING.maxLevel), third);
+  assert.equal(servingsForLevel(0), 0);
+  const state = fresh(8);
+  state.servings.metal = first - 2;
+  assert.ok(feedOnce(state, "metal"));
+  assert.equal(state.mutations.metal, 0, "one short of the threshold is not a level");
+  const seen = state.nextEventId;
+  assert.ok(feedOnce(state, "metal"));
+  assert.equal(state.mutations.metal, 1);
+  assert.ok(newEvents(state, seen).some((e) => e.type === "mutation" && e.value === 1));
+});
+
 test("mutation levels are permanent, stack across ingredients, and cap at three", () => {
   const state = fresh(8);
   mutate(state, "metal", 1);
   mutate(state, "balloon", 1);
   assert.deepEqual(state.mutations, { metal: 1, balloon: 1, pepper: 0 });
   assert.equal(state.mutationEvents, 2);
-  state.servings.pepper = TUNING.servingsPerLevel * (TUNING.maxLevel + 2) - 1;
+  state.servings.pepper = servingsForLevel(TUNING.maxLevel) * 2 - 1;
   assert.ok(feedOnce(state, "pepper"));
   assert.equal(state.mutations.pepper, TUNING.maxLevel);
   advance(state, state.tick + 600);
@@ -461,9 +486,13 @@ test("every serving grows it, growth moves and widens the mouth, and a grow even
   const state = fresh(9);
   const { y, ry, size } = state.creature;
   let grows = 0;
-  for (let i = 0; i < 6; i += 1) {
+  let feeds = 0;
+  // Stage 3 pacing: the first BIGGER. step is no longer inside the first
+  // handful of servings, but it must arrive well inside a shift.
+  while (grows === 0 && feeds < 80) {
     const before = state.nextEventId;
     assert.ok(feedOnce(state));
+    feeds += 1;
     grows += newEvents(state, before).filter((e) => e.type === "grow").length;
   }
   assert.ok(state.creature.size > size);
@@ -471,6 +500,7 @@ test("every serving grows it, growth moves and widens the mouth, and a grow even
   assert.ok(state.creature.ry > ry, "a bigger mouth");
   assert.ok(state.creature.y < y, "sitting higher");
   assert.ok(grows >= 1, "at least one BIGGER. card");
+  assert.ok(feeds > 6, `the first step took ${feeds} servings; it should not be spent in the first six`);
   // The chest rises with it, so the mouth's bottom lip stays clear of the belly's top at the mouth's x.
   const c = state.creature;
   assert.ok(c.by - c.bry < c.y, "belly top is behind the face, never in front of it");

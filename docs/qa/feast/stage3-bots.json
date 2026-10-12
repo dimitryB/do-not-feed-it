@@ -1,0 +1,442 @@
+{
+  "generatedAt": "2026-10-12T08:02:55.504Z",
+  "gameVersion": 5,
+  "shifts": 200,
+  "seedBase": 1,
+  "bots": [
+    {
+      "bot": "naive",
+      "shifts": 200,
+      "survival": {
+        "p10": 61.6,
+        "median": 74.2,
+        "p90": 95.8,
+        "max": 106.1
+      },
+      "feeds": {
+        "median": 71,
+        "mean": 73.2
+      },
+      "accuracy": 49.1,
+      "frenzies": {
+        "mean": 0,
+        "withAtLeastOne": 0
+      },
+      "banks": {
+        "mean": 0.69
+      },
+      "clanks": {
+        "mean": 69.7
+      },
+      "cooked": {
+        "mean": 14.3
+      },
+      "utensils": {
+        "mean": 1.03
+      },
+      "bestCombo": {
+        "median": 2
+      },
+      "score": {
+        "median": 14107
+      },
+      "size": {
+        "median": 1.64
+      },
+      "firstFrenzy": {
+        "median": 0
+      },
+      "pacing": {
+        "firstLevel": {
+          "reached": 100,
+          "p10": 26.5,
+          "median": 27.7,
+          "p90": 28.5,
+          "medianOfReached": 27.7
+        },
+        "size15": {
+          "reached": 89.5,
+          "p10": 37.9,
+          "median": 53.6,
+          "p90": null,
+          "medianOfReached": 52.2
+        },
+        "size20": {
+          "reached": 2.5,
+          "p10": null,
+          "median": null,
+          "p90": null,
+          "medianOfReached": 99
+        },
+        "firstMax": {
+          "reached": 0,
+          "p10": null,
+          "median": null,
+          "p90": null,
+          "medianOfReached": null
+        },
+        "allMax": {
+          "reached": 0,
+          "p10": null,
+          "median": null,
+          "p90": null,
+          "medianOfReached": null
+        }
+      },
+      "causes": {
+        "empty-belly": 200
+      },
+      "deathSpread": [
+        {
+          "bucket": "30-60s",
+          "count": 16,
+          "share": 8
+        },
+        {
+          "bucket": "60-90s",
+          "count": 149,
+          "share": 74.5
+        },
+        {
+          "bucket": "90-120s",
+          "count": 35,
+          "share": 17.5
+        }
+      ],
+      "worstBucketShare": 74.5
+    },
+    {
+      "bot": "moderate",
+      "shifts": 200,
+      "survival": {
+        "p10": 103.2,
+        "median": 142.7,
+        "p90": 210,
+        "max": 330.8
+      },
+      "feeds": {
+        "median": 194,
+        "mean": 201.8
+      },
+      "accuracy": 83.1,
+      "frenzies": {
+        "mean": 5.8,
+        "withAtLeastOne": 100
+      },
+      "banks": {
+        "mean": 37.61
+      },
+      "clanks": {
+        "mean": 29
+      },
+      "cooked": {
+        "mean": 30.6
+      },
+      "utensils": {
+        "mean": 5.15
+      },
+      "bestCombo": {
+        "median": 28
+      },
+      "score": {
+        "median": 163572
+      },
+      "size": {
+        "median": 2.15
+      },
+      "firstFrenzy": {
+        "median": 22.7
+      },
+      "pacing": {
+        "firstLevel": {
+          "reached": 100,
+          "p10": 17.6,
+          "median": 27.1,
+          "p90": 49.1,
+          "medianOfReached": 27.1
+        },
+        "size15": {
+          "reached": 99.5,
+          "p10": 50.1,
+          "median": 66.9,
+          "p90": 97.8,
+          "medianOfReached": 66.7
+        },
+        "size20": {
+          "reached": 67.5,
+          "p10": 104.7,
+          "median": 141.5,
+          "p90": null,
+          "medianOfReached": 122.2
+        },
+        "firstMax": {
+          "reached": 41.5,
+          "p10": 141.9,
+          "median": null,
+          "p90": null,
+          "medianOfReached": 152.6
+        },
+        "allMax": {
+          "reached": 39.5,
+          "p10": 144.7,
+          "median": null,
+          "p90": null,
+          "medianOfReached": 156.4
+        }
+      },
+      "causes": {
+        "empty-belly": 200
+      },
+      "deathSpread": [
+        {
+          "bucket": "60-90s",
+          "count": 3,
+          "share": 1.5
+        },
+        {
+          "bucket": "90-120s",
+          "count": 55,
+          "share": 27.5
+        },
+        {
+          "bucket": "120-150s",
+          "count": 50,
+          "share": 25
+        },
+        {
+          "bucket": "150-180s",
+          "count": 40,
+          "share": 20
+        },
+        {
+          "bucket": "180-210s",
+          "count": 31,
+          "share": 15.5
+        },
+        {
+          "bucket": "210-240s",
+          "count": 10,
+          "share": 5
+        },
+        {
+          "bucket": "240-270s",
+          "count": 8,
+          "share": 4
+        },
+        {
+          "bucket": "270-300s",
+          "count": 1,
+          "share": 0.5
+        },
+        {
+          "bucket": "300-330s",
+          "count": 1,
+          "share": 0.5
+        },
+        {
+          "bucket": "330-360s",
+          "count": 1,
+          "share": 0.5
+        }
+      ],
+      "worstBucketShare": 27.5
+    },
+    {
+      "bot": "good",
+      "shifts": 200,
+      "survival": {
+        "p10": 125.3,
+        "median": 163.9,
+        "p90": 247.2,
+        "max": 361
+      },
+      "feeds": {
+        "median": 217,
+        "mean": 228.9
+      },
+      "accuracy": 80.9,
+      "frenzies": {
+        "mean": 5.66,
+        "withAtLeastOne": 99.5
+      },
+      "banks": {
+        "mean": 80.25
+      },
+      "clanks": {
+        "mean": 41.4
+      },
+      "cooked": {
+        "mean": 36
+      },
+      "utensils": {
+        "mean": 5.84
+      },
+      "bestCombo": {
+        "median": 29
+      },
+      "score": {
+        "median": 181363
+      },
+      "size": {
+        "median": 2.18
+      },
+      "firstFrenzy": {
+        "median": 44.4
+      },
+      "pacing": {
+        "firstLevel": {
+          "reached": 100,
+          "p10": 27.4,
+          "median": 40.9,
+          "p90": 59.7,
+          "medianOfReached": 40.9
+        },
+        "size15": {
+          "reached": 100,
+          "p10": 69.6,
+          "median": 90.7,
+          "p90": 119.9,
+          "medianOfReached": 90.7
+        },
+        "size20": {
+          "reached": 70,
+          "p10": 127.1,
+          "median": 163.4,
+          "p90": null,
+          "medianOfReached": 146.4
+        },
+        "firstMax": {
+          "reached": 57,
+          "p10": 145.4,
+          "median": 199,
+          "p90": null,
+          "medianOfReached": 163.5
+        },
+        "allMax": {
+          "reached": 55,
+          "p10": 148.1,
+          "median": 201.9,
+          "p90": null,
+          "medianOfReached": 165.5
+        }
+      },
+      "causes": {
+        "empty-belly": 200
+      },
+      "deathSpread": [
+        {
+          "bucket": "90-120s",
+          "count": 9,
+          "share": 4.5
+        },
+        {
+          "bucket": "120-150s",
+          "count": 57,
+          "share": 28.5
+        },
+        {
+          "bucket": "150-180s",
+          "count": 54,
+          "share": 27
+        },
+        {
+          "bucket": "180-210s",
+          "count": 32,
+          "share": 16
+        },
+        {
+          "bucket": "210-240s",
+          "count": 24,
+          "share": 12
+        },
+        {
+          "bucket": "240-270s",
+          "count": 9,
+          "share": 4.5
+        },
+        {
+          "bucket": "270-300s",
+          "count": 7,
+          "share": 3.5
+        },
+        {
+          "bucket": "300-330s",
+          "count": 4,
+          "share": 2
+        },
+        {
+          "bucket": "330-360s",
+          "count": 3,
+          "share": 1.5
+        },
+        {
+          "bucket": "360-390s",
+          "count": 1,
+          "share": 0.5
+        }
+      ],
+      "worstBucketShare": 28.5
+    }
+  ],
+  "sampleRun": {
+    "seed": 1,
+    "markers": {
+      "firstMutation": 1086,
+      "firstStack": 1436,
+      "firstFrenzy": 806,
+      "end": 6213,
+      "firstLevel": 1086,
+      "size15": 3658,
+      "size20": null,
+      "firstMax": null,
+      "allMax": null
+    },
+    "ticks": 6213,
+    "seconds": 103.55,
+    "score": 92491,
+    "feeds": 127,
+    "shots": 159,
+    "clanks": 27,
+    "misses": 5,
+    "frenzies": 3,
+    "banks": 25,
+    "cooked": 18,
+    "utensils": 1,
+    "bestCombo": 28,
+    "size": 1.7734,
+    "mutations": {
+      "metal": 2,
+      "balloon": 2,
+      "pepper": 2
+    },
+    "phase": "lost",
+    "cause": "empty-belly",
+    "commands": 159,
+    "timeline": null,
+    "density": null
+  },
+  "decisionDensity": {
+    "shifts": 8,
+    "median": 141.33,
+    "min": 109.02,
+    "max": 150.07
+  },
+  "gates": {
+    "naiveMedian40to80": true,
+    "naiveFeedsAtLeast6": true,
+    "moderateMedian100to180": true,
+    "moderateAccuracyAtLeast55": true,
+    "moderateFrenziesAtLeast1": true,
+    "moderateDeathSpread": true,
+    "moderateFirstLevel25to45": true,
+    "moderateSize15At60to90": true,
+    "moderateSize20At120to180": true,
+    "moderateFirstMaxNotBefore150": true,
+    "moderateAllMaxNotBefore240": true,
+    "moderateFirstFrenzyInside40": true,
+    "decisionDensityAtLeast6": true,
+    "goodAtLeast1p8xNaive": true
+  },
+  "gatesPass": true,
+  "elapsedSeconds": 1029
+}
