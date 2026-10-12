@@ -6,12 +6,13 @@ import { DEV_HOOKS, devHookBag, devRender, drawCostSummary, drawProfileSummary, 
 
 export function GameCanvas({runRef,angle,selected,playing,reduced,guideSteps,onAim}:{runRef:RefObject<ArcadeState|null>;angle:number;selected:Ingredient;playing:boolean;reduced:boolean;guideSteps:number;onAim:(angle:number)=>void}) {
   const canvasRef=useRef<HTMLCanvasElement>(null);
+  const sceneRef=useRef<ReturnType<typeof createScene>|null>(null);
   const propsRef=useRef({angle,selected,playing,reduced,guideSteps});
   useEffect(()=>{propsRef.current={angle,selected,playing,reduced,guideSteps};},[angle,selected,playing,reduced,guideSteps]);
   useEffect(()=>{
     const canvas=canvasRef.current;if(!canvas)return;
     const context=canvas.getContext('2d');if(!context)return;
-    const scene=createScene();let frame=0;let disposed=false;
+    const scene=createScene();sceneRef.current=scene;let frame=0;let disposed=false;
     const resize=()=>{const rect=canvas.getBoundingClientRect();const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);};
     const observer=new ResizeObserver(resize);observer.observe(canvas);resize();
     const draw=(now:number)=>{
@@ -84,11 +85,17 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,guideSteps,onA
         // by scripts/mouth-calibrate.mjs to keep the rules' collision ellipse
         // and the drawn mouth the same object.
         bag.mouthBox=async()=>{const {lastMouth}=await import("../../lib/render/creature/draw");return {...lastMouth};};
-        detachHooks=()=>{delete bag.mouthBox;delete bag.sceneReady;delete bag.canvasSize;delete bag.rigDump;delete bag.poseNow;delete bag.settle;delete bag.hideAim;delete bag.hideLabels;delete bag.holdBlink;};
+        // The camera on the last frame, so a calibration can check the ring
+        // and the drawn mouth agree on screen as well as in arena space.
+        bag.camera=()=>scene.camera();
+        detachHooks=()=>{delete bag.mouthBox;delete bag.camera;delete bag.sceneReady;delete bag.canvasSize;delete bag.rigDump;delete bag.poseNow;delete bag.settle;delete bag.hideAim;delete bag.hideLabels;delete bag.holdBlink;};
       }
     }
-    return()=>{disposed=true;cancelAnimationFrame(frame);observer.disconnect();detachHooks?.();};
+    return()=>{disposed=true;cancelAnimationFrame(frame);observer.disconnect();detachHooks?.();sceneRef.current=null;};
   },[runRef]);
-  const aim=(clientX:number,clientY:number)=>{const rect=canvasRef.current?.getBoundingClientRect();if(!rect)return;const x=(clientX-rect.left)/rect.width*ARENA.width;const y=(clientY-rect.top)/rect.height*ARENA.height;onAim(Math.round(Math.max(ARENA.minAngle,Math.min(ARENA.maxAngle,Math.atan2(y-ARENA.launcher.y,Math.max(30,x-ARENA.launcher.x))*180/Math.PI))));};
+  // The angle from the launcher to the pointer. The camera moves the launcher
+  // on screen when it pulls back, so the angle is taken from where the launcher
+  // is drawn; a uniform zoom preserves angles, so nothing else changes.
+  const aim=(clientX:number,clientY:number)=>{const rect=canvasRef.current?.getBoundingClientRect();if(!rect)return;const x=(clientX-rect.left)/rect.width*ARENA.width;const y=(clientY-rect.top)/rect.height*ARENA.height;const cam=sceneRef.current?.camera()??{zoom:1,ax:0,ay:0};const lx=cam.ax+(ARENA.launcher.x-cam.ax)*cam.zoom;const ly=cam.ay+(ARENA.launcher.y-cam.ay)*cam.zoom;onAim(Math.round(Math.max(ARENA.minAngle,Math.min(ARENA.maxAngle,Math.atan2(y-ly,Math.max(30,x-lx))*180/Math.PI))));};
   return <canvas ref={canvasRef} className="game-canvas" aria-label="Feeding kitchen. Aim with arrow keys or drag in the kitchen; launch with Space or the Launch button." onPointerDown={e=>{if(!playing)return;e.currentTarget.setPointerCapture(e.pointerId);aim(e.clientX,e.clientY);e.currentTarget.focus();}} onPointerMove={e=>{if(playing&&e.buttons===1)aim(e.clientX,e.clientY);}} tabIndex={playing?0:-1}/>;
 }

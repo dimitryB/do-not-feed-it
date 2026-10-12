@@ -754,6 +754,8 @@ const GRADE_REGION = { x: 500, y: 40, width: 700, height: 440 };
  * regression: four composites become one, and the one is the cheap kind.
  */
 const GRADE_MODE: GlobalCompositeOperation = "source-over";
+/** The most summed cool-wash cover the body takes before the washes are scaled back together. */
+const WASH_CAP = 0.5;
 
 function flushGrades(context: CanvasRenderingContext2D, rig: CreatureRig, grades: BodyGrade[]) {
   if (!grades.length) return;
@@ -824,46 +826,56 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
       inner.fillStyle = anger;
       inner.fillRect(500, 40, 700, 500);
     } });
-    context.save();
-    context.globalAlpha = pose.rageFlush * 0.4;
-    context.strokeStyle = "rgba(120,8,24,0.9)";
-    context.lineWidth = 1.8;
-    context.lineCap = "round";
-    for (const [cx, cy, direction] of [[742, 214, -1], [944, 220, 1]] as const) {
-      for (let index = 0; index < 3; index++) {
-        const y = cy + index * 13;
-        context.beginPath();
-        context.moveTo(cx, y);
-        context.quadraticCurveTo(cx + direction * 13, y + 9, cx + direction * 21, y + 4);
-        context.stroke();
+    // The cheeks themselves: two soft hot spots, not lines. Stroke marks on a
+    // painted face read as pen on a photograph.
+    grades.push({ paint: (inner) => {
+      for (const [cx, cy] of [[748, 236], [938, 242]] as const) {
+        const cheek = inner.createRadialGradient(cx, cy, 2, cx, cy, 58);
+        cheek.addColorStop(0, `rgba(222,48,48,${0.55 * pose.rageFlush})`);
+        cheek.addColorStop(0.5, `rgba(196,30,40,${0.24 * pose.rageFlush})`);
+        cheek.addColorStop(1, "rgba(180,20,36,0)");
+        inner.fillStyle = cheek;
+        inner.beginPath();
+        inner.ellipse(cx, cy, 58, 48, 0, 0, Math.PI * 2);
+        inner.fill();
       }
-    }
-    context.restore();
+    } });
   }
+
+  // The three cool washes below — metal's steel, the balloon's taut rim and
+  // hunger's pallor — each read on their own and compounded into a white
+  // creature late in a shift, when all three are on at once. They share one
+  // budget: past `WASH_CAP` of summed cover they are scaled back together, so
+  // a creature carrying every mutation is still the same green monster with a
+  // flush, only colder.
+  const washLoad = 0.5 * pose.magnetism + 0.4 * pose.taut + 0.85 * pose.pallor;
+  const washScale = washLoad > WASH_CAP ? WASH_CAP / washLoad : 1;
+  const magnetism = pose.magnetism * washScale;
+  const taut = pose.taut * washScale;
+  const pallor = pose.pallor * washScale;
 
   // Metal: a cold wash creeping up the jaw, and only ever here. Before this the
   // mutation had no colour identity at all — the fangs were ivory, so it read as
   // "bigger teeth" rather than as metal — while warm tones meant pepper AND
   // anger, so three of the four vocabulary units in the set were one colour.
-  if (pose.magnetism > 0.04) {
+  if (magnetism > 0.04) {
     grades.push({ paint: (inner) => {
       const steel = inner.createRadialGradient(846, 300, 20, 846, 258, 300);
-      steel.addColorStop(0, `rgba(176,206,222,${0.34 * pose.magnetism})`);
-      steel.addColorStop(0.45, `rgba(138,172,196,${0.2 * pose.magnetism})`);
+      steel.addColorStop(0, `rgba(176,206,222,${0.34 * magnetism})`);
+      steel.addColorStop(0.45, `rgba(138,172,196,${0.2 * magnetism})`);
       steel.addColorStop(1, "rgba(120,156,184,0)");
       inner.fillStyle = steel;
       inner.fillRect(500, 40, 700, 500);
     } });
     grades.push({ paint: (inner) => {
-      inner.fillStyle = `rgba(150,170,185,${0.24 * pose.magnetism})`;
+      inner.fillStyle = `rgba(150,170,185,${0.16 * magnetism})`;
       inner.fillRect(500, 40, 700, 500);
     } });
   }
 
   // Balloon: a taut cool rim along the top of the swell, which is what a
   // stretched, over-full surface does to the light above it.
-  if (pose.taut > 0.05) {
-    const taut = pose.taut;
+  if (taut > 0.05) {
     grades.push({ paint: (inner) => {
       const rim = inner.createRadialGradient(846, 268, 30, 846, 300, 320);
       rim.addColorStop(0, `rgba(186,244,232,${0.4 * taut})`);
@@ -875,15 +887,15 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
   }
 
   // Hunger pallor: colour drains and the light goes cold.
-  if (pose.pallor > 0.03) {
+  if (pallor > 0.03) {
     grades.push({ paint: (inner) => {
-      inner.fillStyle = `rgba(150,168,150,${0.45 * pose.pallor})`;
+      inner.fillStyle = `rgba(150,168,150,${0.3 * pallor})`;
       inner.fillRect(500, 40, 700, 500);
     } });
     grades.push({ paint: (inner) => {
       const cold = inner.createRadialGradient(846, 300, 30, 846, 300, 420);
-      cold.addColorStop(0, `rgba(150,186,198,${0.55 * pose.pallor})`);
-      cold.addColorStop(0.7, `rgba(150,186,198,${0.28 * pose.pallor})`);
+      cold.addColorStop(0, `rgba(150,186,198,${0.5 * pallor})`);
+      cold.addColorStop(0.7, `rgba(150,186,198,${0.25 * pallor})`);
       cold.addColorStop(1, "rgba(150,186,198,0)");
       inner.fillStyle = cold;
       inner.fillRect(500, 40, 700, 500);
@@ -892,8 +904,8 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
 
   flushGrades(context, rig, grades);
 
-  // Pressure on the cheeks: a blotch of blood under the skin with veining,
-  // which reads at stream size where thin scratches do not.
+  // Pressure on the cheeks: a blotch of blood under the skin with a hot core.
+  // Soft, because stroke marks on a painted face read as pen on a photograph.
   if (pose.cheekMarks > 0.05) {
     context.save();
     for (const [cx, cy, direction] of [[726, 256, -1], [964, 266, 1]] as const) {
@@ -905,18 +917,14 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
       context.beginPath();
       context.ellipse(cx, cy, 54, 46, 0, 0, Math.PI * 2);
       context.fill();
-      context.globalAlpha = pose.cheekMarks * 0.5;
-      context.strokeStyle = "rgba(140,22,12,0.9)";
-      context.lineWidth = 2.2;
-      context.lineCap = "round";
-      for (let index = 0; index < 3; index++) {
-        const y = cy - 16 + index * 16;
-        context.beginPath();
-        context.moveTo(cx - direction * 6, y);
-        context.quadraticCurveTo(cx + direction * 12, y + 5, cx + direction * 27, y - 3);
-        context.stroke();
-      }
-      context.globalAlpha = 1;
+      // A hotter core, so the mark reads as pressure and not as a general blush.
+      const core = context.createRadialGradient(cx + direction * 8, cy - 4, 1, cx + direction * 8, cy - 4, 22);
+      core.addColorStop(0, `rgba(236,70,40,${0.5 * pose.cheekMarks})`);
+      core.addColorStop(1, "rgba(236,70,40,0)");
+      context.fillStyle = core;
+      context.beginPath();
+      context.ellipse(cx + direction * 8, cy - 4, 22, 18, 0, 0, Math.PI * 2);
+      context.fill();
     }
     context.restore();
   }

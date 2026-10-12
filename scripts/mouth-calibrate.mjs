@@ -124,16 +124,22 @@ async function main() {
         for (let i = 0; i < 50; i += 1) await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
         const c = play.state().creature;
         const drawn = await window.__dnfi.mouthBox();
-        return { drawn, rule: { x: c.x, y: c.y, rx: c.rx, ry: c.ry, lift: c.lift, open: c.open } };
+        const camera = window.__dnfi.camera ? window.__dnfi.camera() : { zoom: 1, ax: 0, ay: 0 };
+        return { drawn, rule: { x: c.x, y: c.y, rx: c.rx, ry: c.ry, lift: c.lift, open: c.open }, camera };
       }, live);
       const n = (v) => (typeof v === "number" ? v.toFixed(1) : String(v));
       const d = pair.drawn ?? {}, r = pair.rule ?? {};
       // The rules' vertical half-height is ry scaled by the gap they test
       // against, not raw ry: `dyGap = (y - mouthY) / (ry * max(gapFloor, open))`.
       const effRy = r.ry * Math.max(0.3, r.open ?? 1);
+      // The camera scales the ring and the drawn mouth together, so the
+      // on-screen disagreement is the arena one times the zoom; it is printed
+      // so a pulled-back frame is checked in the pixels the player sees.
+      const zoom = pair.camera?.zoom ?? 1;
       console.log(`  ${live.name.padEnd(18)} drawn x ${n(d.x)} y ${n(d.y)} rx ${n(d.rx)} ry ${n(d.ry)}`
         + `   rule x ${n(r.x)} y ${n(r.y)} rx ${n(r.rx)} effRy ${n(effRy)}   open ${n(r.open)}`
-        + `   dx ${n(r.x - d.x)} dy ${n(r.y - d.y)}  drx ${n(r.rx - d.rx)} dry ${n(effRy - d.ry)}`);
+        + `   dx ${n(r.x - d.x)} dy ${n(r.y - d.y)}  drx ${n(r.rx - d.rx)} dry ${n(effRy - d.ry)}`
+        + `   zoom ${zoom.toFixed(2)} (on screen dx ${n((r.x - d.x) * zoom)} dy ${n((r.y - d.y) * zoom)})`);
     }
 
     if (args.shot) {

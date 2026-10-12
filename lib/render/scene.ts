@@ -4,7 +4,8 @@ import {
 } from '../game/arcade';
 import { CreatureAnimator } from './creature/pose';
 import { buildRig, type CreatureRig } from './creature/rig';
-import { drawCreature } from './creature/draw';
+import { drawCreature, REST_MOUTH } from './creature/draw';
+import { EYE, ANTENNA_BULB } from './creature/anatomy';
 import { DEV_HOOKS, devRender, frameCells } from '../dev/hook';
 
 /**
@@ -41,6 +42,21 @@ const CAPTION = { x: 300, y: 238 };
 const COMBO = { x: 332, y: 470 };
 /** The belly bar, on the counter's front face directly under the creature. */
 const BELLY = { y: 504, w: 330, h: 14 };
+
+/**
+ * The camera. From about x2 the rules put the mouth so high that the eyes
+ * leave the frame, and the face is the character. Once the creature is past
+ * `CAMERA.from` the whole arena-space scene is scaled about a fixed anchor near
+ * the counter's centre by whatever factor keeps the brow at least `eyeMargin`
+ * px below the top edge and the antennae at least `headMargin`, whichever is
+ * tighter. The factor only ever falls during a run, in steps, each eased over
+ * `ease` seconds; the HUD and the captions stay in screen space.
+ */
+const CAMERA = { ax: 600, ay: 530, from: 1.4, min: 0.6, step: 0.04, ease: 1.5, eyeMargin: 80, headMargin: 24 };
+/** The brow ridge over the eyes and the top of the antennae, in the painting. */
+const BROW_Y = Math.min(EYE.left.y - EYE.left.ry, EYE.right.y - EYE.right.ry) - 20;
+const HEAD_TOP_Y = ANTENNA_BULB.y - ANTENNA_BULB.r;
+const easeInOut = (t: number) => { const u = clampAlpha(t); return u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2; };
 
 interface Particle {
   x: number; y: number; vx: number; vy: number; born: number; life: number;
@@ -93,6 +109,49 @@ export function createScene() {
 
   let previewKey = ''; let guide: { x: number; y: number }[] = [];
 
+  // The camera: the zoom in force, the step it is easing from and to, and
+  // whether this run has already had its "it no longer fits" beat.
+  const camera = { zoom: 1, from: 1, target: 1, since: -10, said: false };
+  const toScreenX = (x: number) => CAMERA.ax + (x - CAMERA.ax) * camera.zoom;
+  const toScreenY = (y: number) => CAMERA.ay + (y - CAMERA.ay) * camera.zoom;
+
+  /**
+   * The zoom the creature needs right now, from the rules' geometry rather than
+   * the drawn pose, so the bob's whole swing is already allowed for and the
+   * camera does not breathe with it.
+   */
+  function zoomNeeded(state: ArcadeState): number {
+    const c = state.creature;
+    if (c.size <= CAMERA.from) return 1;
+    const grow = c.size - 1;
+    const scaleY = 1 + grow * 0.06;
+    // The highest the mouth gets on this bob, in arena space.
+    const bobAmp = TUNING.bobPerLevel * (state.mutations.balloon ?? 0);
+    // Positive track is a lean down; an upward lean also lifts the head a little on its own.
+    const mouthTop = c.y + (c.bob ?? 0) - bobAmp + Math.min(0, c.track ?? 0) * 0.12;
+    const brow = mouthTop - (REST_MOUTH.y - BROW_Y) * scaleY;
+    const head = mouthTop - (REST_MOUTH.y - HEAD_TOP_Y) * scaleY;
+    let zoom = 1;
+    if (brow < CAMERA.eyeMargin) zoom = Math.min(zoom, (CAMERA.ay - CAMERA.eyeMargin) / (CAMERA.ay - brow));
+    if (head < CAMERA.headMargin) zoom = Math.min(zoom, (CAMERA.ay - CAMERA.headMargin) / (CAMERA.ay - head));
+    return clamp(zoom, CAMERA.min, 1);
+  }
+
+  function stepCamera(state: ArcadeState | null, shown: boolean, time: number, reduced: boolean) {
+    if (!shown || !state) {
+      camera.zoom = camera.from = camera.target = 1; camera.since = -10; camera.said = false;
+      return;
+    }
+    // Quantised downward so each pull-back is a step, and never back in: it
+    // does not shrink, and a camera that breathes is a camera you notice.
+    const needed = Math.floor(zoomNeeded(state) / CAMERA.step + 1e-6) * CAMERA.step;
+    if (needed < camera.target - 1e-6) {
+      camera.from = camera.zoom; camera.target = needed; camera.since = time;
+      if (!camera.said) { camera.said = true; say('IT NO LONGER FITS.', '#f1ffc8', 6, time, 60, 1.6, true); }
+    }
+    camera.zoom = reduced ? camera.target : camera.from + (camera.target - camera.from) * easeInOut((time - camera.since) / CAMERA.ease);
+  }
+
   function item(ctx: CanvasRenderingContext2D, ingredient: Ingredient, x: number, y: number, size: number, rotation = 0) {
     ctx.save(); ctx.translate(x, y); ctx.rotate(rotation);
     if (items.complete && items.naturalWidth) {
@@ -127,6 +186,7 @@ export function createScene() {
       // A new run, or one we have never seen: start from here rather than
       // replaying its whole history into the screen.
       seenRun = state.seed; particles.length = 0; pops.length = 0; rings.length = 0; caption = null; shake = 0; wobble.clear();
+      camera.zoom = camera.from = camera.target = 1; camera.since = -10; camera.said = false;
       seenEvent = Math.max(0, (state.events[state.events.length - 1]?.id ?? 0) - 1);
       if (state.tick < 2) seenEvent = 0;
     }
@@ -236,87 +296,199 @@ export function createScene() {
   }
 
   // ---- props: the five kitchen bouncers, where the rules put them.
+  //
+  // Painted to the room, not drawn on it: dark enamel and cast iron, an amber
+  // rim light from the lamps on the right, a soft shadow on the wall or the
+  // counter, a cord or chain where a thing hangs, and a slow sway. A hit
+  // throws a glint along the rim.
+  const RIM = 'rgba(255,186,108,';
   function drawProps(ctx: CanvasRenderingContext2D, time: number, reduced: boolean, dt: number) {
     for (const b of ARENA.bouncers) {
       const w = wobble.get(b.name);
-      let a = 0;
+      let a = 0; let glint = 0;
       if (w) {
         // A damped spring, in radians; reduced motion settles at once.
         if (reduced) { w.v = 0; w.a = 0; }
         else { w.v += (-w.a * 60 - w.v * 4) * dt; w.a += w.v * dt; }
-        a = w.a;
+        a = w.a; glint = clampAlpha(Math.abs(w.v) / 5);
         if (Math.abs(w.a) < 0.002 && Math.abs(w.v) < 0.01) wobble.delete(b.name);
       }
-      drawProp(ctx, b, a, time, reduced);
+      drawProp(ctx, b, a, glint, time, reduced);
     }
   }
 
-  function drawProp(ctx: CanvasRenderingContext2D, b: Bouncer, swing: number, time: number, reduced: boolean) {
+  /** A soft shadow: a radial gradient ellipse, never a hard-edged shape. */
+  function softShadow(ctx: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number, alpha: number) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, rx);
+    g.addColorStop(0, `rgba(2,6,5,${alpha})`); g.addColorStop(0.6, `rgba(2,6,5,${alpha * 0.5})`); g.addColorStop(1, 'rgba(2,6,5,0)');
+    ctx.save(); ctx.translate(x, y); ctx.scale(1, ry / rx); ctx.translate(-x, -y);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, rx, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  /** A hanging cord from the ceiling: dark, with a thread of light on its lit side. */
+  function cord(ctx: CanvasRenderingContext2D, x: number, toY: number, width = 2.5) {
+    ctx.strokeStyle = '#0d1312'; ctx.lineWidth = width; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, toY); ctx.stroke();
+    ctx.strokeStyle = `${RIM}0.35)`; ctx.lineWidth = Math.max(0.8, width * 0.35); ctx.beginPath(); ctx.moveTo(x + width * 0.3, 0); ctx.lineTo(x + width * 0.3, toY); ctx.stroke();
+  }
+
+  function drawProp(ctx: CanvasRenderingContext2D, b: Bouncer, swing: number, glint: number, time: number, reduced: boolean) {
     ctx.save();
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    const sway = reduced ? 0 : Math.sin(time * 0.7 + (b.kind === 'circle' ? b.x : b.x1) * 0.01) * 0.018;
     if (b.kind === 'circle' && b.name === 'pan') {
-      // A frying pan hanging face-on from a cord, swinging about its hook.
-      ctx.translate(b.x, 0); ctx.rotate(swing * 0.35); ctx.translate(-b.x, 0);
-      ctx.strokeStyle = '#1b2422'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(b.x, 0); ctx.lineTo(b.x, b.y - b.r); ctx.stroke();
-      ctx.strokeStyle = '#6c7568'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(b.x, 0); ctx.lineTo(b.x, b.y - b.r); ctx.stroke();
-      const steel = ctx.createRadialGradient(b.x - 10, b.y - 12, 4, b.x, b.y, b.r);
-      steel.addColorStop(0, '#5d6964'); steel.addColorStop(0.55, '#2b3431'); steel.addColorStop(1, '#141a19');
-      ctx.fillStyle = steel; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#8f9a90'; ctx.lineWidth = 3; ctx.stroke();
-      ctx.strokeStyle = '#cfd8cc'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 4, Math.PI * 1.1, Math.PI * 1.6); ctx.stroke();
-      // Handle, out to the right.
-      ctx.fillStyle = '#1e2624'; ctx.strokeStyle = '#8f9a90'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.roundRect(b.x + b.r - 2, b.y - 5, 46, 10, 5); ctx.fill(); ctx.stroke();
+      // A cast-iron pan hanging face-on from a cord, swinging about its hook.
+      ctx.translate(b.x, 0); ctx.rotate(swing * 0.35 + sway); ctx.translate(-b.x, 0);
+      cord(ctx, b.x, b.y - b.r - 8);
+      // Its shadow on the wall, down and to the left of the lamps.
+      softShadow(ctx, b.x - 12, b.y + 14, b.r + 18, b.r + 10, 0.5);
+      // The hook ring.
+      ctx.strokeStyle = '#1a211f'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(b.x, b.y - b.r - 3, 5, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = `${RIM}0.6)`; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(b.x, b.y - b.r - 3, 5, -1.2, 0.5); ctx.stroke();
+      // The handle, out to the right, under the lamps.
+      ctx.save(); ctx.translate(b.x + b.r - 4, b.y); ctx.rotate(0.05);
+      const hg = ctx.createLinearGradient(0, -6, 0, 6); hg.addColorStop(0, '#2a302d'); hg.addColorStop(0.5, '#141a19'); hg.addColorStop(1, '#070b0a');
+      ctx.fillStyle = hg; ctx.beginPath(); ctx.roundRect(0, -6, 50, 12, 6); ctx.fill();
+      ctx.strokeStyle = `${RIM}0.7)`; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(6, -5); ctx.lineTo(44, -5); ctx.stroke();
+      ctx.fillStyle = '#05080899'; ctx.beginPath(); ctx.arc(42, 0, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      // The pan: black iron, a little lighter where the room's light catches it.
+      const iron = ctx.createRadialGradient(b.x - 9, b.y - 9, 3, b.x, b.y, b.r + 2);
+      iron.addColorStop(0, '#2f3634'); iron.addColorStop(0.5, '#171d1c'); iron.addColorStop(0.88, '#0b100f'); iron.addColorStop(1, '#161c1b');
+      ctx.fillStyle = iron; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+      // The inner wall: a ring a few pixels in, darker, which is what gives it depth.
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 6, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = 'rgba(120,130,124,0.14)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 9, 0, Math.PI * 2); ctx.stroke();
+      // Amber rim light along the side that faces the lamps, with a glint on a hit.
+      ctx.strokeStyle = `${RIM}${0.25 + glint * 0.3})`; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 1, -1.35, 0.75); ctx.stroke();
+      ctx.strokeStyle = `${RIM}${0.85 + glint * 0.15})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 1, -1.2, 0.6); ctx.stroke();
+      if (glint > 0.02) { ctx.strokeStyle = `rgba(255,244,214,${glint})`; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 1, -0.9, -0.2); ctx.stroke(); }
+      // A dull specular on the enamel, toward the lamps.
+      const spec = ctx.createRadialGradient(b.x + 11, b.y - 11, 1, b.x + 11, b.y - 11, 15);
+      spec.addColorStop(0, 'rgba(255,214,160,0.22)'); spec.addColorStop(1, 'rgba(255,214,160,0)');
+      ctx.fillStyle = spec; ctx.beginPath(); ctx.arc(b.x + 11, b.y - 11, 15, 0, Math.PI * 2); ctx.fill();
     } else if (b.kind === 'circle' && b.name === 'lamp') {
-      // A caged pendant lamp, lit. It is worth two banks, so it glows.
-      ctx.translate(b.x, 0); ctx.rotate(swing * 0.5); ctx.translate(-b.x, 0);
-      ctx.strokeStyle = '#1b2422'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(b.x, 0); ctx.lineTo(b.x, b.y - b.r + 4); ctx.stroke();
-      const glow = ctx.createRadialGradient(b.x, b.y + 4, 4, b.x, b.y + 4, b.r * 2.6);
+      // A pendant lamp in a dark tin shade, lit. It is worth two banks, so it glows.
+      ctx.translate(b.x, 0); ctx.rotate(swing * 0.5 + sway); ctx.translate(-b.x, 0);
+      cord(ctx, b.x, b.y - b.r - 2, 3);
       const flick = reduced ? 1 : 0.9 + 0.1 * Math.sin(time * 11);
+      const glow = ctx.createRadialGradient(b.x, b.y + 6, 4, b.x, b.y + 6, b.r * 2.8);
       glow.addColorStop(0, `rgba(255,214,140,${0.55 * flick})`); glow.addColorStop(0.5, 'rgba(255,170,80,0.18)'); glow.addColorStop(1, 'rgba(255,150,60,0)');
-      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(b.x, b.y + 4, b.r * 2.6, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#2a3330'; ctx.strokeStyle = '#9aa69c'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(b.x - 8, b.y - b.r + 2); ctx.lineTo(b.x + 8, b.y - b.r + 2); ctx.lineTo(b.x + b.r, b.y - 2); ctx.lineTo(b.x - b.r, b.y - 2); ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = `rgba(255,232,170,${0.85 * flick})`; ctx.beginPath(); ctx.ellipse(b.x, b.y + 6, b.r * 0.55, b.r * 0.62, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#a7b2a6'; ctx.lineWidth = 1.5;
-      for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(b.x + i * 9, b.y - 2); ctx.lineTo(b.x + i * 6, b.y + b.r - 2); ctx.stroke(); }
-      ctx.beginPath(); ctx.ellipse(b.x, b.y + b.r - 2, b.r * 0.52, 4, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(b.x, b.y + 6, b.r * 2.8, 0, Math.PI * 2); ctx.fill();
+      // The shade: a cone of dark tin, its underside lit by the bulb.
+      const top = b.y - b.r - 2;
+      const shade = ctx.createLinearGradient(b.x - b.r, 0, b.x + b.r, 0);
+      shade.addColorStop(0, '#0b100f'); shade.addColorStop(0.4, '#262d2a'); shade.addColorStop(0.7, '#161c1b'); shade.addColorStop(1, '#3a2e22');
+      ctx.fillStyle = shade;
+      ctx.beginPath(); ctx.moveTo(b.x - 9, top); ctx.lineTo(b.x + 9, top); ctx.lineTo(b.x + b.r + 2, b.y - 1); ctx.lineTo(b.x - b.r - 2, b.y - 1); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = `${RIM}${0.75 + glint * 0.25})`; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(b.x + 9, top + 1); ctx.lineTo(b.x + b.r + 1, b.y - 2); ctx.stroke();
+      // The lit underside and the bulb.
+      const under = ctx.createLinearGradient(0, b.y - 3, 0, b.y + 4);
+      under.addColorStop(0, `rgba(255,200,120,${0.7 * flick})`); under.addColorStop(1, 'rgba(255,200,120,0)');
+      ctx.fillStyle = under; ctx.beginPath(); ctx.ellipse(b.x, b.y - 1, b.r + 2, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `rgba(255,236,180,${0.9 * flick})`; ctx.beginPath(); ctx.ellipse(b.x, b.y + 7, b.r * 0.5, b.r * 0.58, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `rgba(255,252,236,${0.95 * flick})`; ctx.beginPath(); ctx.ellipse(b.x, b.y + 5, b.r * 0.26, b.r * 0.32, 0, 0, Math.PI * 2); ctx.fill();
+      // The cage: dark wire silhouetted against the bulb.
+      ctx.strokeStyle = '#1a211f'; ctx.lineWidth = 2;
+      for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(b.x + i * 10, b.y - 1); ctx.quadraticCurveTo(b.x + i * 9, b.y + b.r * 0.6, b.x + i * 5.5, b.y + b.r - 1); ctx.stroke(); }
+      ctx.beginPath(); ctx.ellipse(b.x, b.y + b.r - 1, b.r * 0.5, 3.5, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = `${RIM}0.5)`; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(b.x, b.y + b.r - 1, b.r * 0.5, 3.5, 0, -0.4, 1.4); ctx.stroke();
+      if (glint > 0.02) { ctx.strokeStyle = `rgba(255,244,214,${glint})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(b.x + 9, top + 1); ctx.lineTo(b.x + b.r - 4, b.y - 6); ctx.stroke(); }
     } else if (b.kind === 'circle') {
-      // The pot on the counter: it rattles rather than swings.
-      ctx.translate(b.x, b.y + b.r); ctx.rotate(swing * 0.18); ctx.translate(-b.x, -(b.y + b.r));
+      // The stock pot, standing on the counter. It rattles rather than swings.
+      const bottom = b.y + b.r;
+      // Its weight on the counter: a contact shadow and a smear of reflection.
+      softShadow(ctx, b.x + 2, bottom + 1, b.r + 20, 10, 0.7);
+      const mirror = ctx.createLinearGradient(0, bottom, 0, bottom + 30);
+      mirror.addColorStop(0, 'rgba(10,14,13,0.4)'); mirror.addColorStop(1, 'rgba(10,14,13,0)');
+      ctx.fillStyle = mirror; ctx.beginPath(); ctx.ellipse(b.x, bottom + 14, b.r - 2, 16, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.translate(b.x, bottom); ctx.rotate(swing * 0.18); ctx.translate(-b.x, -bottom);
+      const topY = b.y - b.r + 10;
+      // The body: dark enamel, lit from the right.
       const body = ctx.createLinearGradient(b.x - b.r, 0, b.x + b.r, 0);
-      body.addColorStop(0, '#1a2321'); body.addColorStop(0.35, '#50605a'); body.addColorStop(0.6, '#2d3834'); body.addColorStop(1, '#111817');
-      ctx.fillStyle = body; ctx.beginPath(); ctx.roundRect(b.x - b.r + 3, b.y - b.r + 8, b.r * 2 - 6, b.r * 2 - 8, [4, 4, 10, 10]); ctx.fill();
-      ctx.strokeStyle = '#8f9a90'; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.fillStyle = '#39443f'; ctx.beginPath(); ctx.ellipse(b.x, b.y - b.r + 8, b.r, 7, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#b9c3b8'; ctx.lineWidth = 2.5; ctx.stroke();
-      ctx.strokeStyle = '#8f9a90'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(b.x - b.r + 1, b.y - 2, 9, Math.PI * 0.5, Math.PI * 1.5); ctx.stroke();
-      ctx.beginPath(); ctx.arc(b.x + b.r - 1, b.y - 2, 9, -Math.PI * 0.5, Math.PI * 0.5); ctx.stroke();
+      body.addColorStop(0, '#070b0a'); body.addColorStop(0.18, '#1b2321'); body.addColorStop(0.42, '#2c3532'); body.addColorStop(0.7, '#161c1b'); body.addColorStop(0.9, '#3a2f24'); body.addColorStop(1, '#1a1512');
+      ctx.fillStyle = body;
+      ctx.beginPath(); ctx.moveTo(b.x - b.r + 2, topY); ctx.lineTo(b.x + b.r - 2, topY); ctx.lineTo(b.x + b.r - 3, bottom - 6);
+      ctx.quadraticCurveTo(b.x + b.r - 3, bottom, b.x + b.r - 10, bottom); ctx.lineTo(b.x - b.r + 10, bottom);
+      ctx.quadraticCurveTo(b.x - b.r + 3, bottom, b.x - b.r + 3, bottom - 6); ctx.closePath(); ctx.fill();
+      // Bottom rim, in perspective: the counter is seen from a little above.
+      ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(b.x, bottom - 2, b.r - 4, 5, 0, 0, Math.PI); ctx.stroke();
+      // Amber rim light up the right side, and a glint on a hit.
+      ctx.strokeStyle = `${RIM}${0.3 + glint * 0.3})`; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(b.x + b.r - 5, topY + 6); ctx.lineTo(b.x + b.r - 6, bottom - 6); ctx.stroke();
+      ctx.strokeStyle = `${RIM}${0.85 + glint * 0.15})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(b.x + b.r - 4, topY + 4); ctx.lineTo(b.x + b.r - 5, bottom - 5); ctx.stroke();
+      if (glint > 0.02) { ctx.strokeStyle = `rgba(255,244,214,${glint})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(b.x + b.r - 6, topY + 10); ctx.lineTo(b.x + b.r - 7, topY + 34); ctx.stroke(); }
+      // A soft sheen down the enamel, the way the painting's bowls take the room's light.
+      const sheen = ctx.createLinearGradient(b.x - 18, 0, b.x + 2, 0);
+      sheen.addColorStop(0, 'rgba(190,206,200,0)'); sheen.addColorStop(0.5, 'rgba(190,206,200,0.13)'); sheen.addColorStop(1, 'rgba(190,206,200,0)');
+      ctx.fillStyle = sheen; ctx.fillRect(b.x - 18, topY + 10, 20, bottom - topY - 16);
+      // A faint cool highlight up the left, from the lantern across the room.
+      ctx.strokeStyle = 'rgba(170,200,196,0.16)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(b.x - b.r + 7, topY + 8); ctx.lineTo(b.x - b.r + 7, bottom - 10); ctx.stroke();
+      // The mouth of the pot: a dark interior and a lit rim.
+      ctx.fillStyle = '#2a3230'; ctx.beginPath(); ctx.ellipse(b.x, topY, b.r - 1, 8, 0, 0, Math.PI * 2); ctx.fill();
+      const inside = ctx.createRadialGradient(b.x, topY + 1, 2, b.x, topY + 1, b.r - 4);
+      inside.addColorStop(0, '#040706'); inside.addColorStop(0.8, '#0a0e0d'); inside.addColorStop(1, '#1c2422');
+      ctx.fillStyle = inside; ctx.beginPath(); ctx.ellipse(b.x, topY + 1, b.r - 5, 6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(b.x, topY, b.r - 1, 8, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = `${RIM}0.9)`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(b.x, topY, b.r - 1, 8, 0, -1.3, 0.9); ctx.stroke();
+      ctx.strokeStyle = 'rgba(190,210,204,0.35)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(b.x, topY, b.r - 1, 8, 0, Math.PI + 0.3, Math.PI + 1.6); ctx.stroke();
+      // Two handles, dark, each catching the light on its outer edge.
+      ctx.lineWidth = 7; ctx.strokeStyle = '#0c1211';
+      ctx.beginPath(); ctx.arc(b.x - b.r + 3, b.y - 2, 10, Math.PI * 0.45, Math.PI * 1.55); ctx.stroke();
+      ctx.beginPath(); ctx.arc(b.x + b.r - 3, b.y - 2, 10, -Math.PI * 0.55, Math.PI * 0.55); ctx.stroke();
+      ctx.strokeStyle = `${RIM}0.75)`; ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.arc(b.x + b.r - 3, b.y - 2, 11.5, -Math.PI * 0.5, Math.PI * 0.3); ctx.stroke();
+      ctx.strokeStyle = 'rgba(150,170,164,0.25)'; ctx.beginPath(); ctx.arc(b.x - b.r + 3, b.y - 2, 11.5, Math.PI * 0.6, Math.PI * 1.3); ctx.stroke();
     } else if (b.name === 'shelf') {
-      // A plank on two brackets. It bounces rather than swings.
+      // A plank on two iron brackets, in the dark of the upper wall. It bounces
+      // rather than swings. Dark wood, an edge of lamplight, and two bottles in
+      // silhouette so it reads as a shelf and not a bar.
       ctx.translate(0, swing * 6);
-      ctx.fillStyle = '#2b2a22'; ctx.strokeStyle = '#9a9276'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.roundRect(b.x1, b.y1 - 2, b.x2 - b.x1, 9, 2); ctx.fill(); ctx.stroke();
-      ctx.strokeStyle = '#d6cfae'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(b.x1 + 4, b.y1 - 1); ctx.lineTo(b.x2 - 4, b.y1 - 1); ctx.stroke();
-      ctx.strokeStyle = '#6c7568'; ctx.lineWidth = 3;
-      for (const x of [b.x1 + 22, b.x2 - 22]) { ctx.beginPath(); ctx.moveTo(x, b.y1 + 7); ctx.lineTo(x, b.y1 + 26); ctx.lineTo(x - 14, b.y1 + 7); ctx.stroke(); }
-      // Two jars, so the plank reads as a shelf and not a bar.
-      ctx.fillStyle = '#3d4a3a'; ctx.strokeStyle = '#9fb08e'; ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.roundRect(b.x1 + 36, b.y1 - 26, 18, 24, 3); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#4a3a2e'; ctx.strokeStyle = '#c9a070';
-      ctx.beginPath(); ctx.roundRect(b.x1 + 72, b.y1 - 20, 24, 18, 3); ctx.fill(); ctx.stroke();
+      const h = 10;
+      // The plank's shadow on the wall.
+      const under = ctx.createLinearGradient(0, b.y1 + h - 2, 0, b.y1 + h + 22);
+      under.addColorStop(0, 'rgba(2,6,5,0.6)'); under.addColorStop(1, 'rgba(2,6,5,0)');
+      ctx.fillStyle = under; ctx.fillRect(b.x1 - 6, b.y1 + h - 2, b.x2 - b.x1 + 8, 24);
+      // Brackets, under the plank.
+      ctx.strokeStyle = '#0d1211'; ctx.lineWidth = 4;
+      for (const x of [b.x1 + 26, b.x2 - 26]) { ctx.beginPath(); ctx.moveTo(x, b.y1 + h); ctx.lineTo(x, b.y1 + h + 22); ctx.lineTo(x - 16, b.y1 + h); ctx.stroke(); }
+      ctx.strokeStyle = `${RIM}0.4)`; ctx.lineWidth = 1;
+      for (const x of [b.x1 + 26, b.x2 - 26]) { ctx.beginPath(); ctx.moveTo(x + 1.5, b.y1 + h + 1); ctx.lineTo(x + 1.5, b.y1 + h + 20); ctx.stroke(); }
+      // The plank: old wood, darker at the left end, a warm edge on top.
+      const wood = ctx.createLinearGradient(b.x1, 0, b.x2, 0);
+      wood.addColorStop(0, '#120d09'); wood.addColorStop(0.5, '#2a1f15'); wood.addColorStop(1, '#3a2a1b');
+      ctx.fillStyle = wood; ctx.beginPath(); ctx.roundRect(b.x1 - 4, b.y1 - 2, b.x2 - b.x1 + 8, h, 2); ctx.fill();
+      ctx.strokeStyle = `${RIM}${0.55 + glint * 0.45})`; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(b.x1 + 10, b.y1 - 1.5); ctx.lineTo(b.x2 + 3, b.y1 - 1.5); ctx.stroke();
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(b.x1 - 3, b.y1 + h - 2.5); ctx.lineTo(b.x2 + 3, b.y1 + h - 2.5); ctx.stroke();
+      // Bottles and a jar on it, in silhouette, each with one bead of lamplight.
+      const bottle = (x: number, w: number, hh: number, neck: number, tint: string) => {
+        const glass = ctx.createLinearGradient(x, 0, x + w, 0);
+        glass.addColorStop(0, '#07090a'); glass.addColorStop(0.6, tint); glass.addColorStop(1, '#0b0d0c');
+        ctx.fillStyle = glass;
+        ctx.beginPath(); ctx.roundRect(x + w * 0.32, b.y1 - 2 - hh, w * 0.36, neck, 2); ctx.fill();
+        ctx.beginPath(); ctx.roundRect(x, b.y1 - 2 - hh + neck - 2, w, hh - neck + 2, 4); ctx.fill();
+        ctx.strokeStyle = `${RIM}0.75)`; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(x + w - 3, b.y1 - hh + neck + 4); ctx.lineTo(x + w - 3, b.y1 - 8); ctx.stroke();
+        ctx.fillStyle = `${RIM}0.5)`; ctx.beginPath(); ctx.ellipse(x + w / 2, b.y1 - 2 - hh + 1, w * 0.2, 1.5, 0, 0, Math.PI * 2); ctx.fill();
+      };
+      bottle(b.x1 + 30, 16, 40, 14, '#152019');
+      bottle(b.x1 + 52, 20, 30, 9, '#1d1711');
+      bottle(b.x2 - 46, 26, 24, 6, '#1a1c14');
     } else {
       // The chain, hanging from the ceiling, a hook on its end.
-      ctx.translate(b.x1, 0); ctx.rotate(swing * 0.3); ctx.translate(-b.x1, 0);
-      ctx.strokeStyle = '#121917'; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(b.x1, b.y1); ctx.lineTo(b.x2, b.y2); ctx.stroke();
-      ctx.strokeStyle = '#9aa69c'; ctx.lineWidth = 2;
+      ctx.translate(b.x1, 0); ctx.rotate(swing * 0.3 + sway); ctx.translate(-b.x1, 0);
+      // Its shadow on the wall.
+      ctx.strokeStyle = 'rgba(2,6,5,0.45)'; ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(b.x1 - 9, b.y1); ctx.lineTo(b.x2 - 9, b.y2 + 8); ctx.stroke();
       for (let y = b.y1 + 6; y < b.y2; y += 14) {
         const wide = Math.round(y / 14) % 2 === 0;
-        ctx.beginPath(); ctx.ellipse(b.x1, y, wide ? 5 : 2.5, 7, 0, 0, Math.PI * 2); ctx.stroke();
+        const rx = wide ? 5.5 : 2.6;
+        ctx.fillStyle = '#0b100f'; ctx.beginPath(); ctx.ellipse(b.x1, y, rx + 1.5, 8.5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#1e2624'; ctx.lineWidth = 2.6; ctx.beginPath(); ctx.ellipse(b.x1, y, rx, 7, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = `${RIM}${0.7 + glint * 0.3})`; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(b.x1, y, rx, 7, 0, -1.1, 0.9); ctx.stroke();
       }
-      ctx.strokeStyle = '#b9c3b8'; ctx.lineWidth = 3.5;
-      ctx.beginPath(); ctx.arc(b.x2 + 7, b.y2 + 10, 9, Math.PI * 1.5, Math.PI * 0.75); ctx.stroke();
+      // The hook: dark iron with light on its outer curve.
+      ctx.strokeStyle = '#0b100f'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(b.x2 + 7, b.y2 + 10, 9, Math.PI * 1.5, Math.PI * 0.75); ctx.stroke();
+      ctx.strokeStyle = '#242c29'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(b.x2 + 7, b.y2 + 10, 9, Math.PI * 1.5, Math.PI * 0.75); ctx.stroke();
+      ctx.strokeStyle = `${RIM}${0.8 + glint * 0.2})`; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(b.x2 + 7, b.y2 + 10, 10.5, -0.3, 1.2); ctx.stroke();
+      if (glint > 0.02) { ctx.strokeStyle = `rgba(255,244,214,${glint})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(b.x2 + 7, b.y2 + 10, 10.5, -0.1, 0.6); ctx.stroke(); }
     }
     ctx.restore();
   }
@@ -525,8 +697,23 @@ export function createScene() {
     ctx.save();
     ctx.translate(sx, sy);
 
+    // The camera: the arena-space scene, scaled about the counter's centre
+    // once the creature is too big for the frame. Everything in the room is
+    // drawn inside this transform; the HUD is drawn after it is restored.
+    stepCamera(state, shown, t, reduced);
+    const zoom = camera.zoom;
+    if (kitchen.complete && kitchen.naturalWidth && !rig && !rigFailed) { try { rig = buildRig(kitchen); } catch { rigFailed = true; } }
+    if (zoom < 0.999) {
+      // The room beyond the frame: the same kitchen, out of the light.
+      if (kitchen.complete && kitchen.naturalWidth) ctx.drawImage(rig ? rig.backdrop : kitchen, 0, 0, 1200, 700);
+      ctx.fillStyle = 'rgba(3,9,8,0.78)'; ctx.fillRect(0, 0, 1200, 700);
+    }
+    ctx.save();
+    // Not clipped to the arena: a creature that has outgrown the kitchen is
+    // drawn over the dark beyond it, which is the point of pulling back.
+    ctx.translate(CAMERA.ax, CAMERA.ay); ctx.scale(zoom, zoom); ctx.translate(-CAMERA.ax, -CAMERA.ay);
+
     if (kitchen.complete && kitchen.naturalWidth) {
-      if (!rig && !rigFailed) { try { rig = buildRig(kitchen); } catch { rigFailed = true; } }
       // The kitchen without the creature, then the creature on it.
       ctx.drawImage(rig ? rig.backdrop : kitchen, 0, 0, 1200, 700);
       if (rig) {
@@ -574,12 +761,19 @@ export function createScene() {
     }
     const hazard = playing && state ? getHazard(state.vent, tick) : null;
     if (hazard) {
-      // The vent flap it bit off, swinging under the ceiling: a bank.
+      // The vent flap it bit off, swinging under the ceiling: a bank. Dark
+      // louvred tin, lamplight on its edge, a wire where it hangs.
       ctx.save(); const { x, y, width: w, height: h, warning } = hazard;
-      ctx.globalAlpha = warning ? 0.5 + 0.3 * (reduced ? 0 : Math.abs(Math.sin(t * 6))) : 0.95;
-      ctx.fillStyle = '#1a2422'; ctx.strokeStyle = warning ? '#eea66d' : '#9fb0a0'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.roundRect(x, y, w, h, 3); ctx.fill(); ctx.stroke();
-      ctx.strokeStyle = '#5c6a62'; ctx.lineWidth = 1; for (let i = 1; i < 5; i++) { ctx.beginPath(); ctx.moveTo(x + 2, y + i * h / 5); ctx.lineTo(x + w - 2, y + i * h / 5); ctx.stroke(); }
+      ctx.globalAlpha = warning ? 0.55 + 0.3 * (reduced ? 0 : Math.abs(Math.sin(t * 6))) : 1;
+      cord(ctx, x + w / 2, y, 1.5);
+      softShadow(ctx, x + w / 2 - 6, y + h / 2 + 8, w + 14, h / 2 + 14, 0.4);
+      const tin = ctx.createLinearGradient(x, 0, x + w, 0);
+      tin.addColorStop(0, '#0a0f0e'); tin.addColorStop(0.5, '#222a27'); tin.addColorStop(1, '#141a18');
+      ctx.fillStyle = tin; ctx.beginPath(); ctx.roundRect(x, y, w, h, 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.lineWidth = 1;
+      for (let i = 1; i < 6; i++) { ctx.beginPath(); ctx.moveTo(x + 2, y + i * h / 6); ctx.lineTo(x + w - 2, y + i * h / 6); ctx.stroke(); }
+      ctx.strokeStyle = warning ? 'rgba(238,166,109,0.9)' : `${RIM}0.8)`; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(x + w - 1, y + 2); ctx.lineTo(x + w - 1, y + h - 2); ctx.stroke();
       ctx.restore();
     }
 
@@ -765,13 +959,31 @@ export function createScene() {
       }
     }
 
+    ctx.restore(); // camera: from here on, screen space.
+    if (zoom < 0.999) {
+      // A soft edge where the frame ends and the dark room begins.
+      const x0 = toScreenX(0), y0 = toScreenY(0), x1 = toScreenX(1200), y1 = toScreenY(700);
+      const edge = 26;
+      const fade = (gx0: number, gy0: number, gx1: number, gy1: number, x: number, y: number, w: number, h: number) => {
+        const g = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
+        g.addColorStop(0, 'rgba(3,9,8,0.6)'); g.addColorStop(1, 'rgba(3,9,8,0)');
+        ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+      };
+      ctx.save();
+      fade(0, y1, 0, y1 - edge, x0, y1 - edge, x1 - x0, edge);
+      fade(x0, 0, x0 + edge, 0, x0, y0, edge, y1 - y0);
+      fade(x1, 0, x1 - edge, 0, x1 - edge, y0, edge, y1 - y0);
+      ctx.restore();
+    }
+
     // The craving ring: what it wants, drawn by the creature, with the time
-    // left as a shrinking arc. Bigger than before.
+    // left as a shrinking arc. Bigger than before. Screen space, placed from
+    // where the mouth is on screen.
     if (playing && state && state.craving) {
       const c = state.creature; const cr = state.craving;
       const span = Math.max(1, cr.endsAt - cr.startedAt);
       const left = Math.max(0, Math.min(1, (cr.endsAt - tick) / span));
-      const bx = Math.min(1120, c.x + c.rx * (c.gape ?? 1) * 0.92 + 66); const by = Math.max(118, c.y - c.ry - 76);
+      const bx = Math.min(1120, toScreenX(c.x + c.rx * (c.gape ?? 1) * 0.92) + 66); const by = Math.max(118, toScreenY(c.y - c.ry) - 76);
       const urgent = left < 0.3;
       ctx.save();
       ctx.globalAlpha = urgent && !reduced ? .82 + .18 * Math.sin(t * 11) : .94;
@@ -789,7 +1001,7 @@ export function createScene() {
     if (playing && state) {
       const c = state.creature;
       const fullness = clampAlpha(state.hunger / 100);
-      const x = clamp(c.x, 420 + BELLY.w / 2, 1180 - BELLY.w / 2) - BELLY.w / 2; const y = BELLY.y;
+      const x = clamp(toScreenX(c.x), 420 + BELLY.w / 2, 1180 - BELLY.w / 2) - BELLY.w / 2; const y = toScreenY(BELLY.y);
       const low = fullness < 0.25;
       const blink = low ? (reduced ? 1 : 0.55 + 0.45 * Math.abs(Math.sin(t * Math.PI * 2.5))) : 1;
       ctx.save();
@@ -827,8 +1039,9 @@ export function createScene() {
         const size = clamp(30 + n * 9, 30, 72) * bump;
         const heat = clampAlpha((n - 1) / (TUNING.frenzyAt - 1));
         const color = n >= TUNING.frenzyAt - 1 ? '#ffd36a' : heat > 0.5 ? '#f1ffa8' : '#d8f896';
-        drawText(ctx, `×${n}`, COMBO.x, COMBO.y, size, color, 1, DISPLAY, 'center', 7);
-        drawText(ctx, 'COMBO', COMBO.x, COMBO.y - size * 0.62 - 6, 13, '#b9c6ae', 1, MONO, 'center', 4);
+        const cx = toScreenX(COMBO.x), cy = toScreenY(COMBO.y);
+        drawText(ctx, `×${n}`, cx, cy, size, color, 1, DISPLAY, 'center', 7);
+        drawText(ctx, 'COMBO', cx, cy - size * 0.62 - 6, 13, '#b9c6ae', 1, MONO, 'center', 4);
       }
     }
 
@@ -867,7 +1080,7 @@ export function createScene() {
         ctx.globalAlpha = (1 - f) * 0.9;
         ctx.strokeStyle = '#f1ffc8'; ctx.lineWidth = 14 * (1 - f) + 2;
         const c = state.creature;
-        ctx.beginPath(); ctx.ellipse(c.x, c.y + 60, reduced ? 420 : 120 + f * 900, reduced ? 300 : 80 + f * 640, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(toScreenX(c.x), toScreenY(c.y + 60), reduced ? 420 : 120 + f * 900, reduced ? 300 : 80 + f * 640, 0, 0, Math.PI * 2); ctx.stroke();
         ctx.globalAlpha = (1 - f) * 0.14;
         ctx.fillStyle = '#f1ffc8'; ctx.fillRect(0, 0, 1200, 700);
         ctx.restore();
@@ -894,5 +1107,7 @@ export function createScene() {
   const debugPose = () => ({ ...animator.current });
   /** Development only: the render clock the last frame was drawn at (hit-stop aware). */
   const worldTime = () => lastWorldTime;
-  return { draw, ready, debugRig, debugPose, warm, worldTime };
+  /** The camera in force on the last frame: arena -> screen is `anchor + (p - anchor) * zoom`. */
+  const cameraNow = () => ({ zoom: camera.zoom, target: camera.target, ax: CAMERA.ax, ay: CAMERA.ay, said: camera.said });
+  return { draw, ready, debugRig, debugPose, warm, worldTime, camera: cameraNow };
 }
