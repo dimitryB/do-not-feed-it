@@ -65,7 +65,8 @@ function add(state: ArcadeState, type: ArcadeEvent["type"], ageTicks: number, la
 function shot(state: ArcadeState, ingredient: Ingredient, x: number, y: number, vx: number, vy: number, age: number) {
   state.projectiles.push({
     id: state.nextProjectileId++, ingredient, x, y, vx, vy,
-    kind: "food", age, bounces: 0, hazardBounces: 0, assisted: false, faceHits: 0,
+    kind: "food", age, bounces: 0, bank: 0, hitMask: 0, lastSurface: "", lastBank: "", hazardBounces: 0,
+    assisted: false, cooked: false, spent: false,
   });
 }
 

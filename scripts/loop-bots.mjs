@@ -1,27 +1,28 @@
 #!/usr/bin/env node
 /**
- * Headless balance harness for the feeding loop.
+ * Headless balance harness for FEAST.
  *
  * Three deterministic bots play the pure simulation. Nothing here reads a
  * clock, a renderer or `Math.random`: a bot's only randomness is aim noise
  * drawn from its own seeded stream, so a reported table is reproducible from
  * `--seed` alone.
  *
- *   naive     never aims (the default angle, mid power), fires on cooldown,
- *             never reacts. This is the current build's winning strategy and
- *             the gate that says the clicker is gone.
- *   moderate  reads the craving and the mouth rhythm through a 250 ms delay,
- *             with +/-4 degrees of aim noise.
- *   good      the same policy at 150 ms and +/-1.5 degrees.
+ *   naive     never aims: the default angle and power, fired the instant the
+ *             launcher is ready, cycling the three snacks in order. A beginner
+ *             who has found the fire button and nothing else.
+ *   moderate  aims at the mouth through a 250 ms delay with +/-4 degrees of
+ *             noise, does not fire into a chew it can see coming, serves the
+ *             craving when there is one, and tries a bank shot now and then.
+ *   good      150 ms and +/-1.5 degrees, and goes looking for banks on purpose.
  *
- * Reported per bot: survival-time percentiles, feeds, score, and the cause of
- * death. The moderate bot additionally reports decision density — how often
- * per minute the best available action actually changes, which is the closest
- * measurable proxy for "the player is deciding something".
+ * Reported per bot: survival-time percentiles, feeds, accuracy, frenzies and
+ * banks per run, score, cause of death, deaths per 30-second bucket. The
+ * moderate bot additionally reports decision density — how often per minute
+ * the best available action actually changes.
  *
  * Usage:
  *   node --experimental-strip-types scripts/loop-bots.mjs [--shifts 200]
- *        [--seed 1] [--density-shifts 12] [--json FILE] [--fixtures FILE]
+ *        [--seed 1] [--density-shifts 8] [--json FILE] [--fixtures FILE]
  */
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -30,30 +31,12 @@ import { fileURLToPath } from "node:url";
 import * as arcade from "../lib/game/arcade.ts";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const { ARENA, FOODS, createArcade, launchFood, stepArcade, replayArcade } = arcade;
+const { ARENA, FOODS, TUNING, createArcade, launchFood, stepArcade, replayArcade, probeFlight, cooldownFor } = arcade;
 
-/* ------------------------------------------------------------------ *
- * Capability detection.
- *
- * The harness is written once and has to keep running while the rules grow
- * underneath it, so every feature added after iteration 0 — launch power, the
- * reaction verb, the cheap flight probe — is detected rather than assumed.
- * ------------------------------------------------------------------ */
-const HAS_POWER = Number.isFinite(ARENA.minPower) && Number.isFinite(ARENA.maxPower);
-const HAS_HATCH = typeof arcade.slamHatch === "function";
-const HAS_PROBE = typeof arcade.probeFlight === "function";
-const TICKS = ARENA.tickRate ?? 60;
-const MAX_TICKS = ARENA.maxTicks ?? ARENA.roundTicks ?? 7200;
-const DEFAULT_POWER = HAS_POWER ? Math.round((ARENA.minPower + ARENA.maxPower) / 2) : null;
-
-/** Coarse enough to evaluate at 60 Hz, fine enough that the bands are real. */
-const ANGLE_STEP = 3;
-const POWER_STEP = 2;
-const ANGLES = [];
-for (let a = ARENA.minAngle; a <= ARENA.maxAngle; a += ANGLE_STEP) ANGLES.push(a);
-const POWERS = HAS_POWER
-  ? (() => { const out = []; for (let p = ARENA.minPower; p <= ARENA.maxPower; p += POWER_STEP) out.push(p); return out; })()
-  : [null];
+const TICKS = ARENA.tickRate;
+const MAX_TICKS = ARENA.maxTicks;
+const GRAVITY = 0.16;
+const PROBE_TICKS = 200;
 
 /* ------------------------------------------------------------------ *
  * Deterministic noise, owned by the bot rather than by the rules.
@@ -69,140 +52,172 @@ function stream(seed) {
   };
 }
 
-/* ------------------------------------------------------------------ *
- * Flight probe.
- *
- * `probeFlight` is the sim's own pure predictor and is used when the rules
- * offer it. Before it exists the harness falls back to cloning the state and
- * running the real rules forward, which is slower but cannot disagree with
- * them.
- * ------------------------------------------------------------------ */
-const HAS_TIMELINE = typeof arcade.projectMouth === "function";
-const PROBE_TICKS = 240;
-
-function probe(state, ingredient, angle, power, timeline) {
-  if (HAS_PROBE) return arcade.probeFlight(state, ingredient, angle, power, PROBE_TICKS, timeline);
-  const copy = structuredClone(state);
-  copy.events = [];
-  // The probe answers "would this shot land", not "may I fire now": readiness
-  // is a separate question and folding the two together turns every reload
-  // into a decision change. Food already in the air is cleared for the same
-  // reason — another snack landing mid-probe would otherwise be read as this
-  // shot succeeding, which makes the plan flip at random.
-  copy.projectiles = [];
-  copy.lastLaunchTick = copy.tick - ARENA.cooldownTicks;
-  if (!(power === null ? launchFood(copy, ingredient, angle) : launchFood(copy, ingredient, angle, power))) {
-    return { fed: false, ticks: 0, bounces: 0 };
-  }
-  const id = copy.projectiles[copy.projectiles.length - 1].id;
-  const feeds = copy.totalFeeds;
-  for (let i = 1; i <= 240; i += 1) {
-    stepArcade(copy);
-    const live = copy.projectiles.find((item) => item.id === id);
-    if (copy.totalFeeds > feeds) return { fed: true, ticks: i, bounces: 0 };
-    if (!live || copy.phase !== "playing") return { fed: false, ticks: i, bounces: 0 };
-  }
-  return { fed: false, ticks: 240, bounces: 0 };
-}
-
 /**
- * The delayed snapshot a bot decides from.
- *
- * `structuredClone` of the whole state, once per tick, was by far the most
- * expensive thing in this harness — several times the cost of the flight
- * probes it exists to feed. Once the rules expose `probeFlight`, a decision
- * only ever reads these fields, so only these are copied.
+ * The delayed snapshot a bot decides from. Only the fields a decision reads
+ * are copied; the projectile list is shared because the bot never writes it.
  */
 function viewOf(state) {
-  if (!HAS_PROBE) return structuredClone(state);
   return {
-    hatchReadyAt: state.hatchReadyAt, slickUntil: state.slickUntil, vent: state.vent,
-    charge: state.charge, cravingNextAt: state.cravingNextAt,
     seed: state.seed, tick: state.tick, phase: state.phase,
     hunger: state.hunger, rage: state.rage, wanted: state.wanted,
     size: state.size, creature: { ...state.creature },
-    mutation: state.mutation ? { ...state.mutation } : null,
     mutations: state.mutations, craving: state.craving, threat: state.threat,
+    servings: state.servings, frenzyUntil: state.frenzyUntil, slickUntil: state.slickUntil,
+    vent: state.vent, flame: state.flame,
     lastLaunchTick: state.lastLaunchTick, projectiles: state.projectiles,
-    hatchClosedUntil: state.hatchClosedUntil, reloadUntil: state.reloadUntil,
+    hatchClosedUntil: state.hatchClosedUntil, hatchReadyAt: state.hatchReadyAt, reloadUntil: state.reloadUntil,
   };
 }
 
-/**
- * Candidates that fly identically, grouped, with the craved one's group first.
+/* ------------------------------------------------------------------ *
+ * Aiming.
  *
- * Only metal flies differently, and only once the creature has a magnetic
- * mouth — the magnet is a force on metal and the teeth catch a flat metal shot,
- * and nothing else in the rules distinguishes one ingredient's flight from
- * another's. So a plan that would otherwise probe three ingredients through the
- * same physics probes one representative per group and applies the answer to
- * every member. This is exact, and it is most of the harness's cost, because
- * the expensive case is the common one: while the mouth is shut nothing lands
- * and every candidate gets tried.
+ * The ballistic solution to the mouth's centre seeds the candidates; the
+ * rules' own `probeFlight` decides. Nothing in here can disagree with the
+ * physics because nothing in here is the physics.
+ * ------------------------------------------------------------------ */
+const POWERS = [];
+for (let p = ARENA.maxPower; p >= ARENA.minPower; p -= 1) POWERS.push(p);
+
+/** The two launch angles (degrees, arena convention: negative is up) that put a shot of `power` through (tx, ty). */
+function solveAngles(tx, ty, power) {
+  const out = [];
+  // The barrel moves the start point with the angle; two passes settle it.
+  let sx = ARENA.launcher.x + Math.cos(-0.7) * ARENA.barrelLength;
+  let sy = ARENA.launcher.y + Math.sin(-0.7) * ARENA.barrelLength;
+  for (let pass = 0; pass < 2; pass += 1) {
+    out.length = 0;
+    const dx = tx - sx;
+    const up = sy - ty;
+    const v2 = power * power;
+    const disc = v2 * v2 - GRAVITY * (GRAVITY * dx * dx + 2 * up * v2);
+    if (disc < 0 || dx <= 0) return [];
+    const root = Math.sqrt(disc);
+    for (const sign of [1, -1]) {
+      const tan = (v2 + sign * root) / (GRAVITY * dx);
+      const degrees = -Math.atan(tan) * 180 / Math.PI;
+      if (degrees >= ARENA.minAngle - 1 && degrees <= ARENA.maxAngle + 1) out.push(degrees);
+    }
+    if (!out.length) return [];
+    const radians = out[out.length - 1] * Math.PI / 180;
+    sx = ARENA.launcher.x + Math.cos(radians) * ARENA.barrelLength;
+    sy = ARENA.launcher.y + Math.sin(radians) * ARENA.barrelLength;
+  }
+  return out;
+}
+
+const clampAngle = (angle) => Math.round(Math.max(ARENA.minAngle, Math.min(ARENA.maxAngle, angle)));
+
+/**
+ * Whether a shot arriving at `arrival` would meet a mouth still chewing one
+ * of this bot's own earlier shots. The probe knows the chew that is already
+ * happening; this is the one it cannot know about yet.
  */
-function flightGroups(view) {
-  const wanted = view.wanted;
-  const groups = (view.mutations && view.mutations.metal > 0)
-    ? [["metal"], FOODS.filter((food) => food !== "metal")]
-    : [[...FOODS]];
-  return groups.sort((a, b) => (b.includes(wanted) ? 1 : 0) - (a.includes(wanted) ? 1 : 0));
+function intoOwnChew(pending, arrival, view) {
+  if (arrival < view.frenzyUntil) return false;
+  for (const landing of pending) {
+    if (arrival >= landing && arrival < landing + TUNING.chewTicks) return true;
+  }
+  return false;
+}
+
+/** Which snack to serve: the craving, else whichever it has eaten least of. */
+function pickIngredient(view) {
+  if (view.craving) return view.craving.ingredient;
+  let best = FOODS[0];
+  for (const food of FOODS) if (view.servings[food] < view.servings[best]) best = food;
+  return best;
 }
 
 /**
- * The best action available from `view`, as a coarse band rather than an exact
- * number: two shots a degree apart are the same decision, and counting them as
- * different would inflate decision density into meaninglessness.
+ * The best shot available from `view`.
  *
- * This is the player's *plan*, not their permission to fire. Reloading is not a
- * decision, so the launcher's cooldown is deliberately not consulted here;
- * "wait" is returned only when no shot on the grid would land, which is a real
- * choice to hold fire because the mouth is shut or out of reach.
+ * Direct shots first: the analytic solution at every power, with a degree of
+ * slack either side for the rounding. Then, if the bot is the kind that looks
+ * for them, a coarse sweep for bank shots. A bank is preferred when it lands
+ * and the belly is not urgent; otherwise the shot that lands soonest wins.
  */
-function bestAction(view, feedBelow = 68) {
+function bestAction(view, config, pending, wantBank, now = view.tick) {
   if (view.phase !== "playing") return null;
-  if (wantsHatch(view)) return { verb: "hatch" };
-  // A craving about to run out is worth breaking the rationing rule for: the
-  // bonus and the growth pause are the biggest single reward in the game, and
-  // the tantrum is the biggest avoidable loss.
-  const urgent = view.craving && view.craving.endsAt - view.tick < 150;
-  if (view.hunger > feedBelow && !urgent) return { verb: "wait" };
-  // The creature's future is the same for every candidate, so it is projected
-  // once and shared. This is exact, not an approximation: the rules only make it
-  // shot-dependent when the creature is tracking, and `projectMouth` reports
-  // whether that was the case.
-  const timeline = HAS_TIMELINE ? arcade.projectMouth(view, PROBE_TICKS) : undefined;
+  const ingredient = pickIngredient(view);
+  const mouth = view.creature;
+  const frenzy = view.tick < view.frenzyUntil;
+  const urgent = view.hunger < 40;
+  // A shot is only as good as it is under the bot's own hand: the window of
+  // angles around it that also land is what the noise will be drawn from.
+  const spread = Math.ceil(config.noise) + 1;
+  // The snapshot is stale by the bot's latency, but the shot leaves the
+  // launcher now: the probe is run from the present tick so the creature's
+  // visible rhythm (the bob) is led rather than lagged, the way a player
+  // leads a target. Everything else about the snapshot stays stale.
+  const base = now === view.tick ? view : { ...view, tick: now };
+  const cache = new Map();
+  const probe = (angle, power) => {
+    const key = angle * 100 + power;
+    let result = cache.get(key);
+    if (result === undefined) {
+      result = probeFlight(base, ingredient, angle, power, PROBE_TICKS);
+      if (result.fed && intoOwnChew(pending, now + result.ticks, view)) result = { ...result, fed: false };
+      cache.set(key, result);
+    }
+    return result;
+  };
   let best = null;
-  for (const group of flightGroups(view)) {
-    const representative = group.includes(view.wanted) ? view.wanted : group[0];
-    for (const angle of ANGLES) {
-      for (const power of POWERS) {
-        const result = probe(view, representative, angle, power, timeline);
-        if (!result.fed) continue;
-        for (const ingredient of group) {
-          const craved = ingredient === view.wanted;
-          // Prefer the craving, then the shot that arrives soonest: a bot that
-          // waits for a marginally better angle is not a player.
-          const value = (craved ? 1000 : 0) + (result.bounces ? 120 : 0) - result.ticks;
-          if (!best || value > best.value) {
-            best = { verb: "launch", ingredient, angle, power, value, ticks: result.ticks };
-          }
-        }
+  const offer = (angle, power, robustness) => {
+    const result = probe(angle, power);
+    if (!result.fed) return;
+    // A serving that pinballs round the kitchen for two seconds is not a plan
+    // a hungry player makes; only a bank-hunter takes the slow road.
+    if (result.ticks > 90 && (!wantBank || urgent)) return;
+    const bank = result.bank > 0 ? arcade.bankMultiplier(result.bank, result.bounces) : 1;
+    const value = robustness * 30 + (wantBank && !urgent && bank > 1 ? bank * 60 : 0) - result.ticks * (urgent ? 2 : 1);
+    if (!best || value > best.value) best = { verb: "launch", ingredient, angle, power, ticks: result.ticks, bank, robustness, value };
+  };
+  /** The centre of the widest run of landing angles in a window around `centre`. */
+  const widest = (centre, power) => {
+    let runStart = null;
+    let bestRun = null;
+    for (let angle = centre - spread; angle <= centre + spread + 1; angle += 1) {
+      const lands = angle <= centre + spread && angle >= ARENA.minAngle && angle <= ARENA.maxAngle && probe(angle, power).fed;
+      if (lands && runStart === null) runStart = angle;
+      if (!lands && runStart !== null) {
+        const length = angle - runStart;
+        if (!bestRun || length > bestRun.length) bestRun = { start: runStart, length };
+        runStart = null;
       }
     }
-    if (best && best.ingredient === view.wanted) break;
+    return bestRun;
+  };
+  for (const power of POWERS) {
+    for (const degrees of solveAngles(mouth.x, mouth.y, power)) {
+      const run = widest(clampAngle(degrees), power);
+      if (run) offer(Math.round(run.start + (run.length - 1) / 2), power, run.length);
+    }
+    // The fastest shot whose whole window lands is the shot; the slower powers
+    // only matter when the fast ones are blocked or into a chew.
+    if (best && !wantBank && best.robustness >= 2 * spread + 1) break;
+  }
+  if (wantBank && !frenzy) {
+    for (const power of [16, 15, 14]) {
+      for (let angle = ARENA.minAngle; angle <= ARENA.maxAngle; angle += 3) {
+        const result = probe(angle, power);
+        if (!result.fed || result.bank === 0) continue;
+        const run = widest(angle, power);
+        if (run) offer(Math.round(run.start + (run.length - 1) / 2), power, run.length);
+      }
+    }
   }
   if (!best) return { verb: "wait" };
+  // A shot whose window is mostly misses is a shot a player holds. Unless the
+  // belly is nearly empty, in which case anything is better than nothing.
+  const needed = frenzy ? spread : spread + 1;
+  if (best.robustness < needed && !urgent) return { verb: "wait" };
   return best;
 }
 
 /**
  * Whether two plans are different decisions rather than the same decision
  * expressed a degree apart.
- *
- * Fixed bands were the first attempt and were wrong: a plan sitting on a band
- * edge flips every other tick and reports a hundred "decisions" a minute in a
- * game with none. Comparing plans to each other by a material threshold, and
- * only against the last plan actually counted, removes that entirely.
  */
 function differs(a, b) {
   if (!a || !b) return a !== b;
@@ -210,71 +225,43 @@ function differs(a, b) {
   if (a.verb !== "launch") return false;
   if (a.ingredient !== b.ingredient) return true;
   if (Math.abs(a.angle - b.angle) >= 6) return true;
-  if (a.power !== null && b.power !== null && Math.abs(a.power - b.power) >= 3) return true;
+  if (Math.abs(a.power - b.power) >= 3) return true;
   return false;
 }
 
 /** A plan has to hold for this many ticks before it counts as a decision. */
 const SETTLE_TICKS = 5;
 
-function canLaunch(view) {
-  if (view.phase !== "playing") return false;
-  if (view.tick - view.lastLaunchTick < ARENA.cooldownTicks) return false;
-  if (view.projectiles.length >= ARENA.maxProjectiles) return false;
-  if (HAS_HATCH && view.hatchClosedUntil > view.tick) return false;
-  if (view.reloadUntil > view.tick) return false;
+function canLaunch(state) {
+  if (state.phase !== "playing") return false;
+  if (state.tick - state.lastLaunchTick < cooldownFor(state)) return false;
+  if (state.projectiles.filter((item) => item.kind === "food").length >= ARENA.maxProjectiles) return false;
+  if (state.hatchClosedUntil > state.tick) return false;
+  if (state.reloadUntil > state.tick) return false;
   return true;
-}
-
-/**
- * The one reaction verb. A threat the rules have telegraphed is the only
- * reason to spend the hatch; pressing it on nothing costs the lockout anyway,
- * which is what makes it a decision.
- */
-function wantsHatch(view) {
-  if (!HAS_HATCH || view.phase !== "playing") return false;
-  if ((view.hatchReadyAt ?? 0) > view.tick) return false;
-  const threat = view.threat;
-  if (!threat) return false;
-  // Close it late enough that the lockout still covers the arrival, and never
-  // on nothing: the lockout is the cost and spending it blind is how a bot
-  // stops resembling a player.
-  const lead = threat.kind === "lunge" ? 30 : 22;
-  return threat.tick > view.tick && threat.tick - view.tick <= lead;
 }
 
 /* ------------------------------------------------------------------ *
  * The bots.
  * ------------------------------------------------------------------ */
 /**
- * `feedBelow` is the rationing threshold, and it is the title's dilemma as a
- * number: every serving keeps you alive and makes the creature worse, so a
- * better player feeds later. The naive bot has no threshold — it fires whenever
- * the launcher is ready, which is what winning looked like before this rewrite.
+ * `feedBelow` is where a bot starts serving. FEAST wants constant feeding, so
+ * the thresholds are high; what separates the tiers is aim, chew-reading and
+ * bank-seeking, not rationing.
  */
 const BOTS = {
-  naive: { latency: 0, noise: 0, blind: true, feedBelow: 101 },
-  moderate: { latency: Math.round(0.25 * TICKS), noise: 4, feedBelow: 68 },
-  good: { latency: Math.round(0.15 * TICKS), noise: 1.5, feedBelow: 52 },
+  naive: { blind: true, latency: 0, noise: 0 },
+  moderate: { latency: Math.round(0.25 * TICKS), noise: 4, feedBelow: 80, bankChance: 0.25 },
+  good: { latency: Math.round(0.15 * TICKS), noise: 1.5, feedBelow: 78, bankChance: 1 },
 };
 
-/** How many mutations are live, across both the old and the rewritten rules. */
 function mutationCount(state) {
-  if (state.mutations && !Array.isArray(state.mutations)) {
-    return FOODS.filter((food) => (state.mutations[food] ?? 0) > 0).length;
-  }
-  if (Array.isArray(state.mutations)) return state.mutations.filter((item) => item.level > 0).length;
-  return state.mutation ? 1 : 0;
-}
-
-function recordCommand(commands, state, ingredient, angle, power) {
-  if (HAS_POWER) commands.push({ tick: state.tick, kind: "launch", ingredient, angle, power });
-  else commands.push({ tick: state.tick, ingredient, angle });
+  return FOODS.filter((food) => (state.mutations[food] ?? 0) > 0).length;
 }
 
 /**
  * Plays one shift. `trackDensity` turns on the every-tick evaluation of the
- * best action, which is far too slow to leave on for every run.
+ * best action, which is too slow to leave on for every run.
  */
 export function playShift(name, seed, { trackDensity = false } = {}) {
   const config = BOTS[name];
@@ -287,19 +274,18 @@ export function playShift(name, seed, { trackDensity = false } = {}) {
   let ticksObserved = 0;
   let run = { action: null, count: 0 };
   let counted = null;
-  // Ticks the capture harness wants to film. Collected here because the bot is
-  // the only thing that knows when this particular shift got interesting.
-  const markers = { firstMutation: null, firstStack: null, end: null };
+  let pending = [];
+  let cycle = 0;
+  const markers = { firstMutation: null, firstStack: null, firstFrenzy: null, end: null };
 
   while (state.phase === "playing" && state.tick < MAX_TICKS) {
     history.push(viewOf(state));
     if (history.length > depth) history.shift();
     const view = history[0];
+    pending = pending.filter((landing) => landing + TUNING.chewTicks > state.tick);
 
-    let planned = null;
-    if (trackDensity) {
-      const action = bestAction(view, config.feedBelow);
-      planned = action;
+    if (trackDensity && !config.blind) {
+      const action = bestAction(view, config, pending, false, state.tick);
       ticksObserved += 1;
       if (run.action && !differs(action, run.action)) run.count += 1;
       else run = { action, count: 1 };
@@ -310,26 +296,28 @@ export function playShift(name, seed, { trackDensity = false } = {}) {
     }
 
     if (config.blind) {
-      // Never aims, never reacts, fires the instant the launcher is ready.
       if (canLaunch(state)) {
-        const ingredient = FOODS[0];
-        if (HAS_POWER ? launchFood(state, ingredient, ARENA.defaultAngle, DEFAULT_POWER)
-          : launchFood(state, ingredient, ARENA.defaultAngle)) {
-          recordCommand(commands, state, ingredient, ARENA.defaultAngle, DEFAULT_POWER);
+        const ingredient = FOODS[cycle % FOODS.length];
+        if (launchFood(state, ingredient, ARENA.defaultAngle, ARENA.defaultPower)) {
+          cycle += 1;
+          commands.push({ tick: state.tick, kind: "launch", ingredient, angle: ARENA.defaultAngle, power: ARENA.defaultPower });
         }
       }
-    } else {
-      if (wantsHatch(view) && HAS_HATCH && arcade.slamHatch(state)) {
-        commands.push({ tick: state.tick, kind: "hatch" });
-      } else if (canLaunch(state)) {
-        const action = planned ?? bestAction(view, config.feedBelow);
+    } else if (canLaunch(state)) {
+      const frenzy = view.tick < view.frenzyUntil;
+      const urgentCraving = view.craving && view.craving.endsAt - view.tick < 180;
+      if (view.hunger < config.feedBelow || urgentCraving || frenzy) {
+        // Trick shots are for a full belly. Below the line, the fast shot.
+        const wantBank = view.hunger > 60 && (config.bankChance >= 1 || (config.bankChance > 0 && noise() < config.bankChance));
+        const action = bestAction(view, config, pending, wantBank, state.tick);
         if (action && action.verb === "launch") {
           const jitter = (noise() * 2 - 1) * config.noise;
-          const angle = Math.round(Math.max(ARENA.minAngle, Math.min(ARENA.maxAngle, action.angle + jitter)));
-          const fired = HAS_POWER
-            ? launchFood(state, action.ingredient, angle, action.power)
-            : launchFood(state, action.ingredient, angle);
-          if (fired) recordCommand(commands, state, action.ingredient, angle, action.power);
+          const angle = clampAngle(action.angle + jitter);
+          if (launchFood(state, action.ingredient, angle, action.power)) {
+            commands.push({ tick: state.tick, kind: "launch", ingredient: action.ingredient, angle, power: action.power });
+            pending.push(state.tick + action.ticks);
+            if (process.env.BOT_DEBUG) console.log(`[bot] t=${state.tick} plan a=${action.angle} p=${action.power} robust=${action.robustness} bank=${action.bank} ticks=${action.ticks} wantBank=${wantBank} fired a=${angle} hunger=${view.hunger.toFixed(0)} frenzy=${frenzy}`);
+          }
         }
       }
     }
@@ -337,6 +325,7 @@ export function playShift(name, seed, { trackDensity = false } = {}) {
     const live = mutationCount(state);
     if (live >= 1 && markers.firstMutation === null) markers.firstMutation = state.tick;
     if (live >= 2 && markers.firstStack === null) markers.firstStack = state.tick;
+    if (state.frenzies >= 1 && markers.firstFrenzy === null) markers.firstFrenzy = state.tick;
   }
   markers.end = state.tick;
 
@@ -348,7 +337,15 @@ export function playShift(name, seed, { trackDensity = false } = {}) {
     score: state.score,
     feeds: state.totalFeeds,
     shots: state.shots,
-    size: state.size ?? 1,
+    clanks: state.clanks,
+    misses: state.misses,
+    frenzies: state.frenzies,
+    banks: state.banks,
+    cooked: state.cooked,
+    utensils: state.utensils,
+    bestCombo: state.bestCombo,
+    size: state.size,
+    mutations: { ...state.mutations },
     phase: state.phase,
     cause: state.failureReason ?? (state.phase === "playing" ? "hit-tick-cap" : state.phase),
     commands,
@@ -365,6 +362,8 @@ const percentile = (sorted, p) => {
   return sorted[index];
 };
 const round = (value, places = 1) => Math.round(value * 10 ** places) / 10 ** places;
+const mean = (values) => values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+const median = (values) => percentile([...values].sort((a, b) => a - b), 0.5);
 
 /** Deaths per 30-second bucket, which is the spread gate. */
 function buckets(runs) {
@@ -382,6 +381,8 @@ function summarise(name, runs) {
   const causes = {};
   for (const run of runs) causes[run.cause] = (causes[run.cause] ?? 0) + 1;
   const share = buckets(runs);
+  const shots = runs.reduce((a, r) => a + r.shots, 0);
+  const feeds = runs.reduce((a, r) => a + r.feeds, 0);
   return {
     bot: name,
     shifts: runs.length,
@@ -391,9 +392,17 @@ function summarise(name, runs) {
       p90: round(percentile(seconds, 0.9)),
       max: round(seconds[seconds.length - 1]),
     },
-    feeds: { median: round(percentile(runs.map((r) => r.feeds).sort((a, b) => a - b), 0.5)) },
-    score: { median: round(percentile(runs.map((r) => r.score).sort((a, b) => a - b), 0.5)) },
-    size: { median: round(percentile(runs.map((r) => r.size).sort((a, b) => a - b), 0.5), 2) },
+    feeds: { median: round(median(runs.map((r) => r.feeds))), mean: round(mean(runs.map((r) => r.feeds))) },
+    accuracy: shots ? round(feeds / shots * 100) : 0,
+    frenzies: { mean: round(mean(runs.map((r) => r.frenzies)), 2), withAtLeastOne: round(runs.filter((r) => r.frenzies > 0).length / runs.length * 100) },
+    banks: { mean: round(mean(runs.map((r) => r.banks)), 2) },
+    clanks: { mean: round(mean(runs.map((r) => r.clanks)), 1) },
+    cooked: { mean: round(mean(runs.map((r) => r.cooked)), 1) },
+    utensils: { mean: round(mean(runs.map((r) => r.utensils)), 2) },
+    bestCombo: { median: median(runs.map((r) => r.bestCombo)) },
+    score: { median: round(median(runs.map((r) => r.score))) },
+    size: { median: round(median(runs.map((r) => r.size)), 2) },
+    firstFrenzy: { median: round(median(runs.filter((r) => r.markers.firstFrenzy !== null).map((r) => r.markers.firstFrenzy / TICKS))) },
     causes,
     deathSpread: share,
     worstBucketShare: share.length ? Math.max(...share.map((item) => item.share)) : 0,
@@ -401,10 +410,11 @@ function summarise(name, runs) {
 }
 
 function table(rows) {
-  const head = ["bot", "n", "p10", "median", "p90", "max", "feeds", "score", "size", "worst 30s bucket"];
+  const head = ["bot", "n", "p10", "median", "p90", "max", "feeds", "acc", "frenzies", "banks", "score", "size", "worst 30s"];
   const body = rows.map((row) => [
     row.bot, String(row.shifts), `${row.survival.p10}s`, `${row.survival.median}s`,
-    `${row.survival.p90}s`, `${row.survival.max}s`, String(row.feeds.median),
+    `${row.survival.p90}s`, `${row.survival.max}s`, String(row.feeds.median), `${row.accuracy}%`,
+    String(row.frenzies.mean), String(row.banks.mean),
     String(row.score.median), String(row.size.median), `${row.worstBucketShare}%`,
   ]);
   const widths = head.map((_, index) => Math.max(head[index].length, ...body.map((row) => row[index].length)));
@@ -413,7 +423,7 @@ function table(rows) {
 }
 
 function parseArgs(argv) {
-  const args = { shifts: 200, seed: 1, densityShifts: 12, json: null, fixtures: null };
+  const args = { shifts: 200, seed: 1, densityShifts: 8, json: null, fixtures: null };
   for (let i = 0; i < argv.length; i += 1) {
     const item = argv[i];
     if (item === "--shifts") args.shifts = Number(argv[++i]);
@@ -428,17 +438,15 @@ function parseArgs(argv) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const started = Date.now();
-  const report = { generatedAt: new Date().toISOString(), shifts: args.shifts, seedBase: args.seed, capabilities: { HAS_POWER, HAS_HATCH, HAS_PROBE }, bots: [] };
+  const report = { generatedAt: new Date().toISOString(), gameVersion: arcade.GAME_VERSION, shifts: args.shifts, seedBase: args.seed, bots: [] };
 
   for (const name of ["naive", "moderate", "good"]) {
     const runs = [];
     for (let i = 0; i < args.shifts; i += 1) runs.push(playShift(name, (args.seed + i * 7919) >>> 0));
     report.bots.push(summarise(name, runs));
-    if (name === "moderate") report.sampleRun = runs[0];
+    if (name === "moderate") report.sampleRun = { ...runs[0], commands: runs[0].commands.length };
   }
 
-  // Decision density, moderate bot only, over a smaller sample because the
-  // every-tick evaluation is expensive.
   const density = [];
   for (let i = 0; i < args.densityShifts; i += 1) {
     const run = playShift("moderate", (args.seed + i * 7919) >>> 0, { trackDensity: true });
@@ -452,13 +460,16 @@ async function main() {
     max: round(density[density.length - 1] ?? 0, 2),
   };
 
-  // Gates, evaluated here so no report can quietly disagree with the brief.
+  // Gates, from docs/FEAST_BRIEF.md, evaluated here so no report can quietly disagree with it.
   const byName = Object.fromEntries(report.bots.map((row) => [row.bot, row]));
   report.gates = {
-    naiveMedianAtMost45: byName.naive.survival.median <= 45,
-    moderateMedian90to150: byName.moderate.survival.median >= 90 && byName.moderate.survival.median <= 150,
+    naiveMedian40to80: byName.naive.survival.median >= 40 && byName.naive.survival.median <= 80,
+    naiveFeedsAtLeast6: byName.naive.feeds.median >= 6,
+    moderateMedian100to180: byName.moderate.survival.median >= 100 && byName.moderate.survival.median <= 180,
+    moderateAccuracyAtLeast55: byName.moderate.accuracy >= 55,
+    moderateFrenziesAtLeast1: byName.moderate.frenzies.mean >= 1,
     moderateDeathSpread: byName.moderate.worstBucketShare <= 40,
-    goodAtLeast2p5xNaive: byName.good.survival.median >= byName.naive.survival.median * 2.5,
+    goodAtLeast1p8xNaive: byName.good.survival.median >= byName.naive.survival.median * 1.8,
     decisionDensityAtLeast6: report.decisionDensity.median >= 6,
   };
   report.gatesPass = Object.values(report.gates).every(Boolean);
@@ -466,7 +477,10 @@ async function main() {
 
   console.log(table(report.bots));
   console.log("");
-  for (const row of report.bots) console.log(`${row.bot.padEnd(9)} causes: ${JSON.stringify(row.causes)}`);
+  for (const row of report.bots) {
+    console.log(`${row.bot.padEnd(9)} causes: ${JSON.stringify(row.causes)}  clanks/run ${row.clanks.mean}  cooked/run ${row.cooked.mean}  utensils/run ${row.utensils.mean}  best combo ${row.bestCombo.median}  first frenzy ${row.firstFrenzy.median}s (${row.frenzies.withAtLeastOne}% of runs)`);
+    console.log(`${"".padEnd(9)} deaths: ${row.deathSpread.map((b) => `${b.bucket} ${b.share}%`).join(", ")}`);
+  }
   console.log("");
   console.log(`decision density (moderate): median ${report.decisionDensity.median}/min over ${report.decisionDensity.shifts} shifts (${report.decisionDensity.min}-${report.decisionDensity.max})`);
   console.log("");
@@ -497,8 +511,6 @@ async function main() {
   }
 }
 
-// Importable by the capture harness, which needs the same bot but not the
-// report.
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch((error) => { console.error(error); process.exitCode = 1; });
 }
