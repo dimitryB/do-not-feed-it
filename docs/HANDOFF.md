@@ -1,5 +1,20 @@
 # Current handoff
 
+## FEAST stage 2, October 12, 2026 (branch `feat/feast`, not merged)
+
+The presentation was rebuilt to pillars 6 and 7 of `docs/FEAST_BRIEF.md`:
+`lib/render/scene.ts` (HUD, bouncers, captions, particles, flame, fire, frenzy),
+`lib/render/creature/*` (the creature is a clipped layer scaled as a whole and
+pinned to the rules' mouth; in-painted backdrop; chrome teeth crackle),
+`app/page.tsx` and `app/globals.css` (score/time/chips only, legend strip,
+hit-stop in the frame scheduler, audio cues), `lib/engine/audio.ts` (new cues,
+frenzy duck). Decisions D106–D111 and proposals P7–P9 are in
+`docs/DECISION_REGISTER.md`; the report, timings and the critic table are in
+`docs/qa/feast/STAGE2.md`; the captures are `docs/qa/loop/iter-1`. Render cost
+4.4 ms median on the typical state. Open: a real fresh-context critic pass
+(none could be spawned from the session that did this), the late-game face at
+the frame's top edge (a rules question), and the belly bar's presence at 960 px.
+
 ## FEAST stage 1, October 12, 2026 (branch `feat/feast`, not merged)
 
 The rules were rebuilt to `docs/FEAST_BRIEF.md` in the pure simulation only:

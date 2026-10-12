@@ -1,0 +1,160 @@
+{
+  "iteration": 100,
+  "capturedAt": "2026-10-12T03:43:32.289Z",
+  "seed": 20260911,
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "bot": {
+    "name": "moderate",
+    "ticks": 7291,
+    "seconds": 121.51666666666667,
+    "feeds": 17,
+    "score": 10909,
+    "cause": "empty-belly",
+    "markers": {
+      "firstMutation": 1501,
+      "firstStack": 3096,
+      "end": 7291
+    }
+  },
+  "browserFinal": {
+    "tick": 7291,
+    "phase": "lost",
+    "failureReason": "empty-belly",
+    "hunger": 0,
+    "rage": 79.74,
+    "score": 10909,
+    "combo": 0,
+    "wanted": "balloon",
+    "servings": {
+      "metal": 5,
+      "balloon": 4,
+      "pepper": 8
+    },
+    "mutations": {
+      "metal": 1,
+      "balloon": 1,
+      "pepper": 2
+    },
+    "threat": null,
+    "craving": {
+      "ingredient": "balloon",
+      "startedAt": 7106,
+      "endsAt": 7605
+    },
+    "creature": {
+      "size": 1.8237,
+      "x": 835.552,
+      "y": 294.6068,
+      "rx": 135.0595,
+      "ry": 94.9169,
+      "bx": 835.3312,
+      "by": 374.7705,
+      "brx": 252.5234,
+      "bry": 160.5022,
+      "aperture": 0.6667,
+      "untilOpen": -2,
+      "track": 45.3573,
+      "lift": 2.486,
+      "pressure": 0.7402,
+      "clog": 0.18,
+      "open": 0.5467,
+      "cycle": 72,
+      "cycleTick": 22,
+      "openTicks": 14,
+      "shutTicks": 57
+    },
+    "size": 1.8237,
+    "appetite": 1.01,
+    "snubs": 42,
+    "misses": 61,
+    "totalFeeds": 17,
+    "hatchClosedUntil": 7199,
+    "hatchReadyAt": 7325,
+    "reloadUntil": 7066,
+    "vent": null,
+    "ending": 1,
+    "projectiles": 3,
+    "events": [
+      {
+        "tick": 7142,
+        "type": "clog",
+        "label": "CLANG",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 7151,
+        "type": "miss",
+        "label": "ON THE FLOOR",
+        "ingredient": "pepper"
+      },
+      {
+        "tick": 7199,
+        "type": "launch",
+        "label": "balloon",
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 7205,
+        "type": "miss",
+        "label": "ON THE FLOOR",
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 7234,
+        "type": "snub",
+        "label": "TOO LATE",
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 7252,
+        "type": "bounce",
+        "label": "ONE MORE CHANCE",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 7289,
+        "type": "launch",
+        "label": "metal",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 7291,
+        "type": "end",
+        "label": "Empty belly. It has eaten the shift supervisor.",
+        "ingredient": null
+      }
+    ]
+  },
+  "groups": [
+    "strip-0020",
+    "clip-first-mutation",
+    "hud-0020",
+    "strip-0040",
+    "hud-0040",
+    "clip-first-stack",
+    "strip-0100",
+    "hud-0100",
+    "strip-0120",
+    "hud-0120",
+    "clip-ending",
+    "strip-0140",
+    "hud-0140",
+    "strip-0200",
+    "hud-0200"
+  ],
+  "renderTiming": {
+    "samples": 31,
+    "average": 5.151612903209283,
+    "median": 5,
+    "p95": 7.7999999998137355,
+    "max": 7.800000000046566,
+    "last": 7,
+    "canvas": {
+      "width": 1920,
+      "height": 1080
+    }
+  }
+}

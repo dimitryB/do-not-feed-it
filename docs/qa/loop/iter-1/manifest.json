@@ -1,6 +1,6 @@
 {
   "iteration": 1,
-  "capturedAt": "2026-09-12T02:44:06.486Z",
+  "capturedAt": "2026-10-12T06:58:55.748Z",
   "seed": 20260911,
   "viewport": {
     "width": 1920,
@@ -8,110 +8,181 @@
   },
   "bot": {
     "name": "moderate",
-    "ticks": 5781,
-    "seconds": 96.35,
-    "feeds": 22,
-    "score": 14176,
+    "ticks": 15174,
+    "seconds": 252.9,
+    "feeds": 282,
+    "score": 235883,
     "cause": "empty-belly",
     "markers": {
-      "firstMutation": 922,
-      "firstStack": null,
-      "end": 5781
+      "firstMutation": 534,
+      "firstStack": 1434,
+      "firstFrenzy": 1434,
+      "end": 15174
     }
   },
   "browserFinal": {
-    "tick": 5781,
+    "tick": 15174,
     "phase": "lost",
     "failureReason": "empty-belly",
     "hunger": 0,
-    "rage": 56.19,
-    "score": 14176,
-    "combo": 0,
-    "wanted": "balloon",
+    "rage": 5.42,
+    "score": 235883,
+    "combo": 1,
+    "bestCombo": 28,
+    "frenzies": 7,
+    "frenzyUntil": 14227,
+    "banks": 75,
+    "clanks": 44,
+    "cooked": 75,
+    "utensils": 15,
+    "wanted": "metal",
     "servings": {
-      "metal": 14,
-      "balloon": 5,
+      "metal": 93,
+      "balloon": 94,
+      "pepper": 95
+    },
+    "mutations": {
+      "metal": 3,
+      "balloon": 3,
       "pepper": 3
     },
-    "mutation": null,
+    "threat": {
+      "kind": "flame",
+      "tick": 15211,
+      "x": 832.44,
+      "y": 153.9482
+    },
+    "craving": {
+      "ingredient": "metal",
+      "startedAt": 15108,
+      "endsAt": 15531
+    },
+    "flame": {
+      "tellUntil": 15211,
+      "until": 15261,
+      "angle": 2.6514,
+      "length": 756.0436
+    },
+    "benchFireUntil": 13405,
     "creature": {
       "size": 2.4,
-      "x": 830.2,
-      "y": 281.4367,
-      "rx": 110.08,
-      "ry": 82.36,
-      "aperture": 0,
-      "untilOpen": 91,
-      "track": 4.4367,
-      "cycle": 52,
-      "cycleTick": 28,
-      "openTicks": 9,
-      "shutTicks": 95
+      "x": 832.44,
+      "y": 163.9708,
+      "rx": 150.4934,
+      "ry": 113.0496,
+      "bx": 833.464,
+      "by": 247.3231,
+      "brx": 264.084,
+      "bry": 167.85,
+      "aperture": 0.1,
+      "open": 0.1,
+      "chewUntil": 15193,
+      "untilOpen": 19,
+      "gape": 1,
+      "track": 16.0795,
+      "lift": 36,
+      "bob": 27.9087,
+      "flush": 0.0542,
+      "brow": 0.9975,
+      "pressure": 0,
+      "clog": 0
     },
     "size": 2.4,
-    "appetite": 1.22,
-    "snubs": 24,
-    "misses": 30,
-    "totalFeeds": 22,
-    "projectiles": 1,
+    "appetite": 1.018,
+    "misses": 24,
+    "totalFeeds": 282,
+    "hatchClosedUntil": 0,
+    "hatchReadyAt": 0,
+    "reloadUntil": 15156,
+    "vent": {
+      "since": 1776
+    },
+    "ending": 3,
+    "projectiles": 3,
     "events": [
       {
-        "tick": 5641,
-        "type": "snub",
-        "label": "TOO LATE",
-        "ingredient": "balloon"
+        "tick": 15116,
+        "type": "jam",
+        "label": "BITTEN",
+        "name": "lunge",
+        "ingredient": null
       },
       {
-        "tick": 5715,
-        "type": "bounce",
-        "label": "ONE MORE CHANCE",
-        "ingredient": "balloon"
+        "tick": 15144,
+        "type": "beat",
+        "label": "THE LAST SERVING",
+        "name": "last-serving",
+        "ingredient": null
       },
       {
-        "tick": 5728,
-        "type": "launch",
-        "label": "balloon",
-        "ingredient": "balloon"
-      },
-      {
-        "tick": 5736,
+        "tick": 15145,
         "type": "miss",
-        "label": "SNACK DOWN",
+        "label": "ON THE FLOOR",
+        "name": null,
         "ingredient": "balloon"
       },
       {
-        "tick": 5772,
-        "type": "snub",
-        "label": "TOO LATE",
+        "tick": 15156,
+        "type": "launch",
+        "label": "metal",
+        "name": null,
+        "ingredient": "metal"
+      },
+      {
+        "tick": 15157,
+        "type": "chew",
+        "label": "CHOMP",
+        "name": null,
+        "ingredient": null
+      },
+      {
+        "tick": 15157,
+        "type": "feed",
+        "label": "NOM +100",
+        "name": null,
         "ingredient": "balloon"
       },
       {
-        "tick": 5781,
+        "tick": 15171,
+        "type": "flame",
+        "label": "IT INHALES",
+        "name": "tell",
+        "ingredient": null
+      },
+      {
+        "tick": 15174,
         "type": "end",
-        "label": "Empty belly. It has eaten the employee handbook.",
+        "label": "Empty belly. It no longer fits through the door. It has been promoted.",
+        "name": null,
         "ingredient": null
       }
     ]
   },
   "groups": [
     "clip-first-mutation",
+    "clip-first-frenzy",
+    "clip-first-stack",
     "strip-0020",
     "hud-0020",
     "strip-0040",
     "hud-0040",
     "strip-0100",
     "hud-0100",
-    "clip-ending",
     "strip-0120",
-    "hud-0120"
+    "hud-0120",
+    "strip-0140",
+    "hud-0140",
+    "strip-0200",
+    "hud-0200",
+    "clip-ending"
   ],
   "renderTiming": {
     "samples": 40,
-    "average": 5.372499999962747,
-    "median": 4.600000001490116,
-    "p95": 10.5,
-    "max": 14.199999999254942,
-    "last": 4.699999999254942,
+    "average": 5.909999999869615,
+    "median": 5.800000000745058,
+    "p95": 8,
+    "max": 16,
+    "last": 7.100000001490116,
     "canvas": {
       "width": 1920,
       "height": 1080

@@ -41,15 +41,15 @@ export const CREATURE_STATE_IDS = [
 export type CreatureStateId = (typeof CREATURE_STATE_IDS)[number];
 
 const MUTATION_LABELS: Record<Ingredient, string> = {
-  metal: "MAGNETIC TEETH · Metal curves toward its mouth",
-  balloon: "BALLOON BELLY · Every snack feels lighter",
-  pepper: "PRESSURE BURP · Watch for the next gust",
+  metal: "MAGNET MOUTH ×1",
+  balloon: "BALLOON BELLY ×1",
+  pepper: "FIRE BREATH ×1",
 };
 
 let eventId = 1;
 
 function add(state: ArcadeState, type: ArcadeEvent["type"], ageTicks: number, label: string,
-             extra?: { x?: number; y?: number; ingredient?: Ingredient; craved?: boolean }) {
+             extra?: { x?: number; y?: number; ingredient?: Ingredient; craved?: boolean; name?: string; value?: number }) {
   state.events.push({
     id: eventId++,
     tick: Math.round(state.tick - ageTicks),
@@ -59,6 +59,8 @@ function add(state: ArcadeState, type: ArcadeEvent["type"], ageTicks: number, la
     label,
     ...(extra?.ingredient ? { ingredient: extra.ingredient } : {}),
     ...(extra?.craved === undefined ? {} : { craved: extra.craved }),
+    ...(extra?.name === undefined ? {} : { name: extra.name }),
+    ...(extra?.value === undefined ? {} : { value: extra.value }),
   });
 }
 
@@ -141,7 +143,7 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
       state.combo = 3;
       const points = { metal: 260, balloon: 180, pepper: 305 }[ingredient];
       if (before) approach(state, ingredient, before);
-      else add(state, "feed", ticks, `TASTY +${points}`, { x: 838, y: 286, ingredient, craved: false });
+      else add(state, "feed", ticks, `NOM +${points}`, { x: 838, y: 286, ingredient, craved: false, value: points });
       break;
     }
     case "craving-satisfied": {
@@ -150,7 +152,7 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
       state.wanted = "balloon";
       selected = "balloon";
       if (before) approach(state, "balloon", before);
-      else add(state, "feed", ticks, "CRAVING +410", { x: 838, y: 282, ingredient: "balloon", craved: true });
+      else add(state, "feed", ticks, "CRAVING +410", { x: 838, y: 282, ingredient: "balloon", craved: true, value: 410 });
       break;
     }
     case "off-menu": {
@@ -159,7 +161,7 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
       state.wanted = "pepper";
       selected = "metal";
       if (before) approach(state, "metal", before);
-      else add(state, "feed", ticks, "TASTY +140", { x: 838, y: 282, ingredient: "metal", craved: false });
+      else add(state, "feed", ticks, "NOM +140", { x: 838, y: 282, ingredient: "metal", craved: false, value: 140 });
       break;
     }
     case "miss-floor": {
@@ -172,7 +174,7 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
         const away = Math.min(0.9, before) * 60 * 11.4;
         shot(state, "pepper", ARENA.mouth.x - away, ARENA.mouth.y + 110 - away * 0.02, 11.4, 5.4, 46);
         add(state, "launch", 46, "pepper", { x: 264, y: 494, ingredient: "pepper" });
-      } else add(state, "miss", ticks, "SNACK DOWN", { x: 690, y: 612, ingredient: "pepper" });
+      } else add(state, "miss", ticks, "ON THE FLOOR", { x: 690, y: 612, ingredient: "pepper" });
       break;
     }
     case "miss-vent": {
@@ -181,7 +183,7 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
       selected = "metal";
       state.misses = 5;
       state.rage = 34;
-      add(state, "bounce", ticks, "VENT DEFLECTION", { x: 556, y: 296, ingredient: "metal" });
+      add(state, "bounce", ticks, "OFF THE VENT", { x: 620, y: 100, ingredient: "metal", name: "vent", value: 1 });
       break;
     }
     case "irritation-1": {
@@ -209,8 +211,7 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
       selected = ingredient;
       state.servings[ingredient] = 3;
       state.mutations[ingredient] = 1;
-      if (ingredient === "balloon") { state.creature.pressure = 0.85; state.creature.lift = 26; }
-      if (ingredient === "metal") state.creature.clog = 0.3;
+      if (ingredient === "balloon") state.creature.lift = 12;
       state.announcement = MUTATION_LABELS[ingredient];
       add(state, "mutation", Math.max(0, ticks - 90), MUTATION_LABELS[ingredient], { ingredient });
       break;
@@ -221,8 +222,7 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
       selected = ingredient;
       state.servings[ingredient] = 9;
       state.mutations[ingredient] = 3;
-      if (ingredient === "balloon") { state.creature.lift = 110; state.creature.pressure = 0.6; }
-      if (ingredient === "metal") state.creature.clog = 0.55;
+      if (ingredient === "balloon") state.creature.lift = 36;
       state.announcement = MUTATION_LABELS[ingredient];
       add(state, "mutation", ticks + 30, MUTATION_LABELS[ingredient], { ingredient });
       break;
@@ -232,14 +232,17 @@ export function buildPose(id: CreatureStateId, t = 0): DevPose {
       state.servings.pepper = 9;
       state.mutations.pepper = 3;
       state.announcement = MUTATION_LABELS.pepper;
-      add(state, "spit", Math.max(0, ticks - 6), "INCOMING", { ingredient: "pepper" });
+      // Mid-breath: the tell is over and the cone is out.
+      state.flame = { tellUntil: state.tick - 6, until: state.tick + 40, angle: Math.PI * 0.87, length: 520 };
+      state.threat = { kind: "flame", tick: state.tick - 6, x: ARENA.mouth.x, y: ARENA.mouth.y };
+      add(state, "flame", 6, "FIRE BREATH", { ingredient: "pepper", name: "breath", value: 50 });
       break;
     }
     case "recovery": {
       selected = "pepper";
       state.servings.pepper = 3;
       state.mutations.metal = 2;
-      add(state, "sneeze", ticks, "SNEEZE — MOUTH CLEAR", { ingredient: "pepper" });
+      add(state, "beat", ticks, "SNEEZE", { ingredient: "pepper", name: "sneeze" });
       break;
     }
     case "end-survived": {
