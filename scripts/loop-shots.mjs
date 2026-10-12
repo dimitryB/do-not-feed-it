@@ -126,6 +126,7 @@ function buildSchedule(run) {
   }
   const clips = [
     { name: "first-mutation", at: run.markers.firstMutation },
+    { name: "first-frenzy", at: run.markers.firstFrenzy },
     { name: "first-stack", at: run.markers.firstStack },
     // The ending clip has to contain the ending: its last scheduled frame is
             // the final tick, and two more are taken after the run is over so
@@ -306,8 +307,7 @@ async function main() {
     // capture carries an honest number for the state it filmed.
     timing = await measureRenderCost(timingPage, 4242, 8, (page) => page.evaluate(() => {
       window.__dnfi.play.setSize(2.0);
-      window.__dnfi.play.setMutations({ metal: 2, balloon: 2, pepper: 1 },
-        { clog: 0.4, lift: 9, pressure: 0.5 });
+      window.__dnfi.play.setMutations({ metal: 2, balloon: 2, pepper: 1 }, { lift: 9 });
     }));
     await timingPage.close();
 

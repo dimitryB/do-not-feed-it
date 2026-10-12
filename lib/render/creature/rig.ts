@@ -11,8 +11,8 @@
  * Built once, lazily, on the first frame after the art decodes.
  */
 import {
-  ARENA_HEIGHT, ARENA_WIDTH, BODY_OUTLINE, CHIN_SOURCE, EYE, EYE_SIDES, HI,
-  MOUTH_OUTLINE, MOUTH_PATCH, TONGUE, type EyeSide,
+  ANTENNAE, ANTENNA_BULB, ANTENNA_WIDTH, ARENA_HEIGHT, ARENA_WIDTH, BODY_OUTLINE, CHIN_SOURCE, EYE, EYE_SIDES, HI,
+  MOUTH_OUTLINE, MOUTH_PATCH, SILHOUETTE, TONGUE, type EyeSide,
 } from "./anatomy";
 
 export interface Patch {
@@ -24,6 +24,15 @@ export interface Patch {
 export interface CreatureRig {
   /** The painting at twice arena resolution, muzzle and pupils removed. */
   art: HTMLCanvasElement;
+  /**
+   * The kitchen without the creature, at arena resolution.
+   *
+   * The creature is drawn as its own clipped layer now, scaled and moved by
+   * the rules' mouth, and wherever it moves away from where it was painted the
+   * picture underneath has to be a wall and not a second creature. The hole is
+   * filled from its surroundings; it is only ever seen in slivers.
+   */
+  backdrop: HTMLCanvasElement;
   pupil: Record<EyeSide, Patch>;
   lidUpper: Record<EyeSide, Patch>;
   lidLower: Record<EyeSide, Patch>;
@@ -436,6 +445,84 @@ function buildScleraPatch(art: HTMLCanvasElement, side: EyeSide): Patch {
   return { canvas: patch, x: rect.x, y: rect.y, width: rect.width, height: rect.height };
 }
 
+/**
+ * Traces the creature's silhouette — body plus the three antennae — as one
+ * path, in painting coordinates, on whatever context is given. Used both to
+ * cut the hole in the backdrop and, every frame, as the clip the creature is
+ * drawn through.
+ */
+export function silhouettePath(context: CanvasRenderingContext2D, scale = 1, grow = 0,
+                               map?: (x: number, y: number) => { x: number; y: number }) {
+  const at = (x: number, y: number) => (map ? map(x, y) : { x, y });
+  context.beginPath();
+  // Every subpath is wound the same way, so the overlaps where an antenna
+  // meets the skull are inside under the nonzero rule rather than holes.
+  const ring = (points: { x: number; y: number }[]) => {
+    let area = 0;
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i], b = points[(i + 1) % points.length];
+      area += a.x * b.y - b.x * a.y;
+    }
+    const ordered = area < 0 ? [...points].reverse() : points;
+    ordered.forEach((p, index) => {
+      if (index) context.lineTo(p.x * scale, p.y * scale); else context.moveTo(p.x * scale, p.y * scale);
+    });
+    context.closePath();
+  };
+  // The body polygon, pushed outward by `grow` along a crude normal: away from
+  // the body's centre. Enough for a clip margin; nothing here is a true offset.
+  const cx = 840, cy = 330;
+  const body = SILHOUETTE.map(([x, y]) => {
+    const dx = x - cx, dy = y - cy;
+    const d = Math.hypot(dx, dy) || 1;
+    return at(x + dx / d * grow, y + dy / d * grow);
+  });
+  body.push(at(SILHOUETTE[SILHOUETTE.length - 1][0] + grow, 560));
+  body.push(at(SILHOUETTE[0][0] - grow, 560));
+  ring(body);
+  // Antennae as thick polylines turned into polygons: left side forward, right
+  // side back.
+  const half = ANTENNA_WIDTH / 2 + grow;
+  for (const line of ANTENNAE) {
+    const left: { x: number; y: number }[] = [];
+    const right: { x: number; y: number }[] = [];
+    for (let i = 0; i < line.length; i++) {
+      const [x, y] = line[i];
+      const [px, py] = line[Math.max(0, i - 1)];
+      const [nx, ny] = line[Math.min(line.length - 1, i + 1)];
+      const tx = nx - px, ty = ny - py;
+      const t = Math.hypot(tx, ty) || 1;
+      const ox = -ty / t * half, oy = tx / t * half;
+      left.push(at(x + ox, y + oy));
+      right.push(at(x - ox, y - oy));
+    }
+    ring([...left, ...right.reverse()]);
+  }
+  const bulb: { x: number; y: number }[] = [];
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2;
+    bulb.push(at(ANTENNA_BULB.x + Math.cos(a) * (ANTENNA_BULB.r + grow), ANTENNA_BULB.y + Math.sin(a) * (ANTENNA_BULB.r + grow)));
+  }
+  ring(bulb);
+}
+
+/** The painting with the creature taken out and the gap filled from around it. */
+function buildBackdrop(image: HTMLImageElement): HTMLCanvasElement {
+  const canvas = canvasOf(ARENA_WIDTH, ARENA_HEIGHT);
+  const context = contextOf(canvas);
+  context.imageSmoothingQuality = "high";
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  context.save();
+  context.globalCompositeOperation = "destination-out";
+  context.filter = "blur(2px)";
+  context.fillStyle = "#000";
+  silhouettePath(context, 1, 8);
+  context.fill();
+  context.restore();
+  pullPushFill(canvas, "rgb(22,34,32)");
+  return canvas;
+}
+
 function buildBodyMask(): HTMLCanvasElement {
   const mask = canvasOf(ARENA_WIDTH / 4, ARENA_HEIGHT / 4);
   const context = contextOf(mask);
@@ -497,7 +584,7 @@ export function buildRig(image: HTMLImageElement): CreatureRig {
   for (const patch of sclera) artContext.drawImage(patch.canvas, patch.x * HI, patch.y * HI);
 
   return {
-    art, pupil, lidUpper, lidLower, lidSkin, tongue, tooth, steelTooth: buildSteelTooth(tooth),
+    art, backdrop: buildBackdrop(image), pupil, lidUpper, lidLower, lidSkin, tongue, tooth, steelTooth: buildSteelTooth(tooth),
     bodyMask: buildBodyMask(), grade: canvasOf(ARENA_WIDTH / 5, ARENA_HEIGHT / 5), palette,
   };
 }

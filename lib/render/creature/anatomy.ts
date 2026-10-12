@@ -79,6 +79,37 @@ export const CHIN_SOURCE = { x: 730, y: 384, width: 220, height: 54 };
  */
 export const TONGUE = { x: 815, y: 308, rx: 40, ry: 16 };
 
+/**
+ * The creature's silhouette, traced tightly off the painting at 4x.
+ *
+ * `BODY_OUTLINE` below is a loose hull and was never meant for cutting. This
+ * one is: it is the clip the body scale draws through, so it runs a few pixels
+ * outside the painted edge and nowhere inside it. The antennae are thin and are
+ * listed separately as centre-lines with a width.
+ */
+export const SILHOUETTE: readonly (readonly [number, number])[] = [
+  [565, 476], [557, 450], [550, 425], [552, 400], [559, 375], [570, 350], [585, 325], [602, 300],
+  [615, 275], [628, 250], [645, 225], [660, 200], [688, 183], [705, 175], [722, 160], [735, 150],
+  [747, 125], [760, 113], [780, 104], [800, 100], [820, 100], [850, 101], [880, 100], [900, 103],
+  [920, 110], [937, 122], [952, 136], [975, 150], [990, 160], [1005, 175], [1022, 200], [1035, 225],
+  [1048, 250], [1062, 275], [1075, 300], [1090, 325], [1102, 350], [1110, 375], [1121, 400],
+  [1126, 425], [1124, 450], [1118, 476],
+];
+/** Antenna centre-lines, each drawn as a stroke of `ANTENNA_WIDTH`. */
+export const ANTENNAE: readonly (readonly (readonly [number, number])[])[] = [
+  [[818, 118], [808, 104], [798, 92], [788, 80], [778, 72], [769, 74], [764, 82], [766, 90]],
+  [[855, 114], [858, 100], [862, 88], [866, 80], [868, 76]],
+  [[892, 114], [900, 102], [912, 91], [926, 82], [940, 82], [950, 90], [949, 100], [944, 104]],
+];
+export const ANTENNA_WIDTH = 15;
+export const ANTENNA_BULB = { x: 868, y: 76, r: 10 };
+/**
+ * The top of the serving sill. The painting below this line is drawn over the
+ * creature, so a creature that has grown past the counter sinks behind it
+ * rather than standing on it.
+ */
+export const SILL_Y = 466;
+
 /** Soft silhouette used only for colour grading, never for cutting. */
 export const BODY_OUTLINE: readonly (readonly [number, number])[] = [
   [545, 486], [551, 424], [566, 366], [588, 310], [612, 268], [640, 232],

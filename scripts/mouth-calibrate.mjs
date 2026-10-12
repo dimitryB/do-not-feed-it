@@ -97,17 +97,14 @@ async function main() {
       { name: "bare x1.68", size: 1.68, m: { metal: 0, balloon: 0, pepper: 0 }, extra: {} },
       { name: "track +40", size: 1.68, m: { metal: 0, balloon: 0, pepper: 0 }, extra: { track: 40 } },
       { name: "track -40", size: 1.68, m: { metal: 0, balloon: 0, pepper: 0 }, extra: { track: -40 } },
-      { name: "lift 10 only", size: 1.68, m: { metal: 0, balloon: 1, pepper: 0 }, extra: { lift: 10, clog: 0, pressure: 0 } },
-      { name: "lift 20 only", size: 1.68, m: { metal: 0, balloon: 1, pepper: 0 }, extra: { lift: 20, clog: 0, pressure: 0 } },
-      { name: "clog 0.6 only", size: 1.68, m: { metal: 1, balloon: 0, pepper: 0 }, extra: { lift: 0, clog: 0.6, pressure: 0 } },
-      { name: "metal 3 only", size: 1.68, m: { metal: 3, balloon: 0, pepper: 0 }, extra: { lift: 0, clog: 0, pressure: 0 } },
-      { name: "pepper 3 only", size: 1.68, m: { metal: 0, balloon: 0, pepper: 3 }, extra: { lift: 0, clog: 0, pressure: 0 } },
-      { name: "balloon 3 no lift", size: 1.68, m: { metal: 0, balloon: 3, pepper: 0 }, extra: { lift: 0, clog: 0, pressure: 0.9 } },
-      { name: "balloon 3 p0", size: 1.68, m: { metal: 0, balloon: 3, pepper: 0 }, extra: { lift: 0, clog: 0, pressure: 0 } },
-      { name: "balloon 1 p0", size: 1.68, m: { metal: 0, balloon: 1, pepper: 0 }, extra: { lift: 0, clog: 0, pressure: 0 } },
-      { name: "balloon 1 x1.68", size: 1.68, m: { metal: 1, balloon: 1, pepper: 1 }, extra: { lift: 10, clog: 0.2 } },
-      { name: "balloon 2 x2.0", size: 2.0, m: { metal: 2, balloon: 2, pepper: 1 }, extra: { lift: 18, clog: 0.4 } },
-      { name: "balloon 3 x2.4", size: 2.4, m: { metal: 3, balloon: 3, pepper: 3 }, extra: { lift: 11.5, clog: 0.7 } },
+      { name: "lift 10 only", size: 1.68, m: { metal: 0, balloon: 1, pepper: 0 }, extra: { lift: 10 } },
+      { name: "lift 20 only", size: 1.68, m: { metal: 0, balloon: 1, pepper: 0 }, extra: { lift: 20 } },
+      { name: "metal 3 only", size: 1.68, m: { metal: 3, balloon: 0, pepper: 0 }, extra: { lift: 0 } },
+      { name: "pepper 3 only", size: 1.68, m: { metal: 0, balloon: 0, pepper: 3 }, extra: { lift: 0 } },
+      { name: "balloon 3 no lift", size: 1.68, m: { metal: 0, balloon: 3, pepper: 0 }, extra: { lift: 0 } },
+      { name: "balloon 1 x1.68", size: 1.68, m: { metal: 1, balloon: 1, pepper: 1 }, extra: { lift: 10 } },
+      { name: "balloon 2 x2.0", size: 2.0, m: { metal: 2, balloon: 2, pepper: 1 }, extra: { lift: 18 } },
+      { name: "balloon 3 x2.4", size: 2.4, m: { metal: 3, balloon: 3, pepper: 3 }, extra: { lift: 11.5 } },
     ];
     console.log("\nDrawn mouth vs the rules' ellipse, in states a shift reaches:");
     for (const live of LIVE) {
@@ -134,9 +131,9 @@ async function main() {
       // The rules' vertical half-height is ry scaled by the gap they test
       // against, not raw ry: `dyGap = (y - mouthY) / (ry * max(gapFloor, open))`.
       const effRy = r.ry * Math.max(0.3, r.open ?? 1);
-      console.log(`  ${live.name.padEnd(18)} drawn y ${n(d.y)} ry ${n(d.ry)}`
-        + `   rule y ${n(r.y)} effRy ${n(effRy)}   open ${n(r.open)}`
-        + `   dy ${n(r.y - d.y)}  dry ${n(effRy - d.ry)}`);
+      console.log(`  ${live.name.padEnd(18)} drawn x ${n(d.x)} y ${n(d.y)} rx ${n(d.rx)} ry ${n(d.ry)}`
+        + `   rule x ${n(r.x)} y ${n(r.y)} rx ${n(r.rx)} effRy ${n(effRy)}   open ${n(r.open)}`
+        + `   dx ${n(r.x - d.x)} dy ${n(r.y - d.y)}  drx ${n(r.rx - d.rx)} dry ${n(effRy - d.ry)}`);
     }
 
     if (args.shot) {

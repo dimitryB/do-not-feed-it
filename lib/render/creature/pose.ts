@@ -15,7 +15,7 @@
  * Springs on top of that give anticipation and overshoot for free: a target
  * snaps, the body arrives late and settles.
  */
-import { ARENA, type ArcadeEvent, type ArcadeState, type Ingredient } from "../../game/arcade";
+import { ARENA, TUNING, inFrenzy, type ArcadeEvent, type ArcadeState, type Ingredient } from "../../game/arcade";
 
 export interface CreaturePose {
   headX: number; headY: number; headTilt: number; lean: number;
@@ -34,6 +34,19 @@ export interface CreaturePose {
   antennaDroop: number; antennaTwist: number; antennaShake: number;
   exhale: number; magnetism: number; taut: number;
   shake: number;
+  /**
+   * The body scale and where the mouth is, from the rules. The creature is
+   * drawn as a clipped layer scaled by `bodyScale` about its resting mouth and
+   * moved so that mouth lands on `(mouthX, mouthY)` — the rules' collision
+   * ellipse. Growth, lift, bob and tracking all arrive through these three.
+   */
+  bodyScaleX: number; bodyScaleY: number; mouthX: number; mouthY: number;
+  /** A frenzy: the mouth gapes, the teeth crackle, nothing is chewed. */
+  frenzy: number;
+  /** Electric crackle on the teeth, metal only. */
+  crackle: number;
+  /** Fire breath: inhaling (the tell), then the breath itself. */
+  inhale: number;
 }
 
 const FIELDS: (keyof CreaturePose)[] = [
@@ -45,6 +58,7 @@ const FIELDS: (keyof CreaturePose)[] = [
   "teethBare", "teethAlign", "teethLong", "teethQuiver", "throat", "throatTravel",
   "cheekPuff", "cheekMarks", "flush", "rageFlush", "pallor", "sweat", "tears",
   "antennaDroop", "antennaTwist", "antennaShake", "exhale", "magnetism", "taut", "shake",
+  "bodyScaleX", "bodyScaleY", "mouthX", "mouthY", "frenzy", "crackle", "inhale",
 ];
 
 /**
@@ -75,6 +89,11 @@ const RATES: Partial<Record<keyof CreaturePose, [number, number]>> = {
   cheekPuff: [80, 11], teethLong: [70, 12], teethAlign: [90, 13],
   flush: [95, 17], rageFlush: [60, 14], pallor: [22, 9], antennaDroop: [34, 10], antennaTwist: [40, 11],
   tears: [60, 12],
+  // Loose enough that a growth step is a visible pop with an overshoot; the
+  // mouth position is stiff, because the rules' ring is drawn where the rules
+  // say and the picture has to keep up with it.
+  bodyScaleX: [70, 10], bodyScaleY: [70, 10], mouthX: [320, 28], mouthY: [320, 28],
+  frenzy: [60, 12], crackle: [120, 14], inhale: [140, 16],
 };
 const DEFAULT_RATE: [number, number] = [120, 15];
 
@@ -410,21 +429,47 @@ const zero = (): CreaturePose => {
   pose.squashY = 1;
   pose.mouthWidth = 1;
   pose.pupilScale = 1;
+  pose.mouthScaleX = 1;
+  pose.mouthScaleY = 1;
+  pose.bodyScaleX = 1;
+  pose.bodyScaleY = 1;
+  pose.mouthX = ARENA.mouth.x;
+  pose.mouthY = ARENA.mouth.y;
   return pose;
 };
 
+/**
+ * How much bigger the body is drawn, per unit of size, on each axis.
+ *
+ * The rules raise the mouth 48 px a size and widen it 24 %; the warp cannot
+ * stretch the painting past about 14 % without the skin dissolving, which is
+ * why growth was invisible on a stream. The body is now scaled as a whole,
+ * about its resting mouth, and the mouth's own scale is divided by this so the
+ * drawn aperture still matches the rules' ellipse exactly.
+ *
+ * Wider than tall, on purpose. The mouth is the anchor and the rules keep it
+ * low, so everything above it — the eyes — leaves the top of the frame as the
+ * vertical scale rises: 0.06 keeps the eyes on screen at the size cap even
+ * with a full balloon lift and bob under them. Width has no such limit, and a
+ * thing that is fed gets fat.
+ */
+export const BODY_SCALE_PER_SIZE = { x: 0.36, y: 0.06 };
+/** How much the balloon inflates the body, per level, on top of growth: mostly sideways. */
+const INFLATE_PER_LEVEL = { x: 0.035, y: 0.01 };
+
 interface Gaze { x: number; y: number; weight: number }
 
-interface Reaction { type: ArcadeEvent["type"]; ingredient?: Ingredient; craved?: boolean; age: number; x: number; y: number }
+interface Reaction { type: ArcadeEvent["type"]; name?: string; ingredient?: Ingredient; craved?: boolean; age: number; x: number; y: number }
 
-function latest(state: ArcadeState | null, types: ArcadeEvent["type"][], within: number): Reaction | null {
+function latest(state: ArcadeState | null, types: ArcadeEvent["type"][], within: number, name?: string): Reaction | null {
   if (!state) return null;
   for (let index = state.events.length - 1; index >= 0; index--) {
     const item = state.events[index];
     if (!types.includes(item.type)) continue;
+    if (name !== undefined && item.name !== name) continue;
     const age = (state.tick - item.tick) / 60;
     if (age < 0 || age > within) continue;
-    return { type: item.type, ingredient: item.ingredient, craved: item.craved, age, x: item.x, y: item.y };
+    return { type: item.type, name: item.name, ingredient: item.ingredient, craved: item.craved, age, x: item.x, y: item.y };
   }
   return null;
 }
@@ -497,10 +542,8 @@ export class CreatureAnimator {
     const metal = clamp01(levels.metal / 3);
     const balloon = clamp01(levels.balloon / 3);
     const pepper = clamp01(levels.pepper / 3);
-    const creatureNow = state?.creature;
-    const clog = clamp01(creatureNow?.clog ?? 0);
-    const pressure = clamp01(creatureNow?.pressure ?? 0);
     const clock = time - this.started;
+    const frenzied = playing && state ? inFrenzy(state) : false;
 
     // 1. Baseline. On the title screen it watches the launcher; in play this is
     //    only ever what it looks like between other things happening.
@@ -546,12 +589,23 @@ export class CreatureAnimator {
     this.wear("holdPepper", pepper * 0.9);
     if (step3 > 0.01) this.wear("annoy3", step3);
     else if (step2 > 0.01) this.wear("annoy2", step2 * 0.8);
-    // The pressure that is about to become a burp, and the spit that is about
-    // to leave, are the two moments worth anticipating.
-    const spitting = latest(state, ["spit"], 0.55);
-    if (spitting) this.wear("blowPepper", 1);
-    else if (pepper > 0 && pressure > 0.7) this.wear("warnPepper", pressure);
-    if (balloon > 0 && pressure > 0.8) this.wear("warnBalloon", (pressure - 0.8) * 5);
+
+    // Fire breath. The tell is the creature holding it in — cheeks out, lips
+    // clamped, eyes screwed up — and the breath is the exhale that follows.
+    // Both are read off `state.flame`, which is the rules' own clock for it.
+    const flame = playing && state?.flame ? state.flame : null;
+    const tick = state?.tick ?? 0;
+    if (flame && tick < flame.until) {
+      if (tick < flame.tellUntil) {
+        const held = clamp01(1 - (flame.tellUntil - tick) / TUNING.flameTell);
+        this.wear("warnPepper", 0.4 + 0.6 * held);
+        target.inhale = Math.max(target.inhale, 0.3 + 0.7 * held);
+      } else {
+        this.wear("blowPepper", 1);
+        target.exhale = 1;
+        target.inhale = 0;
+      }
+    }
 
     const landed = latest(state, ["mutation"], 0.7);
     if (landed) {
@@ -566,18 +620,46 @@ export class CreatureAnimator {
       target.bellySwell += pop * 0.35;
       if (!reduced) target.antennaShake = Math.max(target.antennaShake, pop);
     }
-    const clogged = latest(state, ["clog"], 0.8);
-    if (clogged) {
-      const pop = Math.exp(-clogged.age * 5);
-      target.jawShift += pop * 0.5;
+    // A snack off the teeth: a hard jolt sideways, mouth clamped.
+    const clanked = latest(state, ["clank"], 0.5);
+    if (clanked) {
+      const pop = Math.exp(-clanked.age * 7);
+      this.wear("clank", pop);
       target.teethQuiver = Math.max(target.teethQuiver, pop);
+      if (!reduced) target.shake = Math.max(target.shake, pop * 0.5);
     }
-    const burped = latest(state, ["burp"], 0.9);
-    if (burped) {
-      const pop = Math.exp(-burped.age * 4.4);
-      target.cheekPuff += pop * 0.9;
-      target.exhale = Math.max(target.exhale, pop);
-      target.squashY -= pop * 0.08;
+    // A tantrum: the snarl, the whole body shaking.
+    const tantrum = latest(state, ["tantrum"], 1.2);
+    if (tantrum) {
+      const fit = Math.sin(clamp01(tantrum.age / 1.2) * Math.PI);
+      this.wear("annoy3", fit);
+      target.antennaShake = Math.max(target.antennaShake, fit);
+      if (!reduced) target.shake = Math.max(target.shake, fit);
+    }
+    // A sneeze: the deflate-and-recover beat, borrowed whole.
+    const sneezed = latest(state, ["beat"], 1.6, "sneeze");
+    if (sneezed) {
+      const sag = Math.sin(clamp01(sneezed.age / 1.6) * Math.PI) ** 0.7;
+      this.wear("deflate", sag);
+      target.exhale = Math.max(target.exhale, Math.exp(-sneezed.age * 5));
+    }
+    // A lunge coming: it gathers itself, teeth out, leaning in.
+    const lunging = latest(state, ["beat"], 1.0, "lunge");
+    if (lunging) {
+      const gather = clamp01(lunging.age / 0.9);
+      this.wear("activeMetal", gather * 0.6);
+      target.lean += gather * 0.06;
+      target.headX += gather * 18;
+    }
+    // A growth step: a pop with an overshoot, so the size change reads as an
+    // event rather than a drift.
+    const grew = latest(state, ["grow"], 0.7);
+    if (grew) {
+      const pop = Math.exp(-grew.age * 5);
+      target.squashX += pop * 0.07;
+      target.squashY += pop * 0.05;
+      target.bodyRise += pop * 10;
+      if (!reduced) target.antennaShake = Math.max(target.antennaShake, pop);
     }
 
     // 5. Tracking. A snack in the air owns the face until it lands.
@@ -594,11 +676,28 @@ export class CreatureAnimator {
 
     // 6. One-shot reactions, which override whatever mood they land on.
     const feed = latest(state, ["feed"], 1.5);
-    const miss = latest(state, ["miss", "bounce"], 1.2);
-    const recovery = latest(state, ["sneeze", "burp"], 1.9);
-    if (recovery) gaze = this.applyRecovery(recovery);
+    const miss = latest(state, ["miss"], 1.2);
+    // Only a bounce off its own belly is the creature's business. One off a
+    // pan is the kitchen's.
+    const belly = latest(state, ["bounce"], 0.6, "belly");
     if (feed && (!miss || feed.age <= miss.age)) gaze = this.applyGulp(target, feed, reduced) ?? gaze;
     else if (miss) this.applyFlinch(target, miss, reduced);
+    if (belly) {
+      const boing = Math.exp(-belly.age * 6) * Math.cos(belly.age * 22);
+      target.squashY -= boing * 0.08;
+      target.squashX += boing * 0.06;
+      this.wear("startle", Math.exp(-belly.age * 4) * 0.6);
+    }
+    // A frenzy: the mouth gapes, the eyes go wide, and the whole animal is up.
+    if (frenzied) {
+      this.wear("trackNear", 0.5);
+      target.pupilScale = Math.max(target.pupilScale, 1.3);
+      target.teethBare = Math.max(target.teethBare, 0.6);
+      target.browRaise = Math.max(target.browRaise, 0.8);
+      target.bodyRise += 8;
+      if (!reduced) target.shake = Math.max(target.shake, 0.35);
+    }
+    target.frenzy = frenzied ? 1 : 0;
 
     // 6b. And above the top step, nothing outranks the temper.
     //
@@ -710,33 +809,25 @@ export class CreatureAnimator {
       target.flush = Math.max(target.flush, 0.3 + pepper * 0.55);
       target.cheekMarks = Math.max(target.cheekMarks, 0.4 + pepper * 0.6);
       target.sweat = Math.max(target.sweat, 0.25 + pepper * 0.45);
-      if (spitting) target.exhale = 1;
-      if (pressure > 0.7) target.cheekPuff = Math.max(target.cheekPuff, (pressure - 0.7) * 2.4);
+      // The tell runs hot: the cheeks glow before the breath comes.
+      if (target.inhale > 0.05) {
+        target.flush = Math.max(target.flush, 0.5 + target.inhale * 0.5);
+        target.cheekMarks = Math.max(target.cheekMarks, 0.6 + target.inhale * 0.4);
+        target.cheekPuff = Math.max(target.cheekPuff, target.inhale * 1.6);
+      }
     }
-    // Stretched-skin sheen, balloon only, and it tightens as the pressure
-    // builds toward the burp.
+    // Stretched-skin sheen, balloon only, and the swell that goes with it.
     if (balloon > 0) {
       target.taut = Math.max(target.taut, 0.35 + balloon * 0.65);
-      // Halved. Folded into the uniform scale, a large swell on top of a
-      // full-grown creature slams into the warp's ×1.14 ceiling, and the grid
-      // clamp that stops a cell inverting then shows up as hard-edged
-      // rectangular tearing across the belly. The lift and the sheen carry the
-      // balloon; the swell only has to support them.
-      target.bellySwell = Math.max(target.bellySwell, balloon * (0.2 + pressure * 0.28));
+      // Most of "inflated" is the whole-body scale below; the swell only has
+      // to support it, and a large one tears the warp.
+      target.bellySwell = Math.max(target.bellySwell, balloon * 0.35);
     }
     if (metal > 0) {
       target.magnetism = Math.max(target.magnetism, 0.4 + metal * 0.6);
       target.teethAlign = Math.max(target.teethAlign, 0.5 + metal * 0.5);
       target.teethLong = Math.max(target.teethLong, metal * 0.55);
-      // A mouth full of cutlery does not close cleanly.
-      // A mouth full of cutlery does not close cleanly. It also must not move:
-      // the jaw shift raised the drawn mouth 22 px at a clog of 0.6, and the
-      // rules' ellipse does not move with clog at all, so every pixel of it was
-      // the ring drifting off the mouth.
-      if (clog > 0.1) {
-        target.teethQuiver = Math.max(target.teethQuiver, clog);
-        target.jawShift += clog * 0.08;
-      }
+      target.crackle = Math.max(target.crackle, 0.35 + metal * 0.65);
     }
     if (ended && enraged) {
       target.rageFlush = 1;
@@ -766,80 +857,43 @@ export class CreatureAnimator {
     const creature = state?.creature;
     if (creature && (playing || ended)) {
       const grow = creature.size - 1;
-      // The gap after the clog: what the rules test is what has to be drawn.
+      // What the rules test is what has to be drawn.
       const open = clamp01(creature.open ?? creature.aperture);
       target.jawOpen = mix(target.jawOpen, open, playing ? 0.88 : 0.35);
       target.mouthWidth = mix(target.mouthWidth, 0.9 + open * 0.34, playing ? 0.7 : 0.3);
       target.lipPress = mix(target.lipPress, open > 0.1 ? 0.1 : 0.75, playing ? 0.7 : 0.3);
       if (open > 0.5) target.teethBare = Math.max(target.teethBare, 0.4);
-      // The mouth carries most of the growth, because the mouth is drawn rather
-      // than warped: it costs nothing, it stays crisp at any size, and it is
-      // the part the rules actually measure. These two follow `mouthGrowX` and
-      // `mouthGrowY` in the rules exactly, so the lit target ring is always the
-      // mouth the player can see.
-      target.mouthScaleX = 1 + grow * 0.2;
-      target.mouthScaleY = 1 + grow * 0.3;
-      // The body scale is deliberately small. Every warp cell the body kernel
-      // touches has to be redrawn once it is displaced at all, and the creature
-      // is now displaced for the whole shift rather than during a mutation —
-      // which took the draw from 4.0 ms to 5.6 ms at full size. Rise and lean
-      // are the same cost as scale here, so they are kept small too and the
-      // growth is spent where it is free.
-      // The body carries the growth now, not only the mouth.
-      //
-      // The previous split put most of it on the mouth because the mouth is
-      // drawn rather than warped and costs nothing at any size. That was true
-      // and it was the wrong answer: at full size the mouth is open about a
-      // sixth of the time, so five frames in six showed no growth at all, and
-      // the critic reading those frames said so. Scale is capped further down
-      // at ×1.14 by the warp's texture budget; rise and lean are translations,
-      // which resample nothing, so they take as much of the remaining headroom
-      // as the warp region has.
-      target.squashX *= 1 + grow * 0.115;
-      target.squashY *= 1 + grow * 0.105;
-      // Trimmed from 46/42. At the previous rise a full-grown creature's eyes
-      // were above the top of the frame and the head read as cut off by a bug
-      // rather than as looming. It still fills the serving hatch; it keeps its
-      // face while doing it.
-      target.bodyRise += grow * 32;
-      target.headX -= grow * 26;
-      target.headY -= grow * 28;
-      target.lean += grow * 0.12;
-      // The balloon. The rules move the mouth up by exactly `lift` pixels, and
-      // the picture has to move by the same amount — not by a similar amount.
-      //
-      // At 1.05 and 0.95 it moved by three and a half times as much: measured,
-      // ten units of lift raised the drawn mouth 34 px while the rules raised
-      // theirs 10, so by mid-shift the lit target ring was sitting 70 px below
-      // an open mouth and the game was drawing a target that was not the target.
-      // The coefficients below are the measured ones, divided by that factor;
-      // `scripts/mouth-calibrate.mjs` now checks the agreement in the states a
-      // shift actually reaches rather than only on a bare creature.
-      const lift = creature.lift ?? 0;
-      if (lift > 0) {
-        target.bodyRise += lift * 0.31;
-        target.headY -= lift * 0.28;
-      }
-      // And the tracking, which is the same thing in the other direction and is
-      // much larger: a hungry creature reaches for a snack in the air, and the
-      // rules move its mouth by up to forty-six pixels to do it. The picture
-      // followed that with nine pixels of head travel in the tracking
-      // expressions and nothing else, so on every frame with a snack in flight —
-      // which is most of the frames a player is aiming on — the ring was
-      // descending while the painted mouth was not. Same two channels as the
-      // lift, same calibrated coefficients, opposite sign.
-      // Measured, not guessed: at 0.31/0.28 — the lift's coefficients — forty
-      // units of track moved the painted mouth eleven pixels against the rules'
-      // thirty-six. Downward displacement through the body kernel meets the
-      // floor gate on its way and costs about three times as much to buy.
+      // The whole body scales, about its resting mouth, and the balloon
+      // inflates it further. The drawn creature is then moved so its mouth
+      // lands on the rules' ellipse: growth, lift, bob and tracking are all
+      // the same operation, and none of them needs a calibrated coefficient.
+      const balloonLevel = levels.balloon ?? 0;
+      const scaleX = (1 + grow * BODY_SCALE_PER_SIZE.x) * (1 + INFLATE_PER_LEVEL.x * balloonLevel);
+      const scaleY = (1 + grow * BODY_SCALE_PER_SIZE.y) * (1 + INFLATE_PER_LEVEL.y * balloonLevel);
+      target.bodyScaleX = scaleX;
+      target.bodyScaleY = scaleY;
+      target.mouthX = creature.x;
+      target.mouthY = creature.y;
+      // The mouth's own scale follows the rules' `mouthGrowX` / `mouthGrowY`
+      // exactly, divided by the body scale it is already riding; in a frenzy
+      // it gapes with the rules' collision ellipse.
+      const gape = creature.gape ?? 1;
+      target.mouthScaleX = (1 + grow * TUNING.mouthGrowX) / scaleX * (1 + (gape - 1) * 0.55);
+      target.mouthScaleY = (1 + grow * TUNING.mouthGrowY) / scaleY * gape;
+      // The head still leads a reach: a little of the tracking in the face, on
+      // top of the whole-body move, so leaning in reads as leaning.
       const track = creature.track ?? 0;
-      target.bodyRise -= track * 1.0;
-      target.headY += track * 0.9;
+      target.headY += track * 0.12;
+      target.headTilt += track * 0.05;
       target.teethLong = Math.max(target.teethLong, clamp01(grow / 1.4) * 0.55);
       // A shut mouth on a big creature is the thing the player is waiting out,
       // so it tightens rather than simply closing.
       if (open < 0.05) target.cornerLift = mix(target.cornerLift, -0.35, 0.4 * clamp01(grow / 0.7));
-
+    } else {
+      target.bodyScaleX = 1;
+      target.bodyScaleY = 1;
+      target.mouthX = ARENA.mouth.x;
+      target.mouthY = ARENA.mouth.y;
     }
 
     // Inflation rides the uniform body scale rather than a deformer of its own:
@@ -996,28 +1050,4 @@ export class CreatureAnimator {
     if (!reduced) target.antennaShake = Math.max(target.antennaShake, jolt);
   }
 
-  /** Deflating: the body sags past its resting size, then comes back. */
-  private applyRecovery(recovery: Reaction): Gaze {
-    const sag = Math.sin(clamp01(recovery.age / 1.5) * Math.PI) ** 0.7;
-    this.wear("deflate", sag);
-    // A residue of whatever it just was, draining away. "Wearing off" is not a
-    // pose on its own — it is the previous state at a fraction of strength, and
-    // without that fraction on screen the state is just a tired face.
-    const leaving = (1 - clamp01(recovery.age / 1.5)) ** 1.4;
-    if (recovery.ingredient === "metal") {
-      this.target.teethAlign = Math.max(this.target.teethAlign, leaving * 0.7);
-      this.target.teethLong = Math.max(this.target.teethLong, leaving * 0.55);
-      this.target.magnetism = Math.max(this.target.magnetism, leaving * 0.5);
-    } else if (recovery.ingredient === "balloon") {
-      this.target.taut = Math.max(this.target.taut, leaving * 0.6);
-      this.target.bellySwell = Math.max(this.target.bellySwell, leaving * 0.5);
-    } else {
-      this.target.flush = Math.max(this.target.flush, leaving * 0.5);
-      this.target.sweat = Math.max(this.target.sweat, leaving * 0.6);
-    }
-    // Deliberately no `exhale`: that plume belongs to the pepper gust, and
-    // borrowing it here left a puff of pepper smoke hanging on the cheek of a
-    // creature that had just finished being a balloon.
-    return { x: -0.2, y: 0.55, weight: sag * 0.8 };
-  }
 }

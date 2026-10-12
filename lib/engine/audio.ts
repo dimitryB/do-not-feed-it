@@ -8,11 +8,16 @@ export interface AudioMixState {
   master: number; music: boolean; musicLevel: number;
   sfx: boolean; sfxLevel: number; ambience: boolean; ambienceLevel: number;
 }
-export type SfxId = "feed" | "mistake" | "mutation" | "ui-click" | "launch" | "gust" | "end";
+export type SfxId =
+  | "feed" | "mistake" | "mutation" | "ui-click" | "launch" | "gust" | "end"
+  | "chew" | "clank" | "bank" | "bounce" | "frenzy-start" | "frenzy-end" | "utensil" | "cooked"
+  | "flame-tell" | "flame" | "fire" | "jam" | "grow" | "tantrum" | "craving";
 export interface MixerAudioEngine {
   unlock(): void;
   play(id: SfxId): void;
   setPlaying(value: boolean): void;
+  /** A frenzy: the ambience ducks and the score lifts until it is over. */
+  setFrenzy(value: boolean): void;
   setMuted(value: boolean): void;
   setMasterLevel(value: number): void;
   setMusicEnabled(value: boolean): void;
@@ -36,6 +41,7 @@ export function createAudioEngine(): MixerAudioEngine {
   let musicTimer: ReturnType<typeof setInterval> | null = null;
   let muted = false;
   let playing = false;
+  let frenzy = false;
   let backgroundStarted = false;
   let disposed = false;
   const voices = new Set<Voice>();
@@ -47,8 +53,10 @@ export function createAudioEngine(): MixerAudioEngine {
     const time = context.currentTime;
     master?.gain.setTargetAtTime(muted ? 0 : mix.master * .5, time, .025);
     buses.sfx.gain.setTargetAtTime(mix.sfx ? mix.sfxLevel : 0, time, .025);
-    buses.music.gain.setTargetAtTime(playing && mix.music ? mix.musicLevel * .38 : 0, time, .12);
-    buses.ambience.gain.setTargetAtTime(playing && mix.ambience ? mix.ambienceLevel * .28 : 0, time, .12);
+    // The frenzy duck: ambience drops to a third, the score comes up. The
+    // mixer's own levels still scale everything, so the player's mix holds.
+    buses.music.gain.setTargetAtTime(playing && mix.music ? mix.musicLevel * (frenzy ? .5 : .38) : 0, time, .12);
+    buses.ambience.gain.setTargetAtTime(playing && mix.ambience ? mix.ambienceLevel * (frenzy ? .1 : .28) : 0, time, .12);
   }
 
   function register(source: AudioScheduledSourceNode, envelope: GainNode, bus: Bus, nodes: AudioNode[], time: number, duration?: number) {
@@ -153,7 +161,11 @@ export function createAudioEngine(): MixerAudioEngine {
           }
         }
         step += 1;
-        nextNote += .72;
+        // The score lifts in a frenzy: double time, a bright fifth on every note.
+        if (frenzy && frequency && mix.music && !muted) {
+          tone("music", frequency * 1.5, frequency * 1.5, nextNote + .36, .5, .07, "triangle", .02);
+        }
+        nextNote += frenzy ? .36 : .72;
       }
     };
     schedule();
@@ -184,7 +196,13 @@ export function createAudioEngine(): MixerAudioEngine {
     setPlaying(value) {
       if (disposed || playing === value) return;
       playing = value;
+      if (!playing) frenzy = false;
       if (playing) startBackground(); else stopBackground();
+      sync();
+    },
+    setFrenzy(value) {
+      if (disposed || frenzy === value) return;
+      frenzy = value;
       sync();
     },
     play(id) {
@@ -223,6 +241,85 @@ export function createAudioEngine(): MixerAudioEngine {
           break;
         case "ui-click":
           tone("sfx", 740, 480, time, .065, .1);
+          break;
+        case "chew":
+          // A wet chomp: a low thud and two quick clicks.
+          tone("sfx", 140, 60, time, .12, .22, "triangle");
+          noise("sfx", time + .02, .05, 1800, .09);
+          noise("sfx", time + .14, .05, 1400, .07);
+          break;
+        case "clank":
+          // Teeth on tin: bright, inharmonic, short.
+          for (const f of [2093, 2794, 3729]) tone("sfx", f, f * .97, time, .14, .07, "square", .004);
+          tone("sfx", 420, 180, time, .18, .16, "triangle");
+          noise("sfx", time, .08, 3200, .14);
+          break;
+        case "bounce":
+          // Off a pan: a ring that decays.
+          tone("sfx", 880, 860, time, .3, .12, "triangle", .004);
+          tone("sfx", 1320, 1300, time, .22, .05, "sine", .004);
+          noise("sfx", time, .05, 2600, .08);
+          break;
+        case "bank":
+          // The bank pays: a rising two-note bell.
+          tone("sfx", 659.25, 659.25, time, .22, .14, "triangle", .01);
+          tone("sfx", 987.77, 987.77, time + .09, .3, .14, "triangle", .01);
+          tone("sfx", 1318.5, 1318.5, time + .18, .4, .1, "sine", .01);
+          break;
+        case "frenzy-start":
+          // A rising sweep and a hit.
+          tone("sfx", 110, 880, time, .5, .22, "sawtooth", .02);
+          for (const [i, f] of [293.66, 440, 587.33, 880].entries()) tone("sfx", f, f, time + .3 + i * .06, .5, .16, "triangle", .01);
+          noise("sfx", time + .3, .5, 1800, .18);
+          break;
+        case "frenzy-end":
+          tone("sfx", 660, 110, time, .6, .14, "sawtooth", .02);
+          noise("sfx", time, .3, 900, .1);
+          break;
+        case "utensil":
+          // A fork in the teeth: a clank and a cash-register ding.
+          noise("sfx", time, .08, 3400, .14);
+          tone("sfx", 1760, 1760, time + .04, .35, .16, "triangle", .005);
+          tone("sfx", 2637, 2637, time + .12, .4, .1, "sine", .005);
+          break;
+        case "cooked":
+          noise("sfx", time, .22, 2400, .14);
+          tone("sfx", 520, 980, time, .2, .08, "sine");
+          break;
+        case "flame-tell":
+          // The inhale.
+          noise("sfx", time, .55, 600, .14);
+          tone("sfx", 90, 160, time, .55, .08, "sine", .2);
+          break;
+        case "flame":
+          // The breath: a roar of low noise with a crackle on top.
+          noise("sfx", time, .8, 380, .3);
+          noise("sfx", time + .05, .6, 2200, .1);
+          tone("sfx", 70, 50, time, .7, .14, "sawtooth", .05);
+          break;
+        case "fire":
+          noise("sfx", time, 1.2, 520, .18);
+          noise("sfx", time + .2, .9, 3000, .06);
+          break;
+        case "jam":
+          // Something in the works: a grinding clunk.
+          tone("sfx", 180, 70, time, .25, .22, "square", .005);
+          noise("sfx", time, .3, 700, .16);
+          tone("sfx", 95, 60, time + .12, .3, .12, "triangle");
+          break;
+        case "grow":
+          // Bigger: a swell downward, a thump.
+          tone("sfx", 220, 110, time, .45, .2, "triangle", .08);
+          tone("sfx", 55, 40, time + .1, .5, .22, "sine", .02);
+          noise("sfx", time + .1, .25, 300, .12);
+          break;
+        case "tantrum":
+          for (let i = 0; i < 4; i++) tone("sfx", 160 - i * 20, 90, time + i * .11, .14, .2, "square", .005);
+          noise("sfx", time, .5, 500, .14);
+          break;
+        case "craving":
+          tone("sfx", 523.25, 523.25, time, .18, .1, "sine", .01);
+          tone("sfx", 783.99, 783.99, time + .14, .28, .1, "sine", .01);
           break;
       }
     },

@@ -6,9 +6,9 @@
  * same displacement field, so nothing slides off the face when the body moves.
  */
 import { DEV_HOOKS, rigParts } from "../../dev/hook";
-import { EYE, EYE_SIDES, MOUTH } from "./anatomy";
+import { ARENA_HEIGHT, ARENA_WIDTH, EYE, EYE_SIDES, HI, MOUTH, SILL_Y } from "./anatomy";
 import type { CreaturePose } from "./pose";
-import type { CreatureRig } from "./rig";
+import { silhouettePath, type CreatureRig } from "./rig";
 import { buildField, drawWarped, localTransform, placePoint, WARP_REGION, type WarpField } from "./warp";
 
 const clamp01 = (value: number) => (value < 0 ? 0 : value > 1 ? 1 : value);
@@ -848,14 +848,14 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
   if (pose.magnetism > 0.04) {
     grades.push({ paint: (inner) => {
       const steel = inner.createRadialGradient(846, 300, 20, 846, 258, 300);
-      steel.addColorStop(0, `rgba(176,206,222,${0.5 * pose.magnetism})`);
-      steel.addColorStop(0.45, `rgba(138,172,196,${0.3 * pose.magnetism})`);
+      steel.addColorStop(0, `rgba(176,206,222,${0.34 * pose.magnetism})`);
+      steel.addColorStop(0.45, `rgba(138,172,196,${0.2 * pose.magnetism})`);
       steel.addColorStop(1, "rgba(120,156,184,0)");
       inner.fillStyle = steel;
       inner.fillRect(500, 40, 700, 500);
     } });
     grades.push({ paint: (inner) => {
-      inner.fillStyle = `rgba(150,170,185,${0.5 * pose.magnetism})`;
+      inner.fillStyle = `rgba(150,170,185,${0.24 * pose.magnetism})`;
       inner.fillRect(500, 40, 700, 500);
     } });
   }
@@ -877,7 +877,7 @@ function drawSkin(context: CanvasRenderingContext2D, rig: CreatureRig, pose: Cre
   // Hunger pallor: colour drains and the light goes cold.
   if (pose.pallor > 0.03) {
     grades.push({ paint: (inner) => {
-      inner.fillStyle = `rgba(150,168,150,${0.7 * pose.pallor})`;
+      inner.fillStyle = `rgba(150,168,150,${0.45 * pose.pallor})`;
       inner.fillRect(500, 40, 700, 500);
     } });
     grades.push({ paint: (inner) => {
@@ -1058,12 +1058,75 @@ function drawExhale(context: CanvasRenderingContext2D, pose: CreaturePose, shape
   context.restore();
 }
 
+/**
+ * Electric crackle over magnetised teeth: short forked arcs that jump between
+ * neighbouring fangs, drawn in the mouth's own coordinates. Deterministic in
+ * `time`, so a capture of the same clock is the same picture.
+ */
+function drawCrackle(context: CanvasRenderingContext2D, pose: CreaturePose, shape: Aperture,
+                     time: number, reduced: boolean) {
+  if (pose.crackle <= 0.05) return;
+  const span = shape.rightX - shape.leftX;
+  const arcs = reduced ? 2 : 3 + Math.round(pose.crackle * 3);
+  context.save();
+  context.globalCompositeOperation = "screen";
+  context.lineCap = "round";
+  for (let i = 0; i < arcs; i++) {
+    // Each arc lives for a third of a second at a seeded place, then jumps.
+    const slot = Math.floor(time * 3 + i * 0.37);
+    const seed = Math.sin(slot * 91.7 + i * 13.1) * 43758.5453;
+    const u = seed - Math.floor(seed);
+    const upper = (slot + i) % 2 === 0;
+    const t0 = 0.08 + u * 0.78;
+    const a = onCurve(shape, t0, upper);
+    const b = onCurve(shape, Math.min(0.95, t0 + 0.09 + u * 0.05), upper);
+    const flicker = reduced ? 0.7 : 0.45 + 0.55 * Math.abs(Math.sin(time * 31 + i * 2.3));
+    const dir = upper ? 1 : -1;
+    context.globalAlpha = pose.crackle * flicker;
+    context.strokeStyle = "rgba(190,236,255,0.95)";
+    context.lineWidth = 1.6 + flicker;
+    context.beginPath();
+    context.moveTo(a.x, a.y + dir * 6);
+    const midX = (a.x + b.x) / 2 + (u - 0.5) * span * 0.04;
+    const midY = (a.y + b.y) / 2 + dir * (14 + u * 10);
+    context.lineTo(midX, midY);
+    context.lineTo(b.x, b.y + dir * 6);
+    context.stroke();
+    context.strokeStyle = "rgba(120,200,255,0.5)";
+    context.lineWidth = 4;
+    context.stroke();
+  }
+  context.restore();
+}
+
+/** The resting mouth in painting coordinates: the point the body is scaled about. */
+export const REST_MOUTH = { x: 840, y: 279 };
+
 export function drawCreature(context: CanvasRenderingContext2D, rig: CreatureRig, pose: CreaturePose,
                              time: number, reduced: boolean) {
   const mark = DEV_HOOKS ? () => performance.now() : () => 0;
   const t0 = mark();
   const field = buildField(pose, time, reduced);
   const t1 = mark();
+
+  // The creature is a clipped layer on the kitchen: the painting, warped, drawn
+  // through its own silhouette, scaled about its resting mouth and moved so
+  // the drawn mouth lands exactly on the rules' collision ellipse. The clip is
+  // the traced silhouette pushed through the same field as the paint, so the
+  // edge follows a tilted head and a swollen belly.
+  const scaleX = pose.bodyScaleX || 1;
+  const scaleY = pose.bodyScaleY || 1;
+  context.save();
+  context.translate(pose.mouthX, pose.mouthY);
+  context.scale(scaleX, scaleY);
+  context.translate(-REST_MOUTH.x, -REST_MOUTH.y);
+  silhouettePath(context, 1, 4, (x, y) => placePoint(field, x, y));
+  context.clip();
+  // The undisplaced painting first, then the warp over it: the warp skips any
+  // cell that has not moved, on the understanding that the base layer already
+  // shows it, and the base layer is now a kitchen with no creature in it.
+  context.drawImage(rig.art, WARP_REGION.x * HI, WARP_REGION.y * HI, WARP_REGION.width * HI, WARP_REGION.height * HI,
+    WARP_REGION.x, WARP_REGION.y, WARP_REGION.width, WARP_REGION.height);
   // One warp pass: the working copy already has the muzzle rebuilt as skin.
   drawWarped(context, rig.art, field, WARP_REGION);
   const t2 = mark();
@@ -1074,12 +1137,14 @@ export function drawCreature(context: CanvasRenderingContext2D, rig: CreatureRig
   // Placed once and reused: the exhale has to sit in exactly the mouth that was
   // drawn, not in the mouth's resting position.
   const shape = placed(aperture(pose), field);
-  // Record what was actually drawn, for the calibration script.
-  lastMouth.x = (shape.leftX + shape.rightX) / 2;
-  lastMouth.y = (shape.upperApex + shape.lowerApex) / 2;
-  lastMouth.rx = (shape.rightX - shape.leftX) / 2;
-  lastMouth.ry = (shape.lowerApex - shape.upperApex) / 2;
+  // Record what was actually drawn, in screen coordinates, for the calibration
+  // script and the target ring.
+  lastMouth.x = pose.mouthX + ((shape.leftX + shape.rightX) / 2 - REST_MOUTH.x) * scaleX;
+  lastMouth.y = pose.mouthY + ((shape.upperApex + shape.lowerApex) / 2 - REST_MOUTH.y) * scaleY;
+  lastMouth.rx = (shape.rightX - shape.leftX) / 2 * scaleX;
+  lastMouth.ry = (shape.lowerApex - shape.upperApex) / 2 * scaleY;
   drawMouth(context, rig, pose, shape, time, reduced);
+  drawCrackle(context, pose, shape, time, reduced);
 
   // Skin colour goes on before the eyes: a hungry creature loses colour in the
   // face, but its eyes are wet and stay bright, which is what carries the read.
@@ -1087,6 +1152,12 @@ export function drawCreature(context: CanvasRenderingContext2D, rig: CreatureRig
   drawThroat(context, pose);
   drawEyes(context, rig, pose, field);
   drawExhale(context, pose, shape, time, reduced);
+  context.restore();
+
+  // The sill and everything below it go back on top: a creature that has
+  // grown past the counter sinks behind it instead of standing on it.
+  context.drawImage(rig.art, 0, SILL_Y * HI, ARENA_WIDTH * HI, (ARENA_HEIGHT - SILL_Y) * HI,
+    0, SILL_Y, ARENA_WIDTH, ARENA_HEIGHT - SILL_Y);
   if (DEV_HOOKS) {
     const parts = rigParts;
     parts.field += t1 - t0;
