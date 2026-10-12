@@ -1,5 +1,5 @@
 import {
-  ARENA, FOODS, TUNING, flameCone, getHazard, inFrenzy, previewFlight,
+  ARENA, TUNING, flameCone, getHazard, inFrenzy, previewFlight,
   type ArcadeState, type Bouncer, type Ingredient, type Projectile,
 } from '../game/arcade';
 import { CreatureAnimator } from './creature/pose';
@@ -7,6 +7,7 @@ import { buildRig, type CreatureRig } from './creature/rig';
 import { drawCreature, REST_MOUTH } from './creature/draw';
 import { EYE, ANTENNA_BULB } from './creature/anatomy';
 import { DEV_HOOKS, devRender, frameCells } from '../dev/hook';
+import { CRAVING_LINES, TOKENS, createTokenSprites, tokenCopy } from './tokens';
 
 /**
  * The scene: the kitchen, the creature, the serving in flight, and every piece
@@ -23,7 +24,8 @@ import { DEV_HOOKS, devRender, frameCells } from '../dev/hook';
  * event ids and the render clock so a capture of a given tick is reproducible.
  */
 
-const COLORS: Record<Ingredient, string> = { metal: '#ddea9c', balloon: '#9be9df', pepper: '#f6a074' };
+/** The effect tints: the game's own palette for each token, not the marks' colours. */
+const COLORS: Record<Ingredient, string> = { metal: TOKENS.metal.tint, balloon: TOKENS.balloon.tint, pepper: TOKENS.pepper.tint };
 const DISPLAY = "Impact,'Arial Black','DejaVu Sans Condensed','Helvetica Neue',Arial,sans-serif";
 const MONO = 'ui-monospace,Menlo,monospace';
 const clampAlpha = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -36,6 +38,8 @@ const hashed = (index: number) => {
 };
 const easeOut = (t: number) => 1 - (1 - clampAlpha(t)) ** 3;
 
+/** A coin on the floor lies a little askew: the most the mark is ever turned. */
+const MARK_TILT_FLOOR = 0.26;
 /** The caption slot: the empty left third of the kitchen, clear of the creature at every size. */
 const CAPTION = { x: 300, y: 238 };
 /** Where the combo lives: just above the launcher's barrel, on the counter. */
@@ -69,7 +73,8 @@ interface Wobble { v: number; a: number }
 
 export function createScene() {
   const kitchen = new Image(); kitchen.src = '/art/kitchen.png';
-  const items = new Image(); items.src = '/art/ingredients.png';
+  // The coins: the token marks on plates, rasterised once at three sizes.
+  const tokens = createTokenSprites();
   const cannon = new Image(); cannon.src = '/art/launcher.png';
   const masks = new Map<string, HTMLCanvasElement>();
   function masked(source: HTMLImageElement) {
@@ -152,14 +157,27 @@ export function createScene() {
     camera.zoom = reduced ? camera.target : camera.from + (camera.target - camera.from) * easeInOut((time - camera.since) / CAMERA.ease);
   }
 
-  function item(ctx: CanvasRenderingContext2D, ingredient: Ingredient, x: number, y: number, size: number, rotation = 0) {
-    ctx.save(); ctx.translate(x, y); ctx.rotate(rotation);
-    if (items.complete && items.naturalWidth) {
-      const w = items.naturalWidth / 3; ctx.shadowColor = '#0008'; ctx.shadowBlur = 3;
-      ctx.drawImage(masked(items) ?? items, w * FOODS.indexOf(ingredient), 0, w, items.naturalHeight, -size / 2, -size / 2, size, size);
-    } else { ctx.fillStyle = COLORS[ingredient]; ctx.beginPath(); ctx.arc(0, 0, size * .2, 0, Math.PI * 2); ctx.fill(); }
-    ctx.restore();
+  /** Device pixels per logical pixel on the last frame, so the coin picks the right bitmap. */
+  let pixelScale = 1.6;
+  /** A coin: the mark on its plate, the sweep around it. `heading` tilts it by at most 15°. */
+  function coin(ctx: CanvasRenderingContext2D, ingredient: Ingredient, x: number, y: number, size: number, heading?: number, spin?: number, sheen = 1) {
+    tokens.draw(ctx, ingredient, x, y, size, { heading, spin, scale: pixelScale * camera.zoom, sheen });
   }
+
+  // Which pieces of kitchen metal were on screen last frame, so a catch or a
+  // jam can say what it was: a fork, or the occasional hardware wallet.
+  const junkSeen = new Map<number, { x: number; y: number; wallet: boolean }>();
+  const isWallet = (id: number) => hashed(id * 13 + 5) < 0.3;
+  function vanishedJunk(state: ArcadeState, x: number, y: number): { wallet: boolean } | null {
+    let best: { wallet: boolean } | null = null; let bestD = 110 * 110;
+    for (const [id, j] of junkSeen) {
+      if (state.projectiles.some(p => p.id === id)) continue;
+      const d = (j.x - x) ** 2 + (j.y - y) ** 2;
+      if (d < bestD) { bestD = d; best = { wallet: j.wallet }; }
+    }
+    return best;
+  }
+  let jamWallet = false;
 
   function burst(x: number, y: number, n: number, color: string, speed: number, time: number, kind: Particle['kind'] = 'dot', seed = 0, life = 0.7, gravity = 260) {
     for (let i = 0; i < n; i++) {
@@ -210,7 +228,7 @@ export function createScene() {
           break;
         }
         case 'bank':
-          say(e.label, '#ffd36a', 4, time, 54, 1.3);
+          say(tokenCopy(e.label), '#ffd36a', 4, time, 54, 1.3);
           burst(e.x, e.y, reduced ? 4 : 10, '#ffd36a', 200, time, 'spark', e.id, 0.6);
           break;
         case 'bounce': {
@@ -218,6 +236,7 @@ export function createScene() {
           const credited = (e.value ?? 0) > 0 || surface === 'belly';
           rings.push({ x: e.x, y: e.y, born: time, color: surface === 'belly' ? '#9be9df' : credited ? '#ffd36a' : '#cdd8c4', big: credited });
           if (surface !== 'floor') nudge(surface, surface === 'lamp' ? 0.9 : 0.6);
+          if (surface === 'belly') say('GAS SPIKE.', '#9be9df', 1, time, 40, 0.7);
           if (surface === 'floor') burst(e.x, ARENA.floor - 4, reduced ? 3 : 7, '#b9ae95', 70, time, 'dust', e.id, 0.5, 60);
           else burst(e.x, e.y, reduced ? 3 : 6, '#fff2c0', 150, time, 'spark', e.id, 0.35);
           break;
@@ -240,40 +259,45 @@ export function createScene() {
           break;
         case 'utensil':
           if (e.name === 'caught') {
-            say('UTENSIL +500', '#dff2ff', 4, time, 50, 1.2);
+            // A hardware wallet in the teeth is cold storage; a fork is a fork.
+            const what = vanishedJunk(state, e.x, e.y);
+            say(what && !what.wallet ? `UTENSIL +${e.value ?? TUNING.utensilScore}` : `COLD STORAGE +${e.value ?? TUNING.utensilScore}`, '#dff2ff', 4, time, 50, 1.2);
             pops.push({ x: e.x, y: e.y - 30, text: `+${e.value ?? TUNING.utensilScore}`, color: '#dff2ff', born: time, size: 40 });
             burst(e.x, e.y, reduced ? 6 : 16, '#e8f4ff', 240, time, 'spark', e.id, 0.5);
             if (!reduced) { freezeUntil = time + 0.05; frozenAt = time; }
           } else burst(e.x, e.y, reduced ? 2 : 5, '#cfe0ea', 90, time, 'spark', e.id, 0.4);
           break;
         case 'cooked':
-          say('COOKED', '#ffb060', 3, time, 44, 0.9);
+          say("TURBO'D ×2", '#ffb060', 3, time, 44, 0.9);
           burst(e.x, e.y, reduced ? 3 : 8, '#ffb060', 120, time, 'ember', e.id, 0.6, -40);
           break;
         case 'fire':
-          if (e.name === 'start') { say('IT IS ON FIRE.', '#ff8a4a', 5, time, 52, 1.5); burst(e.x, ARENA.floor, reduced ? 6 : 18, '#ffb060', 180, time, 'ember', e.id, 0.9, -60); }
+          if (e.name === 'start') { say('THE KITCHEN IS CONGESTED.', '#ff8a4a', 5, time, 50, 1.6); burst(e.x, ARENA.floor, reduced ? 6 : 18, '#ffb060', 180, time, 'ember', e.id, 0.9, -60); }
           break;
         case 'flame':
           if (e.name === 'tell') say('IT INHALES', '#ffb88a', 3, time, 40, 0.8);
-          else { say('FIRE BREATH', '#ff9a4a', 4, time, 54, 1.0); if (!reduced) shake = Math.max(shake, 0.4); }
+          else { say('TURBO BREATH', '#ff9a4a', 4, time, 54, 1.0); if (!reduced) shake = Math.max(shake, 0.4); }
           break;
-        case 'jam':
-          say(e.label, '#ff8a6a', 4, time, 44, 1.1);
+        case 'jam': {
+          const what = e.name === 'utensil' ? vanishedJunk(state, ARENA.launcher.x, ARENA.launcher.y) : null;
+          jamWallet = e.name === 'utensil' && (what?.wallet ?? false);
+          say(jamWallet ? 'SEED PHRASE LOST.' : tokenCopy(e.label), '#ff8a6a', 4, time, 44, 1.1);
           burst(ARENA.launcher.x, ARENA.launcher.y - 10, reduced ? 4 : 10, e.name === 'singe' ? '#ffa060' : '#dfe8ff', 150, time, 'spark', e.id, 0.5);
           if (!reduced) shake = Math.max(shake, 0.3);
           break;
+        }
         case 'grow':
           say('BIGGER.', '#f1ffc8', 6, time, 70, 1.3, true);
           pulseAt = time;
           if (!reduced) shake = Math.max(shake, 0.35);
           break;
         case 'mutation':
-          say(e.label, tint, 7, time, 58, 1.7, true);
+          say(tokenCopy(e.label), tint, 7, time, 58, 1.7, true);
           burst(e.x, e.y, reduced ? 10 : 28, tint, 260, time, 'dot', e.id, 1.0);
           if (!reduced) shake = Math.max(shake, 0.5);
           break;
         case 'craving':
-          if (e.name === 'start' && e.ingredient) say(`IT WANTS ${e.ingredient === 'metal' ? 'TIN' : e.ingredient === 'balloon' ? 'AIR' : 'PEPPER'}.`, tint, 2, time, 42, 1.1);
+          if (e.name === 'start' && e.ingredient) say(CRAVING_LINES[e.ingredient], tint, 2, time, 42, 1.1);
           break;
         case 'tantrum':
           say('TANTRUM.', '#ff8a6a', 5, time, 56, 1.2);
@@ -596,7 +620,9 @@ export function createScene() {
     // Three shapes, chosen by id, so a storm has forks and spoons and knives in
     // it, each with a motion trail so it reads as flying metal and not a smudge.
     const kind = p.id % 3;
-    const rot = p.age * 0.11 + p.id;
+    const wallet = isWallet(p.id);
+    const rot = wallet ? Math.sin(p.age * 0.05 + p.id) * 0.35 : p.age * 0.11 + p.id;
+    junkSeen.set(p.id, { x: p.x, y: p.y, wallet });
     ctx.save();
     if (p.assisted) {
       ctx.strokeStyle = 'rgba(221,234,156,0.45)'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 8]);
@@ -609,7 +635,10 @@ export function createScene() {
       ctx.globalAlpha = g === 0 ? 1 : 0.22 - g * 0.05;
       ctx.translate(p.x - p.vx * back, p.y - p.vy * back); ctx.rotate(rot - g * 0.12);
       ctx.fillStyle = '#d7e1dc'; ctx.strokeStyle = '#303b38'; ctx.lineWidth = 1.5;
-      if (kind === 0) {
+      if (wallet) {
+        // The occasional hardware wallet: a small dark rectangle with a tiny screen.
+        drawWallet(ctx, g === 0 ? 1 : 0.6);
+      } else if (kind === 0) {
         ctx.beginPath(); ctx.roundRect(-22, -2.5, 30, 5, 2.5); ctx.fill(); ctx.stroke();
         for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.roundRect(6, k * 4.5 - 1.5, 16, 3, 1.5); ctx.fill(); ctx.stroke(); }
       } else if (kind === 1) {
@@ -619,10 +648,20 @@ export function createScene() {
         ctx.beginPath(); ctx.roundRect(-22, -3, 18, 6, 3); ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(-4, -4.5); ctx.lineTo(22, -2); ctx.lineTo(22, 1.5); ctx.lineTo(-4, 4.5); ctx.closePath(); ctx.fill(); ctx.stroke();
       }
-      if (g === 0) { ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-18, -1); ctx.lineTo(4, -1); ctx.stroke(); }
+      if (g === 0 && !wallet) { ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-18, -1); ctx.lineTo(4, -1); ctx.stroke(); }
       ctx.restore();
     }
     ctx.restore();
+  }
+
+  /** A hardware wallet, 36×22, centred: dark body, a tiny lit screen, one button. Drawn in the current transform. */
+  function drawWallet(ctx: CanvasRenderingContext2D, lit: number) {
+    ctx.fillStyle = '#1b2224'; ctx.strokeStyle = '#5a6a6c'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.roundRect(-18, -11, 36, 22, 4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = `rgba(150,236,220,${0.9 * lit})`; ctx.beginPath(); ctx.roundRect(-12, -6, 17, 12, 2); ctx.fill();
+    ctx.fillStyle = `rgba(20,40,38,${0.9 * lit})`; ctx.fillRect(-9, -3, 9, 1.5); ctx.fillRect(-9, 0, 6, 1.5);
+    ctx.fillStyle = '#9aa6a3'; ctx.beginPath(); ctx.arc(11, 0, 3.2, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-14, -9); ctx.lineTo(12, -9); ctx.stroke();
   }
 
   function drawFood(ctx: CanvasRenderingContext2D, p: Projectile, time: number, reduced: boolean) {
@@ -655,9 +694,17 @@ export function createScene() {
     ctx.beginPath(); ctx.moveTo(p.x - p.vx * 1.6, p.y - p.vy * 1.6); ctx.lineTo(p.x, p.y); ctx.stroke();
     ctx.globalAlpha = p.spent ? 0.4 : .85; ctx.lineWidth = 2.5;
     if (p.bank > 0) { ctx.strokeStyle = '#ffd36a'; ctx.lineWidth = 3.5; }
-    ctx.beginPath(); ctx.arc(p.x, p.y, 25, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(p.x, p.y, 27, 0, Math.PI * 2); ctx.stroke();
+    if (p.cooked) {
+      // Turbo'd: a hot ring around the coin, outside the mark.
+      ctx.globalAlpha = 0.9; ctx.strokeStyle = '#ffd080'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 31 + (reduced ? 0 : Math.sin(time * 21) * 1.5), 0, Math.PI * 2); ctx.stroke();
+    }
     ctx.restore();
-    item(ctx, p.ingredient, p.x, p.y, 52, reduced ? 0 : p.age * .065);
+    // The coin itself: tilted with its heading (at most 15°), the glint spinning round it.
+    ctx.save(); if (p.spent) ctx.globalAlpha = 0.6;
+    coin(ctx, p.ingredient, p.x, p.y, 46, Math.atan2(p.vy, p.vx), reduced ? 0.8 : p.age * 0.16 + p.id, p.spent ? 0.3 : 1);
+    ctx.restore();
   }
 
   function drawText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, size: number, color: string, alpha: number, font = DISPLAY, align: CanvasTextAlign = 'center', outline = 6) {
@@ -675,6 +722,7 @@ export function createScene() {
   function draw(ctx: CanvasRenderingContext2D, width: number, height: number, state: ArcadeState | null, angle: number, selected: Ingredient, playing: boolean, reduced: boolean, time: number, guideSteps = 0) {
     const charge = state?.charge ?? 0; const power = ARENA.minPower + (ARENA.maxPower - ARENA.minPower) * charge;
     ctx.setTransform(width / 1200, 0, 0, height / 700, 0, 0); ctx.clearRect(0, 0, 1200, 700);
+    pixelScale = width / 1200;
     const delta = lastTime < 0 ? 1 / 60 : Math.min(0.05, Math.max(0.0005, time - lastTime)); lastTime = time;
     const tick = state?.tick ?? 0;
     const shown = playing || (state != null && state.phase !== 'playing');
@@ -808,6 +856,7 @@ export function createScene() {
     // Servings and cutlery in the air.
     if (playing && state) {
       const mouth = { x: state.creature.x, y: state.creature.y };
+      if (junkSeen.size > 40) junkSeen.clear();
       for (const p of state.projectiles) {
         if (p.kind === 'junk') drawUtensil(ctx, p, t, reduced, mouth);
         else if (p.kind === 'food') drawFood(ctx, p, t, reduced);
@@ -871,7 +920,7 @@ export function createScene() {
       }
       ctx.restore();
       ctx.save(); ctx.globalAlpha = loaded ? 1 : .7;
-      item(ctx, selected, x, y, loaded ? 47 : 40, rad);
+      coin(ctx, selected, x, y, loaded ? 44 : 38, rad, reduced ? 0.8 : t * 2.2, loaded ? 0.8 : 0.3);
       ctx.restore();
       if (jammed && state) {
         // What jammed it: a fork through the works, or smoke off a singe.
@@ -879,9 +928,12 @@ export function createScene() {
         ctx.save();
         if (jam?.name === 'utensil') {
           ctx.translate(x + 18, y - 26); ctx.rotate(-0.9);
-          ctx.fillStyle = '#d7e1dc'; ctx.strokeStyle = '#303b38'; ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.roundRect(-24, -2.5, 32, 5, 2.5); ctx.fill(); ctx.stroke();
-          for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.roundRect(8, k * 4.5 - 1.5, 16, 3, 1.5); ctx.fill(); ctx.stroke(); }
+          if (jamWallet) drawWallet(ctx, 0.5);
+          else {
+            ctx.fillStyle = '#d7e1dc'; ctx.strokeStyle = '#303b38'; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.roundRect(-24, -2.5, 32, 5, 2.5); ctx.fill(); ctx.stroke();
+            for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.roundRect(8, k * 4.5 - 1.5, 16, 3, 1.5); ctx.fill(); ctx.stroke(); }
+          }
           ctx.rotate(0.9); ctx.translate(-(x + 18), -(y - 26));
         }
         for (let i = 0; i < (reduced ? 2 : 5); i++) {
@@ -909,9 +961,9 @@ export function createScene() {
         if (e.type !== 'miss' || tick - e.tick >= 65) continue; const age = tick - e.tick; const rest = Math.min(ARENA.floor - 4, e.y + age * 1.6);
         if (rest < ARENA.floor - 30) continue;
         ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, (70 - age) / 26));
-        ctx.fillStyle = '#040908a0'; ctx.beginPath(); ctx.ellipse(e.x, rest + 12, 34, 8, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.translate(e.x, rest); ctx.rotate(.42); ctx.scale(1, .72);
-        item(ctx, e.ingredient ?? selected, 0, 0, 54); ctx.restore();
+        ctx.fillStyle = '#040908a0'; ctx.beginPath(); ctx.ellipse(e.x, rest + 12, 30, 7, 0, 0, Math.PI * 2); ctx.fill();
+        // On the floor, face up and a little tilted. The mark is never squashed.
+        coin(ctx, e.ingredient ?? selected, e.x, rest, 40, MARK_TILT_FLOOR, undefined, 0); ctx.restore();
       }
     }
 
@@ -993,7 +1045,7 @@ export function createScene() {
       ctx.strokeStyle = urgent ? '#eea66d' : '#dded92'; ctx.lineWidth = 8; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.arc(bx, by, 44, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left); ctx.stroke();
       ctx.restore();
-      item(ctx, cr.ingredient, bx, by, 58);
+      coin(ctx, cr.ingredient, bx, by, 60, 0, reduced ? 0.8 : t * 1.6, 0.6);
       drawText(ctx, 'IT WANTS', bx, by - 66, 15, urgent ? '#ffc698' : '#dfe9cb', 1, MONO, 'center', 4);
     }
 
@@ -1097,7 +1149,9 @@ export function createScene() {
       }
     }
   }
-  const ready = () => [kitchen, items, cannon].every(image => image.complete && image.naturalWidth > 0) && (rig !== null || rigFailed);
+  const ready = () => [kitchen, cannon].every(image => image.complete && image.naturalWidth > 0) && tokens.ready() && (rig !== null || rigFailed);
+  /** Whether the HEMI coin on screen is the kit's mark (true), the stand-in (false) or undecided (null). */
+  const hemiFromKit = () => tokens.hemiFromKit();
   /** Development inspection only: hands back the built rig for review tooling. */
   const debugRig = () => rig;
   /** Development only: advances the performance without drawing, so a capture
@@ -1109,5 +1163,5 @@ export function createScene() {
   const worldTime = () => lastWorldTime;
   /** The camera in force on the last frame: arena -> screen is `anchor + (p - anchor) * zoom`. */
   const cameraNow = () => ({ zoom: camera.zoom, target: camera.target, ax: CAMERA.ax, ay: CAMERA.ay, said: camera.said });
-  return { draw, ready, debugRig, debugPose, warm, worldTime, camera: cameraNow };
+  return { draw, ready, debugRig, debugPose, warm, worldTime, camera: cameraNow, hemiFromKit };
 }

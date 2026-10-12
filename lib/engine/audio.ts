@@ -11,7 +11,9 @@ export interface AudioMixState {
 export type SfxId =
   | "feed" | "mistake" | "mutation" | "ui-click" | "launch" | "gust" | "end"
   | "chew" | "clank" | "bank" | "bounce" | "frenzy-start" | "frenzy-end" | "utensil" | "cooked"
-  | "flame-tell" | "flame" | "fire" | "jam" | "grow" | "tantrum" | "craving";
+  | "flame-tell" | "flame" | "fire" | "jam" | "grow" | "tantrum" | "craving"
+  // The coins: a clink on launch and on a catch, pitched by token.
+  | "clink-btc" | "clink-eth" | "clink-hemi";
 export interface MixerAudioEngine {
   unlock(): void;
   play(id: SfxId): void;
@@ -209,6 +211,18 @@ export function createAudioEngine(): MixerAudioEngine {
       if (!context || !buses || context.state !== "running" || muted || !mix.sfx || disposed) return;
       const time = context.currentTime;
       switch (id) {
+        case "clink-btc":
+        case "clink-eth":
+        case "clink-hemi": {
+          // A coin on tin: two inharmonic partials with a fast decay and a
+          // tick of noise. Bitcoin is the heavy coin, Ether a tone above,
+          // HEMI the bright one.
+          const base = id === "clink-btc" ? 1480 : id === "clink-eth" ? 1760 : 2217;
+          tone("sfx", base, base * .985, time, .16, .11, "triangle", .003);
+          tone("sfx", base * 2.76, base * 2.7, time, .09, .05, "sine", .002);
+          noise("sfx", time, .03, 5200, .07);
+          break;
+        }
         case "launch":
           noise("sfx", time, .2, 1500, .2);
           tone("sfx", 160, 65, time, .17, .18, "triangle");
