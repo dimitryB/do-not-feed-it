@@ -1,5 +1,35 @@
 # Current handoff
 
+## FEAST stage 3, October 12, 2026 (branch `feat/feast`, not merged)
+
+Three things from the stage 2 review, fixed and measured:
+
+1. **Pacing.** `lib/game/arcade.ts` (GAME_VERSION 5) — `TUNING` and the
+   level thresholds only: levels at 10 / 28 / 70 servings of an ingredient
+   (`levelServings`, `levelFor`, `servingsForLevel`), growth 0.014 a feed
+   back-loaded, craving gap 120, drain `0.06 + 0.015/size + 0.07/min` at
+   temper 0.5–1.5. 200 shifts: naive 74.2 s, moderate 142.7 s (first level
+   27 s, ×1.5 at 67 s, ×2.0 at 141 s, first ×3 never before 142 s), good
+   163.9 s; all fourteen gates pass. `scripts/loop-bots.mjs` now reports and
+   gates the pacing (censored percentiles; `--bots`; a timeline option).
+2. **The camera.** `lib/render/scene.ts` pulls the whole arena-space scene
+   back about `(600, 530)` once the creature is past ×1.4, in 0.04 steps eased
+   over 1.5 s, keeping the brow ≥ 80 px below the top edge (0.80 at ×2.4 with
+   balloon ×3); the first step says IT NO LONGER FITS. HUD and captions stay
+   in screen space; the pointer aim reads the launcher's on-screen position
+   (`app/components/GameCanvas.tsx`); `__dnfi.camera()` is a dev hook.
+3. **Props and the face.** Every bouncer and the vent flap are painted to the
+   room (dark enamel, amber rim, shadows, cords, sway, a glint on a hit);
+   cheek flushes are radial glows; the metal / taut / pallor washes share a
+   0.5 cover budget so the late creature stays green.
+
+Decisions D112–D120; the report, both tables, the camera measurements and
+the open list are in `docs/qa/feast/STAGE3.md`; captures `docs/qa/loop/
+iter-101` and `iter-102` (the old `iter-2` / `iter-3` manifests from the
+loop iterations were left as they were). Render 4.65 ms median on the
+typical state. Open: the lamp bouncer on the face (P8), a fresh-context
+critic pass on `iter-102`, the pot and the cheek glow at 1920.
+
 ## FEAST stage 2, October 12, 2026 (branch `feat/feast`, not merged)
 
 The presentation was rebuilt to pillars 6 and 7 of `docs/FEAST_BRIEF.md`:
