@@ -1,5 +1,17 @@
 # Current handoff
 
+## FEAST stage 1, October 12, 2026 (branch `feat/feast`, not merged)
+
+The rules were rebuilt to `docs/FEAST_BRIEF.md` in the pure simulation only:
+`lib/game/arcade.ts` (GAME_VERSION 4), `scripts/loop-bots.mjs`,
+`tests/arcade.test.mjs`, regenerated `tests/fixtures/loop-traces.json`. All eight
+brief gates pass at 200 shifts; the table, the decisions (D94–D105) and everything
+the presentation stage needs — state fields, event payloads, bouncer geometry —
+are in `docs/qa/feast/STAGE1.md`. `lib/render`, `app/` and the audio were not
+touched and still type-check against the new state through kept legacy names;
+stage 2 (presentation) rebuilds them and recalibrates the rig to the new mouth
+rise. The section below describes the earlier state of the project.
+
 Last updated: September 9, 2026.
 Project: `/Users/dbur/dev/do-not-feed-it`.
 Branch: **`feat/creature-rig`** (cut from `codex/creature-arcade`, not merged).
