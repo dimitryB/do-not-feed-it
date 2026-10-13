@@ -66,3 +66,53 @@ and all applied through a soft silhouette mask derived from the same file so
 they never end on a hard edge across the body.
 
 Generator: none. Source file: `public/art/kitchen.png`, already recorded above.
+
+# Token marks (branch `feat/feast`, stage 4, October 12 2026)
+
+The three snacks became the three tokens. The marks are third-party brand
+assets, used as delivered; nothing about them was generated here.
+
+| file | what | source | licence / terms |
+| --- | --- | --- | --- |
+| `public/art/tokens/btc.svg` | the Bitcoin mark: orange coin, white ₿, 64 × 64 | Bitcoin logo, Wikimedia Commons (`Bitcoin.svg`) | public domain |
+| `public/art/tokens/eth.svg` | the Ethereum mark: grey Ξ diamond, 256 × 417 | the ethereum.org mark, via Wikimedia Commons | ethereum.org brand assets, usable as the unmodified mark |
+| `public/art/tokens/hemi.svg` / `hemi.png` | the HEMI token mark | Hemi brand kit | used as-is per the kit; Hemi asked that the logo not be modified in look and feel |
+
+The HEMI file had not landed when this pass was done. `lib/render/tokens.ts`
+tries `hemi.svg` then `hemi.png`; when neither decodes it draws a stand-in —
+an orange disc with a white H in the game's display font — and logs nothing.
+The stand-in is not the brand mark and must not be mistaken for it; the
+moment the kit file is in `public/art/tokens/` it is used instead, with no
+code change.
+
+## How the marks are used — the brand rule
+
+All three marks are drawn **unmodified**: no recolouring, tinting, skewing,
+horizontal "coin flip" squash, outline, drop shadow on the mark, or cropping.
+What the game adds is *behind* or *around* the mark, never on it:
+
+- **The plate.** Each coin is a disc in the game's palette drawn behind the
+  mark (`drawPlate`). Bitcoin's own mark is a coin already, so its plate is a
+  dark rim at 92 % coverage; Ether's grey Ξ sits at 64 % on a pale plate
+  (grey on dark enamel vanished at 960 px); HEMI's sits at 72 % on dark
+  enamel with an orange rim. The mark is scaled uniformly to that fraction of
+  the plate's diameter on its longer axis and centred.
+- **Motion.** A coin in flight is tilted toward its heading by at most ±15°
+  (`MARK_TILT`), so it reads as thrown and is never upside down; the plate is
+  a disc, so the tilt is the mark turning and nothing else. The spin is a
+  glint that runs round the rim, outside the mark. A coin on the floor lies
+  at 15°, face up, never squashed. The whole coin scales uniformly with the
+  camera.
+- **Effects.** The tail, the glow, the selection ring, the cooked ("turbo'd")
+  ring, flame trails and the magnet arcs are all drawn around the coin.
+- **The DOM.** Chips, legend, control deck and the title strip use the same
+  SVG files as `<img>` elements inside a round plate (`.item-art`), at natural
+  aspect with `object-fit: contain`; no blend mode, no filter.
+- **Cost.** The marks are decoded once and rasterised with their plate into
+  three offscreen bitmaps (56, 112 and 224 device px); every draw picks the
+  smallest bitmap at or above the size it needs. Nothing is rasterised per
+  frame.
+
+`public/art/ingredients.png` (the tin, pouch and pepper sheet above) is no
+longer drawn anywhere; it stays in the repository as the record of the
+earlier art.
