@@ -131,6 +131,24 @@ the transcripts in the user's "hemi-game-contest" project).
 - **Judging is Oct 29, 4 PM EDT, just before Halloween**, with the hosts in
   costume. Best Horror is a category. Nothing in the lore depends on it.
 
+## Extras
+
+**Press E.** Contest 1's judges could not get a game's E key to work on
+stream, and "Press E" has been the hosts' running joke since ("Press E,
+Jeremy." "I pressed E. I did it."). In this game E does nothing to the rules
+and is never recorded in the trace; it only says so, a little more each time:
+YOU PRESSED E. → IT WORKED. → E IS NOT A TOKEN. → STILL WORKS. On the title
+it sits low on the left; during a shift, in the caption slot.
+
+**Halloween** (October 15 to November 2, local time; `?season=halloween`
+previews it, `?season=none` turns it off). The judging stream is October 29
+with the hosts in costume. On the title only: the tag reads TRICK OR TOKEN,
+the lede opens "Proposal #004 passed. Nobody enforces it.", the accent ("IT.")
+and the tag go pumpkin orange, Munch's card adds "Costume: a whale. It is
+working on it." (the top wallet tier, which it is always growing toward), and
+now and then the lamps flicker — darker only, two dips a burst, at most 28 %,
+never under reduced motion. Gameplay and the report are unchanged.
+
 ## Tone rules
 
 1. **The double-meaning rule.** Every crypto word must also be literally true

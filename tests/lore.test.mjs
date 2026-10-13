@@ -3,8 +3,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { ENDINGS, createArcade, endingFor, launchFood, slamHatch, stepArcade } from "../lib/game/arcade.ts";
 import {
-  CAPTIONS, CAUSES, CRAVING_LINES, ENDING_JOKES, HEADLINES, TOKEN_TRAITS, WALLET_TIERS, tokenCopy,
+  CAPTIONS, CAUSES, CRAVING_LINES, ENDING_JOKES, HALLOWEEN, HEADLINES, PRESS_E, TOKEN_TRAITS, WALLET_TIERS, pressELine, tokenCopy,
 } from "../lib/render/lore.ts";
+import { FLICKER_DARKEST, flickerAt, seasonFor } from "../lib/render/season.ts";
 
 /**
  * The lore is presentation only (`docs/LORE.md`): the rules keep their kitchen
@@ -109,4 +110,40 @@ test("the page says nothing about claims, drains, exploits or prices", () => {
   assert.match(copy, /Friendly disposition\. Unaudited\./);
   assert.match(copy, /UNAUDITED BUT FRIENDLY/);
   assert.match(copy, /veHEMI/);
+});
+
+test("press E says a little more each time, then repeats its last line", () => {
+  assert.deepEqual([1, 2, 3, 4, 5, 40].map(pressELine), ["YOU PRESSED E.", "IT WORKED.", "E IS NOT A TOKEN.", "STILL WORKS.", "STILL WORKS.", "STILL WORKS."]);
+  assert.equal(pressELine(0), PRESS_E[0]);
+  for (const line of PRESS_E) assert.ok(line.length <= 24 && line === line.toUpperCase() && line.endsWith("."), line);
+});
+
+test("Halloween runs October 15 to November 2 in local time, and the URL can force it either way", () => {
+  const on = (m, d) => seasonFor(new Date(2026, m - 1, d, 12));
+  assert.equal(on(10, 12), null);
+  assert.equal(on(10, 14), null);
+  assert.equal(on(10, 15), "halloween");
+  assert.equal(on(10, 29), "halloween"); // the judging stream
+  assert.equal(on(11, 2), "halloween");
+  assert.equal(on(11, 3), null);
+  assert.equal(seasonFor(new Date(2026, 5, 1), "?season=halloween"), "halloween");
+  assert.equal(seasonFor(new Date(2026, 9, 29), "?season=none"), null);
+  assert.equal(HALLOWEEN.tag, "TRICK OR TOKEN");
+  assert.match(HALLOWEEN.costume, /whale/);
+});
+
+test("the Halloween flicker only darkens, and never more than three dips in any second", () => {
+  const step = 1 / 120;
+  const samples = [];
+  for (let t = 0; t < 600; t += step) samples.push(flickerAt(t));
+  assert.ok(samples.every((f) => f >= 0 && f <= 1), "a dip is between steady and the darkest");
+  assert.ok(samples.some((f) => f > 0.9), "it does dip");
+  assert.ok(FLICKER_DARKEST <= 0.3, "and never by much");
+  const starts = [];
+  for (let i = 1; i < samples.length; i += 1) if (samples[i - 1] === 0 && samples[i] > 0) starts.push(i * step);
+  for (let i = 0; i < starts.length; i += 1) {
+    const inSecond = starts.filter((t) => t >= starts[i] && t < starts[i] + 1).length;
+    assert.ok(inSecond <= 3, `${inSecond} dips in the second from ${starts[i].toFixed(2)} s`);
+  }
+  assert.ok(starts.length >= 600 / 8 - 1, "a burst every eight seconds or so");
 });

@@ -112,3 +112,22 @@ export const HEADLINES = {
   over: ['IT’S SO', 'OVER.'],
   back: ['WE’RE SO', 'BACK.'],
 } as const;
+
+// ---- the extras.
+
+/**
+ * Press E. Contest 1's judges could not get a game's E key to work on stream
+ * and it became the hosts' running joke ("Press E, Jeremy." "I pressed E. I
+ * did it."). E does nothing to the rules; it only says so, a little more each
+ * time.
+ */
+export const PRESS_E: readonly string[] = ['YOU PRESSED E.', 'IT WORKED.', 'E IS NOT A TOKEN.', 'STILL WORKS.'];
+/** The line for the `count`-th press (1-based); the last line repeats. */
+export const pressELine = (count: number) => PRESS_E[Math.min(PRESS_E.length - 1, Math.max(0, Math.floor(count) - 1))];
+
+/** Halloween on the title (see `./season.ts`): the tag, the lede's first line and Munch's costume. */
+export const HALLOWEEN = {
+  tag: 'TRICK OR TOKEN',
+  ledeFirst: 'Proposal #004 passed. Nobody enforces it.',
+  costume: 'Costume: a whale. It is working on it.',
+} as const;

@@ -9,6 +9,7 @@ import { EYE, ANTENNA_BULB } from './creature/anatomy';
 import { DEV_HOOKS, devRender, frameCells } from '../dev/hook';
 import { TOKENS, createTokenSprites } from './tokens';
 import { CAPTIONS, CRAVING_LINES, tokenCopy } from './lore';
+import { FLICKER_DARKEST, flickerAt, type Season } from './season';
 
 /**
  * The scene: the kitchen, the creature, the serving in flight, and every piece
@@ -722,7 +723,7 @@ export function createScene() {
     ctx.restore();
   }
 
-  function draw(ctx: CanvasRenderingContext2D, width: number, height: number, state: ArcadeState | null, angle: number, selected: Ingredient, playing: boolean, reduced: boolean, time: number, guideSteps = 0) {
+  function draw(ctx: CanvasRenderingContext2D, width: number, height: number, state: ArcadeState | null, angle: number, selected: Ingredient, playing: boolean, reduced: boolean, time: number, guideSteps = 0, season: Season = null) {
     const charge = state?.charge ?? 0; const power = ARENA.minPower + (ARENA.maxPower - ARENA.minPower) * charge;
     ctx.setTransform(width / 1200, 0, 0, height / 700, 0, 0); ctx.clearRect(0, 0, 1200, 700);
     pixelScale = width / 1200;
@@ -1126,6 +1127,12 @@ export function createScene() {
     ctx.restore(); // shake
 
     // ---- full-frame overlays, outside the shake.
+    // Halloween, on the title only: now and then the lamps dip. Darker, never
+    // brighter, two dips a burst, and not at all under reduced motion.
+    if (!shown && season === 'halloween' && !reduced) {
+      const f = flickerAt(time);
+      if (f > 0) { ctx.save(); ctx.fillStyle = `rgba(3,5,7,${(FLICKER_DARKEST * f).toFixed(3)})`; ctx.fillRect(0, 0, 1200, 700); ctx.restore(); }
+    }
     // Growth pulse: a ring from the creature to the edges, and a flash.
     if (playing && state) {
       const age = t - pulseAt;

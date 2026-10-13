@@ -8,6 +8,12 @@
       "name": "help"
     },
     {
+      "name": "press-e-title-1"
+    },
+    {
+      "name": "press-e-title-2"
+    },
+    {
       "name": null,
       "tick": 175,
       "type": "clank",
@@ -134,7 +140,20 @@
       "ending": 3
     },
     {
+      "name": "press-e-play"
+    },
+    {
       "name": "pause"
+    },
+    {
+      "name": "title-halloween",
+      "clock": 0.5,
+      "flicker": 0
+    },
+    {
+      "name": "title-halloween-flicker",
+      "clock": 2.6250000000000253,
+      "flicker": 0.9999073481666054
     }
   ],
   "captionWidths": [

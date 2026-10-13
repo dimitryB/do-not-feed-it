@@ -118,3 +118,14 @@
 .preflight-foods>div{margin-left:10px}.preflight-foods>div p{margin:0}.preflight-foods .diet-line{color:#dded92;font-size:12px;margin-top:2px}
 .result-joke{font:600 clamp(15px,1.5vw,20px)/1.2 ui-monospace,monospace;letter-spacing:.06em;color:#dded92;margin:-6px 0 14px}
 @media(max-width:650px){.result-joke{font-size:12px;margin:-4px 0 8px}}
+/* Press E: a caption in the canvas's own display face, in the caption slot while playing and low on the left otherwise. */
+.press-e{position:absolute;z-index:4;pointer-events:none;white-space:nowrap;font:700 clamp(22px,3.4vw,66px)/1 Impact,'Arial Black','DejaVu Sans Condensed','Helvetica Neue',Arial,sans-serif;letter-spacing:.01em;color:#f1ffc8;text-shadow:0 0 2px #040a09,0 3px 0 #040a09,3px 0 0 #040a09,-3px 0 0 #040a09,0 -3px 0 #040a09,0 8px 22px #000b;animation:press-e-pop 1.7s ease-out forwards}
+.press-e.in-play{left:22%;top:50%;transform:translate(-50%,-50%)}
+.press-e.idle{left:6%;bottom:7%}
+.press-e.still{animation:press-e-fade 1.7s linear forwards}
+@keyframes press-e-pop{0%{opacity:0;scale:.6}8%{opacity:1;scale:1.08}16%{scale:1}72%{opacity:1}100%{opacity:0}}
+@keyframes press-e-fade{0%,72%{opacity:1}100%{opacity:0}}
+/* Halloween: Munch's costume under the specimen line, and the title's accent goes pumpkin. */
+.scene-caption .costume{color:#f4a46a}
+.stage.halloween .start-copy h2 span,.stage.halloween .section-tag{color:#f4934a}
+.stage.halloween .section-tag:before{background:#f4934a}

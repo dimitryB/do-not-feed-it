@@ -25,6 +25,7 @@ import { chromium } from "playwright";
 import { playShift } from "./loop-bots.mjs";
 import { ARENA, createArcade, launchFood, slamHatch, stepArcade } from "../lib/game/arcade.ts";
 import { CAPTIONS, CRAVING_LINES, TOKEN_TRAITS } from "../lib/render/lore.ts";
+import { flickerAt } from "../lib/render/season.ts";
 import { CHROMIUM, WIDTH, makeStreamCopies, settle, startDevServer, stopServer, waitForScene } from "./shot-kit.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -104,7 +105,8 @@ async function main() {
     const context = await browser.newContext({ viewport: { width: WIDTH, height: SHELL_HEIGHT }, deviceScaleFactor: 1 });
     const page = await context.newPage();
     page.on("pageerror", (error) => manifest.errors.push(error.message));
-    await page.goto(server.url, { waitUntil: "domcontentloaded" });
+    // `?season=none`: the captures do not change with the calendar. Halloween is filmed on purpose, at the end.
+    await page.goto(`${server.url}?season=none`, { waitUntil: "domcontentloaded" });
     await page.evaluate(() => { try { localStorage.clear(); } catch { /* fine */ } });
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => Boolean(window.__dnfi && window.__dnfi.play), null, { timeout: 60_000 });
@@ -148,6 +150,16 @@ async function main() {
     await shoot("help");
     await page.keyboard.press("Escape");
     await settle(page, 3);
+
+    // ---- press E, twice, on the title. The caption's pop is frozen 0.3 s in, so
+    // a slow frame cannot film it half faded.
+    await page.addStyleTag({ content: ".press-e{animation-delay:-.3s!important;animation-play-state:paused!important}" });
+    for (const n of [1, 2]) {
+      await page.keyboard.press("e");
+      await page.waitForTimeout(260);
+      await shoot(`press-e-title-${n}`);
+    }
+    await page.waitForTimeout(1800);
 
     // ---- one real shift, stopping on each captioned event the first time it happens.
     await page.evaluate((seed) => { window.__dnfi.play.start(seed >>> 0); window.__dnfi.play.manual(true); window.__dnfi.clock(40); }, args.seed);
@@ -224,8 +236,26 @@ async function main() {
     // ---- pause, last: it needs a live shift.
     await page.evaluate(() => { window.__dnfi.play.start(77); window.__dnfi.play.manual(false); });
     await settle(page, 10);
+    await page.keyboard.press("e");
+    await page.waitForTimeout(260);
+    await shoot("press-e-play");
     await page.keyboard.press("Escape");
     await shoot("pause");
+
+    // ---- Halloween: the title steady, and at the bottom of a flicker.
+    await page.keyboard.press("Escape");
+    await page.goto(`${server.url}?season=halloween`, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => Boolean(window.__dnfi && window.__dnfi.play), null, { timeout: 60_000 });
+    await waitForScene(page);
+    await page.addStyleTag({ content: FRAME_PAGE });
+    let deepest = 0;
+    for (let t = 0; t < 16; t += 1 / 240) if (flickerAt(t) > flickerAt(deepest)) deepest = t;
+    await page.evaluate(() => window.__dnfi.clock(0.5));
+    await settle(page, 6);
+    await shoot("title-halloween", { clock: 0.5, flicker: flickerAt(0.5) });
+    await page.evaluate((t) => window.__dnfi.clock(t), deepest);
+    await settle(page, 3);
+    await shoot("title-halloween-flicker", { clock: deepest, flicker: flickerAt(deepest) });
 
     await makeStreamCopies(page, files);
   } finally {
