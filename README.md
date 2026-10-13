@@ -1,10 +1,12 @@
 # Do Not Feed It
 
-Feed the creature. Deal with what it becomes.
+Feed it your tokens. Deal with what it becomes.
 
 A new, original browser arcade game being prepared for Hemi Arcade Contest 2:
-Turbo Edition. The player works a short shift at a feeding machine. Ingredients
-change the creature and the physical rules of the kitchen. Completed, verified
+Turbo Edition. Governance Proposal #004, "Do not feed it", passed; nobody
+enforces it. The player works the night shift in the DAO's kitchen, throwing
+Bitcoin, Ether and HEMI at Specimen 04, and each coin changes the creature and
+the physical rules of the kitchen. The lore is in [docs/LORE.md](docs/LORE.md). Completed, verified
 runs will contribute to the form the community encounters in later sessions.
 
 **Status: playable local physical arcade game, September 9, 2026.** This is not the

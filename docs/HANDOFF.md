@@ -1,5 +1,42 @@
 # Current handoff
 
+## FEAST stage 5 — the lore, October 12, 2026 (branch `feat/feast`, not merged)
+
+The world around the coins is crypto now. Copy only: `lib/game/arcade.ts`,
+the trace and the fixtures are untouched; GAME_VERSION stays 5.
+
+1. **`docs/LORE.md` is the canon** — the DAO, Proposal #004, Munch with a
+   Bitcoin node for a stomach, the night-shift keeper and their uptime, the
+   room translated, the endings and the tone rules. Read it before writing
+   any player-facing word. The double-meaning rule (D129) is the one to keep:
+   every crypto word must also be true of what is on screen.
+2. **`lib/render/lore.ts` owns every word**; `lib/render/tokens.ts` now owns
+   only the marks. `tokenCopy` translates the rules' labels (DOUBLE BANK →
+   MULTI-HOP, FORK IN THE WORKS → CHAIN SPLIT, IT ATE THE VENT → IT ATE THE
+   MEV BOT, THE LAST SERVING → ONE TX PENDING…); `CAPTIONS` is everything the
+   renderer says on its own; the epoch report is built from `CAUSES`,
+   `ENDING_JOKES`, `WALLET_TIERS` and `HEADLINES` (D130).
+3. **`tests/lore.test.mjs`** pins the translation, replays the three frozen
+   shifts to prove no shown label escapes untranslated, and holds captions to
+   the slot (24 characters, 18 for cards) and away from price words.
+   `scripts/lore-shots.mjs --iter N` films every changed screen and caption
+   and measures the captions in the canvas face (`docs/qa/lore/iter-N`).
+
+A fresh-context reviewer read the copy as a crypto viewer and as the Hemi
+team; its four fixes are in D129 and D130 (the ending ladder no longer reads
+as an exploit write-up, and nothing jokes about lost holdings or seed
+phrases). Captures: `docs/qa/lore/iter-1` — every target event reached, no
+page errors.
+
+Known: the lunge's FRONT-RUN jam caption is almost always covered by the bite
+caption fired on the same tick (priority 5 over 4); IT TOOK THE TRAY. was
+kept as kitchen-literal. The harness measures captions in the container's
+fallback face (DejaVu Sans Condensed Bold, wider than Impact): stage 4's
+TURBO BREATH ×3 card (605 px) and OFF THE GAS BELLY ×2 (644 px) come out
+just over the 600 px slot there; check them on a machine with Impact before
+the stream. Open from stage 4 still: the HEMI kit file and a critic pass on
+gameplay captures.
+
 ## FEAST stage 4 — the tokens, October 12, 2026 (branch `feat/feast`, not merged)
 
 The three snacks are crypto tokens: metal → Bitcoin (HODL jaws), balloon →

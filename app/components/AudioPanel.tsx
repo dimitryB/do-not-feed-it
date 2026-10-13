@@ -21,7 +21,7 @@ interface BusRow {
 const BUSES: readonly BusRow[] = [
   { on: "music", level: "musicLevel", name: "MUSIC", note: "A quiet, curious melody while the kitchen is open." },
   { on: "sfx", level: "sfxLevel", name: "SOUND EFFECTS", note: "Feeding, mutations, warnings and controls." },
-  { on: "ambience", level: "ambienceLevel", name: "AMBIENCE", note: "Low ventilation and the kitchen’s electrical hum." },
+  { on: "ambience", level: "ambienceLevel", name: "AMBIENCE", note: "Low ventilation and the hum of the Bitcoin node inside it." },
 ];
 
 function percent(level: number): number {

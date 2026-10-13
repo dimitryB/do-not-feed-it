@@ -26,3 +26,7 @@ docs/qa/creature/**/*.png
 # `node --experimental-strip-types scripts/loop-shots.mjs --iter N`.
 docs/qa/loop/**/*.png
 docs/qa/loop/**/*.jpg
+
+# Lore review captures, regenerable with
+# `node --experimental-strip-types scripts/lore-shots.mjs --iter N`.
+docs/qa/lore/**/*.png

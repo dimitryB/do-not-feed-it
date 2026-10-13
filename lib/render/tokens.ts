@@ -2,8 +2,9 @@ import type { Ingredient } from '../game/arcade';
 
 /**
  * The three snacks are crypto tokens: metal is Bitcoin, balloon is Ether,
- * pepper is HEMI. This module owns the marks and the copy — nothing in it is
- * read by the rules, and the rules' ingredient keys stay what they are.
+ * pepper is HEMI. This module owns the marks; the words are in `./lore.ts`.
+ * Nothing in either is read by the rules, and the rules' ingredient keys stay
+ * what they are.
  *
  * Brand rule (Hemi asked that its logo not be modified in look and feel, and
  * the same courtesy is extended to the other two): every mark is drawn as
@@ -209,37 +210,3 @@ export function createTokenSprites() {
   const hemiFromKit = () => (state.pepper.done ? state.pepper.image !== null : null);
   return { draw, ready, hemiFromKit };
 }
-
-// ---- copy. The rules' labels are translated here, on the way to the screen.
-
-/** The three mutations, as the chips, the legend and the help name them. */
-export const TOKEN_TRAITS: Record<Ingredient, string> = { metal: 'HODL jaws', balloon: 'Gas belly', pepper: 'Turbo breath' };
-
-/**
- * Rule labels to token copy. The rules still say MAGNET MOUTH and UTENSIL
- * (their fixtures and traces are frozen); the screen says HODL JAWS and COLD
- * STORAGE. Order matters: longer phrases first.
- */
-const PHRASES: readonly [string, string][] = [
-  ['MAGNET MOUTH', 'HODL JAWS'],
-  ['BALLOON BELLY', 'GAS BELLY'],
-  ['FIRE BREATH', 'TURBO BREATH'],
-  ['OFF THE BELLY', 'OFF THE GAS BELLY'],
-  ['UTENSIL', 'COLD STORAGE'],
-];
-export function tokenCopy(label: string): string {
-  let out = label;
-  for (const [from, to] of PHRASES) if (out.includes(from)) out = out.split(from).join(to);
-  return out;
-}
-
-/** What it wants, by ticker. */
-export const CRAVING_LINES: Record<Ingredient, string> = { metal: 'IT WANTS BTC.', balloon: 'IT WANTS ETH.', pepper: 'IT WANTS HEMI.' };
-
-/** One token joke per ending, by `state.ending` (0–3). Nothing about prices. */
-export const ENDING_JOKES: readonly string[] = [
-  'IT ATE THE PETTY CASH.',
-  'IT ATE YOUR BAGS.',
-  'IT ATE THE TREASURY.',
-  'IT ATE THE FOUNDATION. IT IS THE FOUNDATION NOW.',
-];

@@ -1,24 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CRAVING_LINES, ENDING_JOKES, MARK_TILT, TOKENS, TOKEN_TRAITS, tokenCopy } from "../lib/render/tokens.ts";
+import { MARK_TILT, TOKENS } from "../lib/render/tokens.ts";
+import { CRAVING_LINES, ENDING_JOKES, TOKEN_TRAITS } from "../lib/render/lore.ts";
 import { communityDietLine } from "../lib/community/diet.ts";
 
 /**
- * The token pass is presentation and copy only: the rules keep their labels
- * and the screen translates them. These pin the translation and the stub the
- * chain layer will fill, so neither drifts quietly.
+ * The token pass is presentation only: the rules keep their keys and labels
+ * and the screen draws coins. These pin the token table and the stub the
+ * chain layer will fill, so neither drifts quietly. The words are pinned in
+ * `lore.test.mjs`.
  */
-
-test("rule labels translate to token copy, and the rest passes through", () => {
-  assert.equal(tokenCopy("MAGNET MOUTH ×2"), "HODL JAWS ×2");
-  assert.equal(tokenCopy("BALLOON BELLY ×1"), "GAS BELLY ×1");
-  assert.equal(tokenCopy("FIRE BREATH ×3"), "TURBO BREATH ×3");
-  assert.equal(tokenCopy("OFF THE BELLY ×2"), "OFF THE GAS BELLY ×2");
-  assert.equal(tokenCopy("UTENSIL +500"), "COLD STORAGE +500");
-  assert.equal(tokenCopy("OFF THE PAN ×2"), "OFF THE PAN ×2");
-  assert.equal(tokenCopy("DOUBLE BANK ×3"), "DOUBLE BANK ×3");
-  assert.equal(tokenCopy("SINGED"), "SINGED");
-});
 
 test("every ingredient has a token, a trait, a craving line and a sane mark fraction", () => {
   for (const key of ["metal", "balloon", "pepper"]) {

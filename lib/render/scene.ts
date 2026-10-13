@@ -7,7 +7,8 @@ import { buildRig, type CreatureRig } from './creature/rig';
 import { drawCreature, REST_MOUTH } from './creature/draw';
 import { EYE, ANTENNA_BULB } from './creature/anatomy';
 import { DEV_HOOKS, devRender, frameCells } from '../dev/hook';
-import { CRAVING_LINES, TOKENS, createTokenSprites, tokenCopy } from './tokens';
+import { TOKENS, createTokenSprites } from './tokens';
+import { CAPTIONS, CRAVING_LINES, tokenCopy } from './lore';
 
 /**
  * The scene: the kitchen, the creature, the serving in flight, and every piece
@@ -152,7 +153,7 @@ export function createScene() {
     const needed = Math.floor(zoomNeeded(state) / CAMERA.step + 1e-6) * CAMERA.step;
     if (needed < camera.target - 1e-6) {
       camera.from = camera.zoom; camera.target = needed; camera.since = time;
-      if (!camera.said) { camera.said = true; say('IT NO LONGER FITS.', '#f1ffc8', 6, time, 60, 1.6, true); }
+      if (!camera.said) { camera.said = true; say(CAPTIONS.noRoom, '#f1ffc8', 6, time, 60, 1.6, true); }
     }
     camera.zoom = reduced ? camera.target : camera.from + (camera.target - camera.from) * easeInOut((time - camera.since) / CAMERA.ease);
   }
@@ -223,7 +224,7 @@ export function createScene() {
           const value = e.value ?? 0;
           pops.push({ x: e.x, y: e.y - 30, text: `+${value}`, color: e.craved ? '#ffe28a' : '#e7ffb0', born: time, size: clamp(22 + value / 40, 22, 64) });
           const stuffed = e.label.startsWith('STUFFED');
-          say(e.craved ? 'THAT ONE. YES.' : stuffed ? 'STUFFED.' : 'NOM.', e.craved ? '#ffe28a' : '#e7ffb0', e.craved ? 3 : 2, time, e.craved ? 48 : 44, 0.9);
+          say(e.craved ? CAPTIONS.craved : stuffed ? CAPTIONS.stuffed : CAPTIONS.nom, e.craved ? '#ffe28a' : '#e7ffb0', e.craved ? 3 : 2, time, e.craved ? 48 : 44, 0.9);
           if (!reduced) { freezeUntil = time + 0.05; frozenAt = time; }
           break;
         }
@@ -236,19 +237,19 @@ export function createScene() {
           const credited = (e.value ?? 0) > 0 || surface === 'belly';
           rings.push({ x: e.x, y: e.y, born: time, color: surface === 'belly' ? '#9be9df' : credited ? '#ffd36a' : '#cdd8c4', big: credited });
           if (surface !== 'floor') nudge(surface, surface === 'lamp' ? 0.9 : 0.6);
-          if (surface === 'belly') say('GAS SPIKE.', '#9be9df', 1, time, 40, 0.7);
+          if (surface === 'belly') say(CAPTIONS.gasSpike, '#9be9df', 1, time, 40, 0.7);
           if (surface === 'floor') burst(e.x, ARENA.floor - 4, reduced ? 3 : 7, '#b9ae95', 70, time, 'dust', e.id, 0.5, 60);
           else burst(e.x, e.y, reduced ? 3 : 6, '#fff2c0', 150, time, 'spark', e.id, 0.35);
           break;
         }
         case 'clank':
           burst(e.x, e.y, reduced ? 4 : 9, '#dfe8ff', 220, time, 'spark', e.id, 0.35);
-          say('CLANK.', '#cfd8e8', 2, time, 40, 0.7);
+          say(CAPTIONS.reverted, '#cfd8e8', 2, time, 40, 0.7);
           if (!reduced) shake = Math.max(shake, 0.25);
           break;
         case 'miss':
           burst(e.x, ARENA.floor - 6, reduced ? 3 : 8, '#a8a08a', 60, time, 'dust', e.id, 0.6, 40);
-          say('ON THE FLOOR.', '#d9c9a8', 1, time, 36, 0.8);
+          say(CAPTIONS.dropped, '#d9c9a8', 1, time, 36, 0.8);
           break;
         case 'frenzy':
           if (e.name === 'start') {
@@ -259,35 +260,36 @@ export function createScene() {
           break;
         case 'utensil':
           if (e.name === 'caught') {
-            // A hardware wallet in the teeth is cold storage; a fork is a fork.
+            // A hardware wallet in the teeth is cold storage; a fork is a hard fork.
             const what = vanishedJunk(state, e.x, e.y);
-            say(what && !what.wallet ? `UTENSIL +${e.value ?? TUNING.utensilScore}` : `COLD STORAGE +${e.value ?? TUNING.utensilScore}`, '#dff2ff', 4, time, 50, 1.2);
+            const points = e.value ?? TUNING.utensilScore;
+            say(what && !what.wallet ? CAPTIONS.fork(points) : CAPTIONS.wallet(points), '#dff2ff', 4, time, 50, 1.2);
             pops.push({ x: e.x, y: e.y - 30, text: `+${e.value ?? TUNING.utensilScore}`, color: '#dff2ff', born: time, size: 40 });
             burst(e.x, e.y, reduced ? 6 : 16, '#e8f4ff', 240, time, 'spark', e.id, 0.5);
             if (!reduced) { freezeUntil = time + 0.05; frozenAt = time; }
           } else burst(e.x, e.y, reduced ? 2 : 5, '#cfe0ea', 90, time, 'spark', e.id, 0.4);
           break;
         case 'cooked':
-          say("TURBO'D ×2", '#ffb060', 3, time, 44, 0.9);
+          say(CAPTIONS.turbo, '#ffb060', 3, time, 44, 0.9);
           burst(e.x, e.y, reduced ? 3 : 8, '#ffb060', 120, time, 'ember', e.id, 0.6, -40);
           break;
         case 'fire':
-          if (e.name === 'start') { say('THE KITCHEN IS CONGESTED.', '#ff8a4a', 5, time, 50, 1.6); burst(e.x, ARENA.floor, reduced ? 6 : 18, '#ffb060', 180, time, 'ember', e.id, 0.9, -60); }
+          if (e.name === 'start') { say(CAPTIONS.burn, '#ff8a4a', 5, time, 50, 1.6); burst(e.x, ARENA.floor, reduced ? 6 : 18, '#ffb060', 180, time, 'ember', e.id, 0.9, -60); }
           break;
         case 'flame':
-          if (e.name === 'tell') say('IT INHALES', '#ffb88a', 3, time, 40, 0.8);
-          else { say('TURBO BREATH', '#ff9a4a', 4, time, 54, 1.0); if (!reduced) shake = Math.max(shake, 0.4); }
+          if (e.name === 'tell') say(CAPTIONS.inhale, '#ffb88a', 3, time, 40, 0.8);
+          else { say(CAPTIONS.breath, '#ff9a4a', 4, time, 54, 1.0); if (!reduced) shake = Math.max(shake, 0.4); }
           break;
         case 'jam': {
           const what = e.name === 'utensil' ? vanishedJunk(state, ARENA.launcher.x, ARENA.launcher.y) : null;
           jamWallet = e.name === 'utensil' && (what?.wallet ?? false);
-          say(jamWallet ? 'SEED PHRASE LOST.' : tokenCopy(e.label), '#ff8a6a', 4, time, 44, 1.1);
+          say(jamWallet ? CAPTIONS.walletJam : tokenCopy(e.label), '#ff8a6a', 4, time, 44, 1.1);
           burst(ARENA.launcher.x, ARENA.launcher.y - 10, reduced ? 4 : 10, e.name === 'singe' ? '#ffa060' : '#dfe8ff', 150, time, 'spark', e.id, 0.5);
           if (!reduced) shake = Math.max(shake, 0.3);
           break;
         }
         case 'grow':
-          say('BIGGER.', '#f1ffc8', 6, time, 70, 1.3, true);
+          say(CAPTIONS.scaling, '#f1ffc8', 6, time, 70, 1.3, true);
           pulseAt = time;
           if (!reduced) shake = Math.max(shake, 0.35);
           break;
@@ -300,11 +302,12 @@ export function createScene() {
           if (e.name === 'start' && e.ingredient) say(CRAVING_LINES[e.ingredient], tint, 2, time, 42, 1.1);
           break;
         case 'tantrum':
-          say('TANTRUM.', '#ff8a6a', 5, time, 56, 1.2);
+          say(CAPTIONS.tantrum, '#ff8a6a', 5, time, 56, 1.2);
           if (!reduced) shake = Math.max(shake, 0.8);
           break;
         case 'beat': {
-          const text = e.name === 'sneeze' ? 'SNEEZE.' : e.name === 'drool' ? 'DROOL.' : e.name === 'lunge' ? 'IT IS COMING OUT.' : e.label + (e.label.endsWith('.') ? '' : '.');
+          const named = tokenCopy(e.label);
+          const text = e.name === 'sneeze' ? CAPTIONS.sneeze : e.name === 'drool' ? CAPTIONS.slippage : e.name === 'lunge' ? CAPTIONS.lunge : named + (named.endsWith('.') ? '' : '.');
           say(text, e.name === 'lunge' || e.name === 'bite' ? '#ff9a6a' : '#e7ffb0', e.name === 'bite' ? 5 : 3, time, 44, 1.1);
           if (e.name === 'bite' && !reduced) shake = Math.max(shake, 0.6);
           break;
@@ -1075,9 +1078,9 @@ export function createScene() {
         ctx.save();
         ctx.translate(CAPTION.x, 118); ctx.scale(beat, beat);
         ctx.font = `700 92px ${DISPLAY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
-        ctx.strokeStyle = 'rgba(60,14,4,0.95)'; ctx.lineWidth = 12; ctx.strokeText('FRENZY', 0, 0);
+        ctx.strokeStyle = 'rgba(60,14,4,0.95)'; ctx.lineWidth = 12; ctx.strokeText(CAPTIONS.frenzy, 0, 0);
         const hot = ctx.createLinearGradient(0, -40, 0, 40); hot.addColorStop(0, '#fff2b0'); hot.addColorStop(0.5, '#ffb347'); hot.addColorStop(1, '#ff6a2a');
-        ctx.fillStyle = hot; ctx.fillText('FRENZY', 0, 0);
+        ctx.fillStyle = hot; ctx.fillText(CAPTIONS.frenzy, 0, 0);
         ctx.restore();
         ctx.save();
         ctx.fillStyle = '#2a1408'; ctx.beginPath(); ctx.roundRect(CAPTION.x - 150, 168, 300, 8, 4); ctx.fill();
@@ -1093,7 +1096,7 @@ export function createScene() {
         const color = n >= TUNING.frenzyAt - 1 ? '#ffd36a' : heat > 0.5 ? '#f1ffa8' : '#d8f896';
         const cx = toScreenX(COMBO.x), cy = toScreenY(COMBO.y);
         drawText(ctx, `×${n}`, cx, cy, size, color, 1, DISPLAY, 'center', 7);
-        drawText(ctx, 'COMBO', cx, cy - size * 0.62 - 6, 13, '#b9c6ae', 1, MONO, 'center', 4);
+        drawText(ctx, CAPTIONS.combo, cx, cy - size * 0.62 - 6, 13, '#b9c6ae', 1, MONO, 'center', 4);
       }
     }
 

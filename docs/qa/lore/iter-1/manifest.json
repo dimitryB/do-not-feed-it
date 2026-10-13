@@ -1,0 +1,448 @@
+{
+  "seed": 20260911,
+  "shots": [
+    {
+      "name": "title"
+    },
+    {
+      "name": "help"
+    },
+    {
+      "name": null,
+      "tick": 175,
+      "type": "clank",
+      "label": "CLANK"
+    },
+    {
+      "name": null,
+      "tick": 600,
+      "type": "feed",
+      "label": "CRAVING +360"
+    },
+    {
+      "name": null,
+      "tick": 663,
+      "type": "miss",
+      "label": "ON THE FLOOR"
+    },
+    {
+      "name": "belly",
+      "tick": 694,
+      "type": "bounce",
+      "label": "OFF THE BELLY"
+    },
+    {
+      "name": "drool",
+      "tick": 1387,
+      "type": "beat",
+      "label": "DROOL"
+    },
+    {
+      "name": "lunge",
+      "tick": 1904,
+      "type": "jam",
+      "label": "BITTEN"
+    },
+    {
+      "name": "bite",
+      "tick": 1904,
+      "type": "beat",
+      "label": "IT ATE THE VENT"
+    },
+    {
+      "name": "start",
+      "tick": 2609,
+      "type": "frenzy",
+      "label": "FRENZY"
+    },
+    {
+      "name": null,
+      "tick": 2757,
+      "type": "grow",
+      "label": "BIGGER."
+    },
+    {
+      "name": null,
+      "tick": 2847,
+      "type": "mutation",
+      "label": "MAGNET MOUTH ×1"
+    },
+    {
+      "name": "caught",
+      "tick": 3289,
+      "type": "utensil",
+      "label": "UTENSIL +500"
+    },
+    {
+      "name": "pan",
+      "tick": 4284,
+      "type": "bank",
+      "label": "DOUBLE BANK ×3"
+    },
+    {
+      "name": "utensil",
+      "tick": 5094,
+      "type": "jam",
+      "label": "FORK IN THE WORKS"
+    },
+    {
+      "name": "start",
+      "tick": 11346,
+      "type": "fire",
+      "label": "THE BENCH IS ON FIRE"
+    },
+    {
+      "name": "last-serving",
+      "tick": 21128,
+      "type": "beat",
+      "label": "THE LAST SERVING"
+    },
+    {
+      "name": "end-real-empty-belly-3",
+      "tick": 21185,
+      "cause": "empty-belly",
+      "ending": 3
+    },
+    {
+      "name": "end-gas-shrimp",
+      "tick": 1,
+      "cause": "empty-belly",
+      "ending": 0
+    },
+    {
+      "name": "end-gas-dolphin",
+      "tick": 1,
+      "cause": "empty-belly",
+      "ending": 1
+    },
+    {
+      "name": "end-rekt-shark",
+      "tick": 1,
+      "cause": "kitchen-destroyed",
+      "ending": 2
+    },
+    {
+      "name": "end-rekt-whale",
+      "tick": 1,
+      "cause": "kitchen-destroyed",
+      "ending": 3
+    },
+    {
+      "name": "end-superfinality",
+      "tick": 43200,
+      "cause": "outgrew-the-kitchen",
+      "ending": 3
+    },
+    {
+      "name": "pause"
+    }
+  ],
+  "captionWidths": [
+    {
+      "key": "nom",
+      "text": "NOM.",
+      "size": 50,
+      "card": false,
+      "width": 154,
+      "fits": true
+    },
+    {
+      "key": "craved",
+      "text": "ORDER FILLED.",
+      "size": 50,
+      "card": false,
+      "width": 397,
+      "fits": true
+    },
+    {
+      "key": "stuffed",
+      "text": "STUFFED.",
+      "size": 50,
+      "card": false,
+      "width": 262,
+      "fits": true
+    },
+    {
+      "key": "gasSpike",
+      "text": "GAS SPIKE.",
+      "size": 50,
+      "card": false,
+      "width": 301,
+      "fits": true
+    },
+    {
+      "key": "reverted",
+      "text": "REVERTED.",
+      "size": 50,
+      "card": false,
+      "width": 295,
+      "fits": true
+    },
+    {
+      "key": "dropped",
+      "text": "TX DROPPED.",
+      "size": 50,
+      "card": false,
+      "width": 358,
+      "fits": true
+    },
+    {
+      "key": "fork",
+      "text": "HARD FORK +500",
+      "size": 50,
+      "card": false,
+      "width": 462,
+      "fits": true
+    },
+    {
+      "key": "wallet",
+      "text": "COLD STORAGE +500",
+      "size": 50,
+      "card": false,
+      "width": 555,
+      "fits": true
+    },
+    {
+      "key": "walletJam",
+      "text": "TX STUCK.",
+      "size": 50,
+      "card": false,
+      "width": 282,
+      "fits": true
+    },
+    {
+      "key": "turbo",
+      "text": "TURBO'D.",
+      "size": 50,
+      "card": false,
+      "width": 259,
+      "fits": true
+    },
+    {
+      "key": "burn",
+      "text": "TOKEN BURN.",
+      "size": 50,
+      "card": false,
+      "width": 364,
+      "fits": true
+    },
+    {
+      "key": "inhale",
+      "text": "IT INHALES",
+      "size": 50,
+      "card": false,
+      "width": 298,
+      "fits": true
+    },
+    {
+      "key": "breath",
+      "text": "TURBO BREATH",
+      "size": 50,
+      "card": false,
+      "width": 405,
+      "fits": true
+    },
+    {
+      "key": "scaling",
+      "text": "SCALING.",
+      "size": 70,
+      "card": true,
+      "width": 388,
+      "fits": true
+    },
+    {
+      "key": "noRoom",
+      "text": "BLOCK FULL.",
+      "size": 60,
+      "card": true,
+      "width": 446,
+      "fits": true
+    },
+    {
+      "key": "tantrum",
+      "text": "MAXI TANTRUM.",
+      "size": 50,
+      "card": false,
+      "width": 426,
+      "fits": true
+    },
+    {
+      "key": "sneeze",
+      "text": "SNEEZE.",
+      "size": 50,
+      "card": false,
+      "width": 228,
+      "fits": true
+    },
+    {
+      "key": "slippage",
+      "text": "SLIPPAGE.",
+      "size": 50,
+      "card": false,
+      "width": 275,
+      "fits": true
+    },
+    {
+      "key": "lunge",
+      "text": "IT IS COMING OUT.",
+      "size": 50,
+      "card": false,
+      "width": 482,
+      "fits": true
+    },
+    {
+      "key": "frenzy",
+      "text": "FOMO",
+      "size": 92,
+      "card": false,
+      "width": 296,
+      "fits": true
+    },
+    {
+      "key": "combo",
+      "text": "COMBO",
+      "size": 50,
+      "card": false,
+      "width": 205,
+      "fits": true
+    },
+    {
+      "key": "mutation",
+      "text": "HODL JAWS ×3",
+      "size": 58,
+      "card": true,
+      "width": 489,
+      "fits": true
+    },
+    {
+      "key": "mutation",
+      "text": "GAS BELLY ×3",
+      "size": 58,
+      "card": true,
+      "width": 464,
+      "fits": true
+    },
+    {
+      "key": "mutation",
+      "text": "TURBO BREATH ×3",
+      "size": 58,
+      "card": true,
+      "width": 605,
+      "fits": false
+    },
+    {
+      "key": "craving",
+      "text": "IT WANTS BTC.",
+      "size": 42,
+      "card": false,
+      "width": 332,
+      "fits": true
+    },
+    {
+      "key": "craving",
+      "text": "IT WANTS ETH.",
+      "size": 42,
+      "card": false,
+      "width": 333,
+      "fits": true
+    },
+    {
+      "key": "craving",
+      "text": "IT WANTS HEMI.",
+      "size": 42,
+      "card": false,
+      "width": 359,
+      "fits": true
+    },
+    {
+      "key": "bank",
+      "text": "MULTI-HOP ×3",
+      "size": 54,
+      "card": false,
+      "width": 406,
+      "fits": true
+    },
+    {
+      "key": "bank",
+      "text": "TRIPLE HOP ×4",
+      "size": 54,
+      "card": false,
+      "width": 430,
+      "fits": true
+    },
+    {
+      "key": "bank",
+      "text": "OFF THE GAS BELLY ×2",
+      "size": 54,
+      "card": false,
+      "width": 644,
+      "fits": false
+    },
+    {
+      "key": "bank",
+      "text": "OFF THE CHAIN ×2",
+      "size": 54,
+      "card": false,
+      "width": 529,
+      "fits": true
+    },
+    {
+      "key": "jam",
+      "text": "FORKED.",
+      "size": 44,
+      "card": false,
+      "width": 213,
+      "fits": true
+    },
+    {
+      "key": "jam",
+      "text": "FRONT-RUN",
+      "size": 44,
+      "card": false,
+      "width": 273,
+      "fits": true
+    },
+    {
+      "key": "jam",
+      "text": "TX STUCK.",
+      "size": 44,
+      "card": false,
+      "width": 250,
+      "fits": true
+    },
+    {
+      "key": "jam",
+      "text": "MAXI TANTRUM",
+      "size": 44,
+      "card": false,
+      "width": 361,
+      "fits": true
+    },
+    {
+      "key": "beat",
+      "text": "EXTRACTOR: EATEN.",
+      "size": 44,
+      "card": false,
+      "width": 468,
+      "fits": true
+    },
+    {
+      "key": "beat",
+      "text": "IT TOOK THE TRAY.",
+      "size": 44,
+      "card": false,
+      "width": 432,
+      "fits": true
+    },
+    {
+      "key": "beat",
+      "text": "ONE TX PENDING.",
+      "size": 44,
+      "card": false,
+      "width": 412,
+      "fits": true
+    }
+  ],
+  "errors": [],
+  "notReached": []
+}
