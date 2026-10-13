@@ -97,3 +97,16 @@ test("captions fit the caption slot, and say no prices", () => {
   const everything = [...lines, ...cards, ...ENDING_JOKES, ...WALLET_TIERS.map((w) => w.line), ...Object.values(CAUSES)].join(" ");
   assert.doesNotMatch(everything, /\$|price|pump|dump|crash|rug|hack|exploit|scam|liquidat|treasury|foundation|bags|seed phrase/i);
 });
+
+test("the page says nothing about claims, drains, exploits or prices", () => {
+  // Sept 9 office hours: the judges had just answered questions about an
+  // exploited claim contract (docs/LORE.md, D131). "Unaudited" on the specimen
+  // card is kept by the user's call; nothing else goes near it.
+  const page = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const copy = [...page.matchAll(/>([^<>{}]{3,})</g), ...page.matchAll(/'([^'\n]{6,})'/g)].map((m) => m[1]).join(" ");
+  assert.doesNotMatch(copy.replace(/Friendly disposition\. Unaudited\.|UNAUDITED BUT FRIENDLY/g, ""), /audit|re-?entran|airdrop|drain|exploit|hack|rug|price|pump|dump/i);
+  // "Unaudited" only ever appears next to "friendly", about the creature.
+  assert.match(copy, /Friendly disposition\. Unaudited\./);
+  assert.match(copy, /UNAUDITED BUT FRIENDLY/);
+  assert.match(copy, /veHEMI/);
+});

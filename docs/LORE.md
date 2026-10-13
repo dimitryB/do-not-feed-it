@@ -38,7 +38,7 @@ good; nothing wears off.
 | --- | --- | --- |
 | Bitcoin | **HODL jaws** | It holds on to everything. Its jaws pull metal in from across the room — forks off the walls, hardware wallets out of drawers — and never let go. |
 | Ether | **Gas belly** | Ether is gas, so the belly fills with it. It floats, and the belly bounces coins back up into its mouth. A bounce off it is a GAS SPIKE. |
-| HEMI | **Turbo breath** | It breathes out heat. A coin through the breath comes out TURBO'D, worth double. A turbo'd coin that hits the bench burns. |
+| HEMI | **Turbo breath** | It breathes out heat. A coin through the breath comes out TURBO'D, worth double. A turbo'd coin that hits the bench burns. It locks up every HEMI it eats, so technically the breath is veHEMI — the only veHEMI that is also a weapon. |
 
 **The room, translated.** The painting is a kitchen and stays one. Every
 crypto word on screen has to be true of what the viewer sees in the kitchen
@@ -82,9 +82,9 @@ time is **uptime**, the help is the **whitepaper**, restart is **Ape back in**.
 
 The jokes climb through things a chain is made of — gas money, a block, the
 mempool, the chain — and never through anyone's holdings, a treasury, a
-foundation or governance. With REKT, "Unaudited" and a report on screen, a
-ladder of treasury → governance vote → foundation reads as an exploit
-write-up, and "the foundation" reads as a jab at a real one.
+foundation or governance. With REKT and a report on screen, a ladder of
+treasury → governance vote → foundation reads as an exploit write-up, and
+"the foundation" reads as a jab at a real one.
 
 ## Hemi, specifically
 
@@ -102,6 +102,35 @@ Do not put the monster inside anything real that holds people's coins. A
 creature living in a bridge or a tunnel that eats deposits reads as a joke
 about an exploit, and it would land on the sponsor.
 
+## What the Hemi team said (office hours, Sept 9 and Oct 7)
+
+The two engineering office hours before judging bear on the lore (source:
+the transcripts in the user's "hemi-game-contest" project).
+
+- **"Unaudited" stays, by the user's call.** On Sept 9 the team answered two
+  community questions about the Genesis drop claim contract, exploited
+  through a re-entrancy bug after it was modified under deadline without the
+  full audit process. The specimen card ("Friendly disposition. Unaudited.")
+  and the whitepaper eyebrow ("UNAUDITED BUT FRIENDLY") keep the word anyway
+  — the user decided, knowing this, and asked that it stay friendly. So
+  "Unaudited" is always about Munch, always next to "friendly", and never
+  near a contract, a claim, an exploit or Hemi. Nothing else on screen says
+  claim, airdrop, re-entrancy or drained.
+- **They do this kind of joke themselves.** Jeremy's own demo is "proof of
+  stake → what if we staked some vampires": a crypto term made literal in
+  the game. That is the double-meaning rule, from the judges' side.
+- **veHEMI as a weapon.** On Oct 7 Max said it would be funny if a game made
+  veHEMI a weapon. Munch's HEMI mutation is a breath weapon, so the help says
+  it locks up every HEMI it eats and the breath is, technically, veHEMI.
+- **No prices, no financial advice.** "We are not here to discuss prices of
+  anything nor can we give financial advice" (Sept 9). The title's "Not
+  financial advice" is their own line back at them.
+- **No real people.** Another entrant's game has Rick (the host) eating
+  everything in a plaza. Munch is not Rick and is never drawn or written as
+  anyone on the team; the eating is ours, the in-joke is theirs.
+- **Judging is Oct 29, 4 PM EDT, just before Halloween**, with the hosts in
+  costume. Best Horror is a category. Nothing in the lore depends on it.
+
 ## Tone rules
 
 1. **The double-meaning rule.** Every crypto word must also be literally true
@@ -116,6 +145,8 @@ about an exploit, and it would land on the sponsor.
    really lost those, and next to REKT they read as an exploit. The creature
    is the joke; the coins are what it eats.
 3. **No real people.** No founders, hosts or influencers by name or likeness.
+   No claim, airdrop or drain jokes either (see above); "Unaudited" on the
+   specimen card and the whitepaper is the one audit word, and it stays.
 4. **No endorsement.** The game is a fan-made contest entry. The DAO, the
    proposal and the specimens are fictional; nothing implies Hemi made or
    approved them.
@@ -147,7 +178,8 @@ and are in the table.
 | specimen card | Friendly disposition. Unverified. | Friendly disposition. Unaudited. |
 | HUD timer, idle / play / end | NIGHT SHIFT · 004 / TIME ON SHIFT / SHIFT LASTED | BEST UPTIME / UPTIME / FINAL UPTIME |
 | title strip | AIM. FEED. ADAPT. | AIM. HODL. FEED. |
-| help eyebrow, title | EMPLOYEE HANDBOOK · SECTOR 04 / A very questionable job. | WHITEPAPER · SPECIMEN 04 · UNAUDITED / A very questionable protocol. |
+| help eyebrow, title | EMPLOYEE HANDBOOK · SECTOR 04 / A very questionable job. | WHITEPAPER · UNAUDITED BUT FRIENDLY / A very questionable protocol. |
+| help, HEMI | HEMI gives it turbo breath that cooks coins for double. | … It locks up every HEMI it eats, so technically that breath is veHEMI. |
 | footer | Field guide ↗ | Whitepaper ↗ |
 | pause | Your shift is paused. The creature can wait. | Paused. Blocks keep coming. The creature can wait. |
 | ambience | Low ventilation and the kitchen's electrical hum. | Low ventilation and the hum of the Bitcoin node inside it. |

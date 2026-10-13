@@ -25,8 +25,12 @@ the trace and the fixtures are untouched; GAME_VERSION stays 5.
 A fresh-context reviewer read the copy as a crypto viewer and as the Hemi
 team; its four fixes are in D129 and D130 (the ending ladder no longer reads
 as an exploit write-up, and nothing jokes about lost holdings or seed
-phrases). Captures: `docs/qa/lore/iter-1` — every target event reached, no
-page errors.
+phrases). The copy was then checked against the Sept 9 and Oct 7 engineering
+office hours (D131): the help gives Max his veHEMI weapon, and "Unaudited"
+stays on the specimen card and the whitepaper by the user's call (the team
+had just answered questions on an exploited, under-audited claim contract;
+the user knows and kept it). Captures: `docs/qa/lore/iter-1` — every target event
+reached, no page errors.
 
 Known: the lunge's FRONT-RUN jam caption is almost always covered by the bite
 caption fired on the same tick (priority 5 over 4); IT TOOK THE TRAY. was
