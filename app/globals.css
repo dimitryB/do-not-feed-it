@@ -113,7 +113,7 @@
 .item-art.metal{background:radial-gradient(circle at 35% 30%,#3a2a12,#120c05);border-color:#2a1d0b}.item-art.metal img{width:92%;height:92%}
 .item-art.balloon{background:radial-gradient(circle at 35% 30%,#f3f6fa,#aeb9c8);border-color:#5b6878}
 .item-art.pepper{background:radial-gradient(circle at 35% 30%,#2b1a10,#0e0805);border-color:#f26a1f}.item-art.pepper img{width:72%;height:72%}
-.item-art.pepper b{display:grid;place-items:center;width:86%;height:86%;border-radius:50%;background:#f26a1f;color:#fff;font:700 .72em/1 var(--font-display);letter-spacing:0}
+.item-art{container-type:inline-size}.item-art.pepper b{display:grid;place-items:center;width:86%;height:86%;border-radius:50%;background:#f26a1f;color:#fff;font:700 58cqw/1 var(--font-display);letter-spacing:0}
 .preflight-foods .item-art+.item-art{margin-left:2px}
 .preflight-foods>div{margin-left:10px}.preflight-foods>div p{margin:0}.preflight-foods .diet-line{color:#dded92;font-size:12px;margin-top:2px}
 .result-joke{font:600 clamp(15px,1.5vw,20px)/1.2 ui-monospace,monospace;letter-spacing:.06em;color:#dded92;margin:-6px 0 14px}
