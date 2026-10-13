@@ -1,5 +1,35 @@
 # Current handoff
 
+## FEAST stage 4 — the tokens, October 12, 2026 (branch `feat/feast`, not merged)
+
+The three snacks are crypto tokens: metal → Bitcoin (HODL jaws), balloon →
+Ether (gas belly), pepper → HEMI (turbo breath). Presentation and copy only:
+`lib/game/arcade.ts`, the trace and the fixtures are untouched.
+
+1. **`lib/render/tokens.ts`** owns the marks, the plates and the copy. Every
+   mark is drawn unmodified (D122): a plate behind it, the glint, tail, ring
+   and trails around it, a tilt of at most ±15° toward the heading, uniform
+   scale with the camera. Rasterised once at three bitmap sizes (D123).
+   Rule labels are translated on the way to the screen (`tokenCopy`), so
+   MAGNET MOUTH ×1 reads HODL JAWS ×1 and UTENSIL +500 reads COLD STORAGE
+   +500 without the rules changing a word.
+2. **The HEMI mark has not landed.** `public/art/tokens/` holds `btc.svg` and
+   `eth.svg`; the loader tries `hemi.svg` then `hemi.png` and otherwise draws
+   a stand-in (orange disc, white H) with no log line (D124). Drop the kit
+   file in and it is used with no code change; re-capture the title strip,
+   the chips and the craving ring then.
+3. Cutlery storms carry the occasional hardware wallet (COLD STORAGE +500 in
+   the mouth, SEED PHRASE LOST. in the launcher, D125); a coin clink on
+   launch and catch, pitched by token (D126); `lib/community/diet.ts` is the
+   nullable `communityDiet` stub with the one line of copy under the title
+   legend, wired to nothing (D127).
+
+Report, the copy table and the open list: `docs/qa/feast/STAGE4-TOKENS.md`;
+captures `docs/qa/loop/iter-200` (same seed and shift as `iter-102`).
+Render 3.90 ms median on the typical state, 4.30 in the harness. Provenance
+and the brand rule: `docs/ART_PROVENANCE.md`. Open: the HEMI kit file, a
+fresh-context critic pass on `iter-200`, and everything stage 3 left open.
+
 ## FEAST stage 3, October 12, 2026 (branch `feat/feast`, not merged)
 
 Three things from the stage 2 review, fixed and measured:
