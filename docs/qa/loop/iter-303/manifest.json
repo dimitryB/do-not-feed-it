@@ -1,0 +1,187 @@
+{
+  "iteration": 303,
+  "capturedAt": "2026-10-15T22:14:06.659Z",
+  "seed": 20260911,
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "bot": {
+    "name": "moderate",
+    "ticks": 19266,
+    "seconds": 321.1,
+    "feeds": 398,
+    "score": 364799,
+    "cause": "empty-belly",
+    "markers": {
+      "firstMutation": 2656,
+      "firstStack": 2699,
+      "firstFrenzy": 720,
+      "end": 19266,
+      "firstLevel": 2656,
+      "size15": 4866,
+      "size20": 9568,
+      "firstMax": 15620,
+      "allMax": 15876,
+      "firstBlock": 684
+    }
+  },
+  "browserFinal": {
+    "tick": 19266,
+    "phase": "lost",
+    "failureReason": "empty-belly",
+    "hunger": 0,
+    "rage": 0,
+    "score": 364799,
+    "combo": 0,
+    "bestCombo": 29,
+    "frenzies": 16,
+    "frenzyUntil": 18545,
+    "banks": 99,
+    "clanks": 36,
+    "cooked": 90,
+    "utensils": 15,
+    "wanted": "metal",
+    "servings": {
+      "metal": 131,
+      "balloon": 134,
+      "pepper": 133
+    },
+    "mutations": {
+      "metal": 3,
+      "balloon": 3,
+      "pepper": 3
+    },
+    "threat": null,
+    "craving": null,
+    "flame": null,
+    "benchFireUntil": 18905,
+    "creature": {
+      "size": 2.4,
+      "x": 832.44,
+      "y": 177.6348,
+      "rx": 150.4934,
+      "ry": 113.0496,
+      "bx": 833.464,
+      "by": 255.6487,
+      "brx": 264.084,
+      "bry": 167.85,
+      "aperture": 1,
+      "open": 1,
+      "chewUntil": 19208,
+      "untilOpen": -1,
+      "gape": 1,
+      "track": 24.9769,
+      "lift": 36,
+      "bob": 23.1421,
+      "flush": 0,
+      "brow": 0.9966,
+      "pressure": 0,
+      "clog": 0
+    },
+    "size": 2.4,
+    "appetite": 1,
+    "misses": 22,
+    "totalFeeds": 398,
+    "hatchClosedUntil": 0,
+    "hatchReadyAt": 0,
+    "reloadUntil": 19135,
+    "vent": {
+      "since": 1891
+    },
+    "ending": 3,
+    "crates": [],
+    "cratesBroken": 4,
+    "cratesLost": 7,
+    "projectiles": 1,
+    "events": [
+      {
+        "tick": 19172,
+        "type": "chew",
+        "label": "CHOMP",
+        "name": null,
+        "ingredient": null
+      },
+      {
+        "tick": 19172,
+        "type": "feed",
+        "label": "COOKED +540",
+        "name": null,
+        "ingredient": "metal"
+      },
+      {
+        "tick": 19172,
+        "type": "craving",
+        "label": "IT EASES OFF ×87",
+        "name": "relief",
+        "ingredient": null
+      },
+      {
+        "tick": 19206,
+        "type": "clank",
+        "label": "CLANK",
+        "name": null,
+        "ingredient": "metal"
+      },
+      {
+        "tick": 19211,
+        "type": "bounce",
+        "label": "BOUNCE",
+        "name": "vent",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 19226,
+        "type": "utensil",
+        "label": "CUTLERY",
+        "name": "loose",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 19242,
+        "type": "bounce",
+        "label": "OFF THE BELLY",
+        "name": "belly",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 19266,
+        "type": "end",
+        "label": "Empty belly. It no longer fits through the door. It has been promoted.",
+        "name": null,
+        "ingredient": null
+      }
+    ]
+  },
+  "groups": [
+    "clip-first-block",
+    "clip-first-frenzy",
+    "strip-0020",
+    "hud-0020",
+    "clip-first-mutation",
+    "clip-first-stack",
+    "strip-0040",
+    "hud-0040",
+    "strip-0100",
+    "hud-0100",
+    "strip-0120",
+    "hud-0120",
+    "strip-0140",
+    "hud-0140",
+    "strip-0200",
+    "hud-0200",
+    "clip-ending"
+  ],
+  "renderTiming": {
+    "samples": 26,
+    "average": 10.38076923064028,
+    "median": 8.300000000745058,
+    "p95": 16.40000000037253,
+    "max": 55,
+    "last": 14.799999998882413,
+    "canvas": {
+      "width": 1920,
+      "height": 1080
+    }
+  }
+}

@@ -13,6 +13,11 @@
  * the creature, and growth is the ramp: the belly empties faster, the beats
  * come faster, the mutations stack and never wear off. It always wins.
  *
+ * Stage 6, the cannon: each coin flies its own way (`TUNING.flight` —
+ * Bitcoin heavy, Ether floaty, HEMI straight), so one barrel setting does not
+ * feed every coin; and a crate shuttles on a rail under the ceiling that only
+ * its own coin breaks open, pouring three coins into the mouth.
+ *
  * See `docs/FEAST_BRIEF.md`. It wins over every other document.
  */
 export type Ingredient = "metal" | "balloon" | "pepper";
@@ -31,7 +36,7 @@ export type Bouncer =
   | { name: string; label: string; kind: "segment"; x1: number; y1: number; x2: number; y2: number; restitution: number; banks: number };
 
 export const BOUNCERS: readonly Bouncer[] = Object.freeze([
-  { name: "pan", label: "OFF THE PAN", kind: "circle", x: 500, y: 150, r: 34, restitution: 0.85, banks: 1 },
+  { name: "pan", label: "OFF THE PAN", kind: "circle", x: 370, y: 185, r: 34, restitution: 0.85, banks: 1 },
   { name: "shelf", label: "OFF THE SHELF", kind: "segment", x1: 300, y1: 110, x2: 440, y2: 110, restitution: 0.8, banks: 1 },
   { name: "lamp", label: "OFF THE LAMP", kind: "circle", x: 760, y: 60, r: 26, restitution: 0.9, banks: 2 },
   { name: "chain", label: "OFF THE CHAIN", kind: "segment", x1: 1040, y1: 0, x2: 1040, y2: 110, restitution: 0.75, banks: 1 },
@@ -66,12 +71,13 @@ export const ARENA = Object.freeze({
   hatchTicks: 84, hatchCooldown: 210,
   bouncers: BOUNCERS,
   /**
-   * The rail under the ceiling the crates ride, in the open stretch of room
-   * between the pan and the creature's head: a crate is lowered through a
-   * hatch in the ceiling at `from`, shuttles back and forth to `to` and back,
-   * and is hoisted away. `lower` is how long the lowering and the hoisting take.
+   * The rail under the ceiling the crates ride. A crate hangs on a long chain
+   * in the open air left of the creature, under the lamps and above the caption
+   * slot: lowered at `from`, it shuttles out towards `to` and back, and is
+   * hoisted away. The creature's head takes the right end of the rail as it
+   * grows (`crateLane`). `lower` is how long the lowering and the hoisting take.
    */
-  rail: { y: 30, from: 562, to: 716, lower: 32 },
+  rail: { y: 30, from: 420, to: 545, lower: 32 },
 });
 
 /**
@@ -87,8 +93,8 @@ export const TUNING = Object.freeze({
    * servings count most), negative back-loads it (a big creature grows
    * faster). Back-loaded, because the first frenzy gorges it early anyway.
    */
-  growthPerFeed: 0.01,
-  growthShape: -0.3,
+  growthPerFeed: 0.0115,
+  growthShape: -0.45,
   growthPauseTicks: 60,
   growthPauseMax: 120,
   /** A `grow` event every time the size crosses one of these steps. */
@@ -250,22 +256,29 @@ export const TUNING = Object.freeze({
    * next a gap after the last one is gone. A shuttle is one trip out along
    * the rail and back, and it runs faster as the creature grows.
    */
-  crateFirst: 480,
-  crateGapMin: 150,
-  crateGapMax: 390,
+  crateFirst: 360,
+  crateGapMin: 120,
+  crateGapMax: 300,
   crateShuttleMin: 170,
   crateShuttleMax: 260,
   /** How long a crate stays on the rail before it is hoisted away. */
   crateLifeMin: 330,
   crateLifeMax: 450,
   /** Where the crate hangs: the y of its centre. */
-  crateDropMin: 100,
-  crateDropMax: 150,
-  crateSwingMin: 8,
-  crateSwingMax: 22,
+  crateDropMin: 135,
+  crateDropMax: 160,
+  crateSwingMin: 6,
+  crateSwingMax: 14,
   crateSwingPeriod: 150,
+  /**
+   * The creature's head takes this much of the rail's right end per unit of
+   * growth, so a crate never swings in front of its face; once less than
+   * `crateLaneMin` of rail is left, no more crates come.
+   */
+  crateLaneShrink: 125,
+  crateLaneMin: 50,
   /** Collision radius of a crate, before the serving's own. */
-  crateRadius: 29,
+  crateRadius: 30,
   /** A coin that is not the crate's own glances off it. */
   crateBounce: 0.55,
   /** Coins inside. Each one is a serving, swallowed whole. */
@@ -274,6 +287,14 @@ export const TUNING = Object.freeze({
   crateMult: 2,
   /** A coin out of a crate is in the mouth by this age, wherever it was. */
   pourMaxAge: 100,
+  /** A coin out of a crate lands in the middle of the mouth this many ticks after it comes out. */
+  pourArrive: 32,
+  /** Ticks between one coin coming out of a crate and the next. */
+  pourStagger: 8,
+  /** The fall the pour's arcs are drawn with: a lob, not a beam. */
+  pourGravity: 0.14,
+  /** Ticks over which a coin's pop out of the crate turns into its arc for the mouth. */
+  pourTurn: 12,
 });
 
 /** How a coin flies: its gravity and the multiplier on launch power. */
@@ -316,6 +337,8 @@ export interface Projectile {
   spent: boolean;
   /** The crate it hit, on the tick it hit it. */
   crateId?: number;
+  /** A coin out of a crate: the age at which it lands in the mouth (it comes out at age 1). */
+  arrive?: number;
 }
 
 export interface MutationLevels { metal: number; balloon: number; pepper: number }
@@ -342,6 +365,8 @@ export interface Crate {
   born: number;
   /** Ticks for one shuttle: out along the rail and back. */
   shuttle: number;
+  /** The stretch of rail it shuttles along, fixed when it comes down. */
+  lo: number; hi: number;
   /** Ticks on the rail, hoisting included. */
   life: number;
   /** The y of its centre: how long its cable is. */
@@ -359,8 +384,8 @@ export interface Crate {
  */
 export function crateAt(crate: Crate, tick: number): { x: number; y: number; hookX: number } {
   const t = tick - crate.born;
-  const { from, to, lower } = ARENA.rail;
-  const hookX = from + (to - from) * (1 - Math.cos(2 * Math.PI * t / crate.shuttle)) / 2;
+  const { lower } = ARENA.rail;
+  const hookX = crate.lo + (crate.hi - crate.lo) * (1 - Math.cos(2 * Math.PI * t / crate.shuttle)) / 2;
   const offset = crate.swing * Math.sin(2 * Math.PI * (t / TUNING.crateSwingPeriod + crate.phase));
   const cable = Math.max(1, crate.drop - ARENA.rail.y);
   const down = Math.min(1, t / lower);
@@ -900,23 +925,35 @@ function reflect(food: Projectile, nx: number, ny: number, restitution: number) 
 }
 
 /**
- * A coin out of a broken crate. It fans out, then the creature inhales it:
- * it steers for the mouth faster every tick and is swallowed whole on
- * arrival, chewing or not. By `pourMaxAge` it is in, wherever it was.
+ * A coin out of a broken crate. It pops up out of the crate, fanned, and
+ * turns onto a lob that drops it into the middle of the mouth at its own
+ * `arrive` age, one coin after another: the arc is solved afresh every tick
+ * from where the mouth is now, so it lands whatever the creature does. It is
+ * swallowed whole on arrival, chewing or not.
  */
 function movePour(food: Projectile, env: Env): Outcome {
   food.age++;
+  // Still in the broken crate, waiting its turn to come out.
+  if (food.age <= 0) return "flying";
+  const arrive = food.arrive ?? TUNING.pourArrive;
+  const g = TUNING.pourGravity;
+  // Ticks left to the mouth, this one included.
+  const left = Math.max(1, arrive - food.age + 1);
   const dx = env.mouthX - food.x;
   const dy = env.mouthY - food.y;
-  const distance = Math.max(1, Math.hypot(dx, dy));
-  const top = 3 + food.age * 0.2;
-  food.vx = quantize(food.vx + (dx / distance * top - food.vx) * 0.12);
-  food.vy = quantize(food.vy + (dy / distance * top - food.vy) * 0.12);
+  // The velocity that lands it on the mouth's centre in `left` ticks under `g`.
+  const wantX = dx / left;
+  const wantY = (dy - g * left * (left + 1) / 2) / left;
+  // Eased: it keeps most of its pop for the first few ticks, then commits.
+  const turn = Math.min(1, (food.age / TUNING.pourTurn) ** 2);
+  food.vx = quantize(food.vx + (wantX - food.vx) * turn);
+  food.vy = quantize(food.vy + (wantY - food.vy) * turn + g);
   food.x = quantize(food.x + food.vx);
   food.y = quantize(food.y + food.vy);
-  const ex = (food.x - env.mouthX) / (env.mouthRx * env.gape * 0.7);
-  const ey = (food.y - env.mouthY) / (env.mouthRy * env.gape * 0.7);
-  if (ex * ex + ey * ey <= 1 || food.age >= TUNING.pourMaxAge) return "fed";
+  const ex = (food.x - env.mouthX) / (env.mouthRx * env.gape * 0.6);
+  const ey = (food.y - env.mouthY) / (env.mouthRy * env.gape * 0.6);
+  const inside = food.age >= TUNING.pourTurn && ex * ex + ey * ey <= 1;
+  if (inside || food.age >= arrive || food.age >= TUNING.pourMaxAge) return "fed";
   return "flying";
 }
 
@@ -1283,8 +1320,20 @@ export function servingsForLevel(level: number): number {
 /** Total mutation levels the creature is carrying. */
 export const mutationLoad = (levels: MutationLevels) => levels.metal + levels.balloon + levels.pepper;
 
+/**
+ * The stretch of rail a crate can use at this size: the creature's head takes
+ * the right end as it grows. Null once there is too little left.
+ */
+export function crateLane(size: number): { lo: number; hi: number } | null {
+  const lo = ARENA.rail.from;
+  const hi = Math.min(ARENA.rail.to, ARENA.rail.to - TUNING.crateLaneShrink * (size - 1));
+  return hi - lo >= TUNING.crateLaneMin ? { lo, hi: quantize(hi) } : null;
+}
+
 /** The next crate out of the wall, drawn from the seed. Faster as the creature grows. */
 function spawnCrate(state: ArcadeState): void {
+  const lane = crateLane(state.creature.size);
+  if (!lane) return;
   const n = state.rolls.crate;
   state.rolls.crate += 1;
   const r = (k: number) => roll(state.seed, STREAM.crate, n * 8 + k);
@@ -1293,6 +1342,7 @@ function spawnCrate(state: ArcadeState): void {
     ingredient: FOODS[Math.min(FOODS.length - 1, Math.floor(r(0) * FOODS.length))],
     born: state.tick,
     shuttle: Math.round(mix(TUNING.crateShuttleMin, TUNING.crateShuttleMax, r(1)) / (1 + 0.3 * sizeT(state.creature.size))),
+    lo: lane.lo, hi: lane.hi,
     life: Math.round(mix(TUNING.crateLifeMin, TUNING.crateLifeMax, r(6))),
     drop: quantize(mix(TUNING.crateDropMin, TUNING.crateDropMax, r(2))),
     swing: quantize(mix(TUNING.crateSwingMin, TUNING.crateSwingMax, r(3))),
@@ -1300,7 +1350,7 @@ function spawnCrate(state: ArcadeState): void {
     gap: Math.round(mix(TUNING.crateGapMin, TUNING.crateGapMax, r(5))),
   };
   state.crates.push(crate);
-  event(state, "crate", ARENA.rail.from, ARENA.rail.y, "CRATE", { ingredient: crate.ingredient, name: "spawn" });
+  event(state, "crate", lane.lo, ARENA.rail.y, "CRATE", { ingredient: crate.ingredient, name: "spawn" });
 }
 
 /**
@@ -1316,14 +1366,18 @@ function breakCrate(state: ArcadeState, food: Projectile, into: Projectile[]): v
   state.cratesBroken += 1;
   state.crateAt = state.tick + crate.gap;
   for (let i = 0; i < TUNING.crateCoins; i++) {
-    const a = -Math.PI / 2 + (i - (TUNING.crateCoins - 1) / 2) * 0.7;
-    const speed = 3 + i * 0.8;
+    // Up out of the top of the crate one after another, fanned about 23°
+    // either side of a line leaning well toward the mouth (so the pour stays
+    // under the creature's eyes), then each on its own lob into it.
+    const a = -Math.PI / 2 + 0.85 + (i - (TUNING.crateCoins - 1) / 2) * 0.4;
+    const speed = 3.6;
     into.push({
       id: state.nextProjectileId++, ingredient: crate.ingredient, kind: "pour",
       x: at.x, y: at.y,
-      vx: quantize(Math.cos(a) * speed + food.vx * 0.25), vy: quantize(Math.sin(a) * speed),
-      age: 0, bounces: 0, bank: 0, hitMask: 0, lastSurface: "crate", lastBank: "", hazardBounces: 0,
+      vx: quantize(Math.cos(a) * speed), vy: quantize(Math.sin(a) * speed),
+      age: -i * TUNING.pourStagger, bounces: 0, bank: 0, hitMask: 0, lastSurface: "crate", lastBank: "", hazardBounces: 0,
       assisted: true, cooked: food.cooked, spent: false,
+      arrive: TUNING.pourArrive,
     });
   }
   state.announcement = "Crate. Everything in it is going down.";

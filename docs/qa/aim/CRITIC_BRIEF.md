@@ -10,7 +10,8 @@ must not read it.
 
 A launcher (bottom left) fires coins into a big green creature's mouth
 (right). There are three coins: Bitcoin (orange ₿), Ether (white/silver ◆)
-and HEMI (orange H). The player aims the barrel and holds a key to charge.
+and HEMI (orange H); their effects (lance, trails, block glow, captions) are
+gold for Bitcoin, mint-teal for Ether and red-orange for HEMI. The player aims the barrel and holds a key to charge.
 Feeding it makes it grow and mutate; it always wins in the end.
 
 ## What changed and what you are judging
@@ -22,11 +23,15 @@ all shift. Two changes are meant to fix that:
    charge), Ether floats (a slow soft arc, trails bubbles), HEMI flies dead
    straight for its first stretch with a jet behind it. The aim lance on the
    barrel bends the way the loaded coin will fly.
-2. **Blocks.** A cube on a chain, carrying one coin's mark, is lowered from
-   a hatch in the ceiling between the pan and the creature's head, swings
-   back and forth on a short rail, and is hoisted away after a few seconds.
+2. **Blocks.** A riveted cube on a long chain, carrying one coin's mark, is
+   let down from a hatch in the ceiling into the open air left of the
+   creature, shuttles back and forth along a short rail, and is hoisted away
+   after a few seconds; it says whose it is as it comes down (ETHER BLOCK.).
    Only its own coin breaks it open (BLOCK REWARD.); its three coins then
-   pour into the mouth. Any other coin glances off it (WRONG TOKEN.).
+   pop out of the top one after another and drop into the mouth. Any other
+   coin glances off it (WRONG TOKEN.). Blocks stop coming once the creature has grown into the
+   space where they hang, so a late, huge creature has none — that is by
+   design, not a bug.
 
 ## Score each criterion 1–10 and justify with what you see (frame names)
 

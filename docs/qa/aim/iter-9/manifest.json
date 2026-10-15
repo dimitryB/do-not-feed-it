@@ -1,0 +1,72 @@
+{
+  "iteration": 9,
+  "seed": 20261015,
+  "capturedAt": "2026-10-15T21:50:06.401Z",
+  "scenes": [
+    {
+      "name": "block-hit",
+      "seed": 20261015,
+      "commands": [
+        {
+          "tick": 430,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -60,
+          "power": 13
+        }
+      ],
+      "frames": [
+        426,
+        484,
+        491,
+        498,
+        510,
+        524,
+        540,
+        560
+      ]
+    },
+    {
+      "name": "block-hit-metal",
+      "seed": 20261015,
+      "commands": [
+        {
+          "tick": 3965,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -62,
+          "power": 16
+        }
+      ],
+      "frames": [
+        3996,
+        4003,
+        4010,
+        4022,
+        4036,
+        4052
+      ]
+    },
+    {
+      "name": "block-hit-pepper",
+      "seed": 20261015,
+      "commands": [
+        {
+          "tick": 1590,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -51,
+          "power": 16
+        }
+      ],
+      "frames": [
+        1604,
+        1611,
+        1618,
+        1630,
+        1644,
+        1660
+      ]
+    }
+  ]
+}

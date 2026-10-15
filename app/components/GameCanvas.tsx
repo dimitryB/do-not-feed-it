@@ -13,7 +13,7 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,guideSteps,sea
   useEffect(()=>{
     const canvas=canvasRef.current;if(!canvas)return;
     const context=canvas.getContext('2d');if(!context)return;
-    const scene=createScene();sceneRef.current=scene;let frame=0;let disposed=false;let seenHit=0;
+    const scene=createScene();sceneRef.current=scene;let frame=0;let disposed=false;let seenHit=0;const drawErrors=new Set<string>();
     const resize=()=>{const rect=canvas.getBoundingClientRect();const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);};
     const observer=new ResizeObserver(resize);observer.observe(canvas);resize();
     const draw=(now:number)=>{
@@ -29,7 +29,15 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,guideSteps,sea
       // A hit on the PRESS E sign, handed over once.
       if(p.pressE&&p.pressE.n!==seenHit){seenHit=p.pressE.n;scene.pressE(time,p.pressE.index,motion);}
       const started=performance.now();
-      scene.draw(context,canvas.width,canvas.height,state,aim,food,live,motion,time,p.guideSteps,p.season);
+      // One bad frame must not freeze the game: log it (once per message, so
+      // the capture harnesses can fail on it) and keep the loop running.
+      try{scene.draw(context,canvas.width,canvas.height,state,aim,food,live,motion,time,p.guideSteps,p.season);}
+      catch(error){
+        const message=error instanceof Error?error.message:String(error);
+        if(!drawErrors.has(message)){drawErrors.add(message);console.error('[scene] draw failed:',error);}
+        // Unwind whatever save()s the failed frame left open.
+        (context as CanvasRenderingContext2D&{reset?:()=>void}).reset?.();
+      }
       if(DEV_HOOKS){const cost=performance.now()-started;recordDrawCost(cost);recordFrameProfile(frameCells.count,0,cost);}
       frame=requestAnimationFrame(draw);
     };

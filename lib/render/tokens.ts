@@ -35,7 +35,7 @@ export interface TokenSpec {
 
 export const TOKENS: Record<Ingredient, TokenSpec> = {
   metal: {
-    id: 'BTC', name: 'Bitcoin', sources: ['/art/tokens/btc.svg'], tint: '#ddea9c', markFraction: 0.92,
+    id: 'BTC', name: 'Bitcoin', sources: ['/art/tokens/btc.svg'], tint: '#ffc94d', markFraction: 0.92,
     // Bitcoin's own mark is a coin already; the plate is the dark rim behind it.
     plate: { inner: '#3a2a12', outer: '#120c05', rim: '#2a1d0b' },
   },
@@ -45,7 +45,7 @@ export const TOKENS: Record<Ingredient, TokenSpec> = {
     plate: { inner: '#f3f6fa', outer: '#aeb9c8', rim: '#5b6878' },
   },
   pepper: {
-    id: 'HEMI', name: 'HEMI', sources: ['/art/tokens/hemi.svg', '/art/tokens/hemi.png'], tint: '#f6a074', markFraction: 0.72,
+    id: 'HEMI', name: 'HEMI', sources: ['/art/tokens/hemi.svg', '/art/tokens/hemi.png'], tint: '#ff8248', markFraction: 0.72,
     plate: { inner: '#2b1a10', outer: '#0e0805', rim: '#f26a1f' },
   },
 };
@@ -94,7 +94,7 @@ export function drawPlate(ctx: CanvasRenderingContext2D, spec: TokenSpec, x: num
   g.addColorStop(0, spec.plate.inner); g.addColorStop(1, spec.plate.outer);
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = spec.plate.rim; ctx.lineWidth = Math.max(1, r * 0.08);
-  ctx.beginPath(); ctx.arc(x, y, r - ctx.lineWidth / 2, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, y, Math.max(0, r - ctx.lineWidth / 2), 0, Math.PI * 2); ctx.stroke();
 }
 
 /** The HEMI stand-in: an orange disc with a white H in the display font. Not the brand mark. */
@@ -174,6 +174,9 @@ export function createTokenSprites() {
    * mark turning and nothing else — and the highlight sweep is drawn around it.
    */
   function draw(ctx: CanvasRenderingContext2D, ingredient: Ingredient, x: number, y: number, size: number, opts: TokenDrawOptions = {}) {
+    // A coin too small to see (an animation's first frame) is not drawn: the
+    // rim arcs below would be handed a negative radius and throw.
+    if (!(size >= 2)) return;
     const spec = TOKENS[ingredient];
     const r = size / 2;
     const tilt = opts.heading === undefined ? 0 : Math.max(-MARK_TILT, Math.min(MARK_TILT, opts.heading));
@@ -197,7 +200,7 @@ export function createTokenSprites() {
       const a = opts.spin;
       ctx.lineCap = 'round';
       ctx.strokeStyle = `rgba(255,248,230,${0.75 * sheen})`; ctx.lineWidth = Math.max(1.5, r * 0.11);
-      ctx.beginPath(); ctx.arc(0, 0, r - ctx.lineWidth * 0.55, a - 0.55, a + 0.55); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, Math.max(0, r - ctx.lineWidth * 0.55), a - 0.55, a + 0.55); ctx.stroke();
       ctx.strokeStyle = `rgba(255,255,255,${0.35 * sheen})`; ctx.lineWidth = Math.max(1, r * 0.06);
       ctx.beginPath(); ctx.arc(0, 0, r + ctx.lineWidth, a + Math.PI - 0.4, a + Math.PI + 0.4); ctx.stroke();
     }

@@ -682,6 +682,15 @@ export class CreatureAnimator {
     const belly = latest(state, ["bounce"], 0.6, "belly");
     if (feed && (!miss || feed.age <= miss.age)) gaze = this.applyGulp(target, feed, reduced) ?? gaze;
     else if (miss) this.applyFlinch(target, miss, reduced);
+    // A block broken open: eyes wide, brows up, up on its toes for what is coming.
+    const block = latest(state, ["crate"], 1.0, "hit");
+    if (block) {
+      const k = Math.exp(-block.age * 2.6);
+      target.pupilScale = Math.max(target.pupilScale, 1 + 0.45 * k);
+      target.browRaise = Math.max(target.browRaise, k);
+      target.bodyRise += 12 * k;
+      this.wear("startle", 0.8 * k);
+    }
     if (belly) {
       const boing = Math.exp(-belly.age * 6) * Math.cos(belly.age * 22);
       target.squashY -= boing * 0.08;

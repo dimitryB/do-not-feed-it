@@ -33,7 +33,7 @@ import { playShift } from "./loop-bots.mjs";
 import { ARENA } from "../lib/game/arcade.ts";
 import {
   CHROMIUM, HEIGHT, WIDTH, buildGrid, buildStrip, makeStreamCopies,
-  measureRenderCost, settle, startDevServer, stopServer, waitForScene, wait,
+  measureRenderCost, settle, startDevServer, stopServer, waitForScene, wait, watchErrors,
 } from "./shot-kit.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -128,6 +128,8 @@ function buildSchedule(run) {
     { name: "first-mutation", at: run.markers.firstMutation },
     { name: "first-frenzy", at: run.markers.firstFrenzy },
     { name: "first-stack", at: run.markers.firstStack },
+    // Stage 6: a block broken open, from a little before the shot.
+    { name: "first-block", at: run.markers.firstBlock },
     // The ending clip has to contain the ending: its last scheduled frame is
             // the final tick, and two more are taken after the run is over so
             // the death screen is in the set.
@@ -313,7 +315,7 @@ async function main() {
 
     const context = await browser.newContext({ viewport: { width: WIDTH, height: SHELL_HEIGHT }, deviceScaleFactor: 1 });
     const page = await context.newPage();
-    page.on("pageerror", (error) => console.error("[page error]", error.message));
+    const watch = watchErrors(page);
     await page.goto(server.url, { waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => Boolean(window.__dnfi && window.__dnfi.play), null, { timeout: 60_000 });
     await waitForScene(page);
@@ -438,6 +440,7 @@ async function main() {
     };
     await writeFile(path.join(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
     console.log(`[loop-shots] wrote ${created.length} sheets to ${path.relative(ROOT, outDir)}`);
+    if (!watch.report("loop-shots")) console.error("[loop-shots] these frames were filmed with page errors: do not trust them");
   } finally {
     await browser.close();
     await stopServer(server.child);

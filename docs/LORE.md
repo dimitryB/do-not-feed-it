@@ -70,7 +70,7 @@ too (see the double-meaning rule below).
 | It wanted one coin and you sent another | A **MAXI TANTRUM.** It only wants the one coin. |
 | A craving met | **ORDER FILLED.** It ordered; you filled it. |
 | The last coin in the air when the belly empties | **ONE TX PENDING.** The night waits for it. |
-| The cube on a chain under the ceiling, with a coin's mark on it | **A block.** It is lowered through a hatch, shuttles along the rail and is hoisted away. Its own coin breaks it open — **BLOCK REWARD.** — and the coins inside pour into the mouth. The first of a shift is a **NEW BLOCK.**; one nobody breaks is a **MISSED THE BLOCK.** |
+| The cube on a chain under the ceiling, with a coin's mark on it | **A block.** It is lowered through a hatch, shuttles along the rail and is hoisted away. Its own coin breaks it open — **BLOCK REWARD.** — and the coins inside pour into the mouth. Each one says whose it is as it comes down — **BITCOIN BLOCK.**, **ETHER BLOCK.**, **HEMI BLOCK.** — and one nobody breaks is a **MISSED THE BLOCK.** |
 | Another coin glancing off a block | **WRONG TOKEN.** A block only opens for its own. |
 
 **How the night ends.** One cause, one joke, one wallet tier.
@@ -384,8 +384,8 @@ and are in the table.
 | lunge telegraph | IT IS COMING OUT. | IT IS STILL COMING. |
 | first breath of a shift | FIRE BREATH | veHEMI IS A WEAPON. (later breaths: TURBO BREATH) |
 | fork caught, one in three | UTENSIL +500 | GLAMSTERDAM +500 (the rest: HARD FORK +500) |
-| a crate broken open (stage 6) | CRATE ×3 | BLOCK REWARD. (card) and ×3 at the block |
-| the first crate of a shift (stage 6) | CRATE | NEW BLOCK. |
+| a crate broken open (stage 6) | CRATE ×3 | BLOCK REWARD. (a small card with one mini coin per coin inside) |
+| a crate lowered (stage 6) | CRATE | BITCOIN BLOCK. / ETHER BLOCK. / HEMI BLOCK. (was NEW BLOCK., first of a shift only) |
 | a crate hoisted away unbroken (stage 6) | CRATE GONE | MISSED THE BLOCK. |
 | a coin glancing off another coin's crate (stage 6) | WRONG COIN | WRONG TOKEN. |
 | coin buttons and legend (stage 6) | HODL jaws / Bitcoin · HODL jaws | Heavy · HODL jaws / Bitcoin · heavy (Ether: Floats, HEMI: Straight) |

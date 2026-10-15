@@ -1,0 +1,191 @@
+{
+  "iteration": 301,
+  "capturedAt": "2026-10-15T20:43:37.248Z",
+  "seed": 20260911,
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "bot": {
+    "name": "moderate",
+    "ticks": 13764,
+    "seconds": 229.4,
+    "feeds": 290,
+    "score": 236239,
+    "cause": "empty-belly",
+    "markers": {
+      "firstMutation": 2157,
+      "firstStack": 2202,
+      "firstFrenzy": 734,
+      "end": 13764,
+      "firstLevel": 2157,
+      "size15": 3818,
+      "size20": 8726,
+      "firstMax": null,
+      "allMax": null,
+      "firstBlock": 684
+    }
+  },
+  "browserFinal": {
+    "tick": 13764,
+    "phase": "lost",
+    "failureReason": "empty-belly",
+    "hunger": 0,
+    "rage": 0,
+    "score": 236239,
+    "combo": 1,
+    "bestCombo": 26,
+    "frenzies": 10,
+    "frenzyUntil": 12440,
+    "banks": 69,
+    "clanks": 27,
+    "cooked": 42,
+    "utensils": 8,
+    "wanted": "metal",
+    "servings": {
+      "metal": 96,
+      "balloon": 97,
+      "pepper": 97
+    },
+    "mutations": {
+      "metal": 2,
+      "balloon": 2,
+      "pepper": 2
+    },
+    "threat": null,
+    "craving": {
+      "ingredient": "metal",
+      "startedAt": 13691,
+      "endsAt": 14110
+    },
+    "flame": null,
+    "benchFireUntil": 0,
+    "creature": {
+      "size": 2.4,
+      "x": 832.44,
+      "y": 180.7328,
+      "rx": 150.4934,
+      "ry": 113.0496,
+      "bx": 833.464,
+      "by": 273.192,
+      "brx": 264.084,
+      "bry": 167.85,
+      "aperture": 1,
+      "open": 1,
+      "chewUntil": 13736,
+      "untilOpen": -1,
+      "gape": 1,
+      "track": 0.9014,
+      "lift": 24,
+      "bob": 7.9686,
+      "flush": 0,
+      "brow": 0.9968,
+      "pressure": 0,
+      "clog": 0
+    },
+    "size": 2.4,
+    "appetite": 1.226,
+    "misses": 30,
+    "totalFeeds": 290,
+    "hatchClosedUntil": 0,
+    "hatchReadyAt": 0,
+    "reloadUntil": 13618,
+    "vent": {
+      "since": 1887
+    },
+    "ending": 3,
+    "crates": [],
+    "cratesBroken": 2,
+    "cratesLost": 6,
+    "projectiles": 1,
+    "events": [
+      {
+        "tick": 13652,
+        "type": "chew",
+        "label": "CHOMP",
+        "name": null,
+        "ingredient": null
+      },
+      {
+        "tick": 13652,
+        "type": "feed",
+        "label": "NOM +140",
+        "name": null,
+        "ingredient": "pepper"
+      },
+      {
+        "tick": 13664,
+        "type": "clank",
+        "label": "CLANK",
+        "name": null,
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 13666,
+        "type": "bounce",
+        "label": "BOUNCE",
+        "name": "pot",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 13691,
+        "type": "craving",
+        "label": "IT WANTS METAL",
+        "name": "start",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 13700,
+        "type": "chew",
+        "label": "CHOMP",
+        "name": null,
+        "ingredient": null
+      },
+      {
+        "tick": 13700,
+        "type": "feed",
+        "label": "NOM +100",
+        "name": null,
+        "ingredient": "pepper"
+      },
+      {
+        "tick": 13764,
+        "type": "end",
+        "label": "Empty belly. It no longer fits through the door. It has been promoted.",
+        "name": null,
+        "ingredient": null
+      }
+    ]
+  },
+  "groups": [
+    "clip-first-block",
+    "clip-first-frenzy",
+    "strip-0020",
+    "hud-0020",
+    "clip-first-mutation",
+    "clip-first-stack",
+    "strip-0040",
+    "hud-0040",
+    "strip-0100",
+    "hud-0100",
+    "strip-0120",
+    "hud-0120",
+    "strip-0140",
+    "hud-0140",
+    "strip-0200",
+    "hud-0200",
+    "clip-ending"
+  ],
+  "renderTiming": {
+    "samples": 48,
+    "average": 6.1875,
+    "median": 4.900000000372529,
+    "p95": 12.800000000745058,
+    "max": 21.300000000745058,
+    "last": 8.099999999627471,
+    "canvas": {
+      "width": 1920,
+      "height": 1080
+    }
+  }
+}

@@ -12,8 +12,9 @@
  *                 straight line
  *   block         a block on the chain under the ceiling
  *   block-hit     its own coin breaks it open and the coins pour into the mouth
+ *                 (and block-hit-<coin> for the other two coins' blocks)
  *   wrong-token   another coin glances off it
- *   late          a big, mutated creature with a block going past its face
+ *   late          a big, mutated creature: no block — the head has taken the rail
  *
  *   docs/qa/aim/iter-N/<scene>.png (+ -stream.png at 960 px) and
  *   docs/qa/aim/iter-N/<scene>/frame-NN.jpg, manifest.json
@@ -28,7 +29,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import * as arcade from "../lib/game/arcade.ts";
 import {
-  CHROMIUM, WIDTH, buildStrip, makeStreamCopies, settle, startDevServer, stopServer, waitForScene, wait,
+  CHROMIUM, WIDTH, buildStrip, makeStreamCopies, settle, startDevServer, stopServer, waitForScene, wait, watchErrors,
 } from "./shot-kit.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -70,14 +71,19 @@ function stateAt(seed, commands, tick) {
   return state;
 }
 
-/** The first tick at or after `from` when a crate has been on the rail for `age` ticks. */
-function crateTick(seed, from, age) {
+/**
+ * The first tick at or after `from` when a crate (of `ingredient`, if given)
+ * has been on the rail for `age` ticks.
+ */
+function crateTick(seed, from, age, ingredient = null) {
   const state = createArcade(seed);
   while (state.phase === "playing" && state.tick < 20_000) {
     state.hunger = Math.max(state.hunger, 60);
     stepArcade(state);
     const c = state.crates[0];
-    if (c && state.tick >= from && state.tick - c.born >= age) return { tick: state.tick, crate: { ...c } };
+    if (c && state.tick >= from && state.tick - c.born === age && (!ingredient || c.ingredient === ingredient)) {
+      return { tick: state.tick, crate: { ...c } };
+    }
   }
   throw new Error("no crate");
 }
@@ -105,15 +111,17 @@ function buildScenes(seed) {
 
   // Three coins in the air at once.
   {
+    // A Bitcoin lob, then an Ether float, then a HEMI streak, timed so that
+    // all three are in the air together and arrive one after another.
     const t0 = 330;
     const commands = [];
-    const plan = [["balloon", 0], ["metal", 31], ["pepper", 62]];
-    for (const [food, dt] of plan) {
+    const plan = [["metal", 0, [16, 15]], ["balloon", 31, [11, 12]], ["pepper", 70, [13, 14]]];
+    for (const [food, dt, powers] of plan) {
       const state = stateAt(seed, commands, t0 + dt);
-      const shot = bestShot(state, food, (r) => r.fed && !r.bank);
+      const shot = bestShot(state, food, (r) => r.fed && !r.bank && r.bounces === 0, powers);
       if (shot) commands.push({ tick: t0 + dt, kind: "launch", ingredient: food, angle: shot.angle, power: shot.power });
     }
-    const frames = [t0 + 64, t0 + 70, t0 + 76, t0 + 82, t0 + 88, t0 + 94];
+    const frames = [t0 + 34, t0 + 46, t0 + 58, t0 + 74, t0 + 82, t0 + 92];
     scenes.push({ name: "flights", seed, commands, frames, select: "pepper" });
   }
 
@@ -128,6 +136,17 @@ function buildScenes(seed) {
       const hit = probeFlight(state, crate.ingredient, shot.angle, shot.power, 200).ticks;
       const at = tick + hit;
       scenes.push({ name: "block-hit", seed, commands, frames: [tick - 4, at - 6, at + 1, at + 8, at + 20, at + 34, at + 50, at + 70], select: crate.ingredient });
+    }
+    // The same moment for the other two coins' blocks: every coin's break is filmed.
+    for (const food of FOODS.filter((item) => item !== crate.ingredient)) {
+      const found = crateTick(seed, 0, 70, food);
+      const there = stateAt(seed, [], found.tick);
+      const aim = bestShot(there, food, (r) => r.crate === true);
+      if (!aim) { console.warn(`[aim-shots] no ${food} block shot found`); continue; }
+      const hit = probeFlight(there, food, aim.angle, aim.power, 200).ticks;
+      const at = found.tick + hit;
+      scenes.push({ name: `block-hit-${food}`, seed, commands: [{ tick: found.tick, kind: "launch", ingredient: food, angle: aim.angle, power: aim.power }],
+        frames: [at - 6, at + 1, at + 8, at + 20, at + 34, at + 50], select: food });
     }
   }
 
@@ -162,7 +181,8 @@ function buildScenes(seed) {
   // Each coin loaded, same angle, same charge: the lance bends its own way.
   scenes.push({ name: "lances", seed, commands: [], frames: [200, 200, 200], lances: ["metal", "balloon", "pepper"], angle: -42 });
 
-  // Late: a big, mutated creature with a block going past its face.
+  // Late: a big, mutated creature. Blocks stop once the head has taken the
+  // rail, so this is the check that none hangs over a grown face.
   {
     const { tick } = crateTick(seed, 1500, 150);
     scenes.push({ name: "late", seed, commands: [], frames: [tick - 30, tick], late: true, select: "pepper" });
@@ -234,7 +254,9 @@ async function main() {
   try {
     const context = await browser.newContext({ viewport: { width: WIDTH, height: SHELL_HEIGHT }, deviceScaleFactor: 1 });
     const page = await context.newPage();
+    const watch = watchErrors(page);
     page.on("pageerror", (error) => console.error("[page error]", error.message));
+    if (process.env.AIM_DEBUG) page.on("console", (m) => { if (m.text().startsWith("DBG")) console.log("[console]", m.text()); });
     await page.goto(server.url, { waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => Boolean(window.__dnfi && window.__dnfi.play), null, { timeout: 60_000 });
     await waitForScene(page);
@@ -284,6 +306,7 @@ async function main() {
       console.log(`[aim-shots] ${scene.name}: ${frames.length} frames`);
     }
     await writeFile(path.join(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+    if (!watch.report("aim-shots")) console.error("[aim-shots] these frames were filmed with page errors: do not trust them");
   } finally {
     await browser.close();
     await stopServer(server.child);

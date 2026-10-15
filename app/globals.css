@@ -94,7 +94,7 @@
 .trait-chip em{font-size:20px}
 .trait-chip .item-art{width:34px;height:34px}
 .trait-chip.landed{animation:chip-land 1.4s ease-out 1}
-.trait-chip.metal{border-color:#ddea9caa}.trait-chip.metal strong{color:#ddea9c}
+.trait-chip.metal{border-color:#ffc94daa}.trait-chip.metal strong{color:#ffc94d}
 @keyframes chip-land{0%{box-shadow:0 0 0 0 rgba(241,255,200,.9),0 5px 26px #0005;transform:translateY(0) scale(1.18);filter:brightness(1.8)}35%{filter:brightness(1.4)}100%{box-shadow:0 0 0 18px rgba(241,255,200,0),0 5px 26px #0005;transform:scale(1);filter:brightness(1)}}
 @media(prefers-reduced-motion:reduce){.trait-chip.landed{animation:none}}
 .keyboard-guide{gap:22px}

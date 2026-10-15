@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  ARENA, BOUNCERS, FOODS, TUNING, GAME_VERSION, bankMultiplier, cooldownFor, crateAt, createArcade, drainPerTick,
-  endingFor, flameCone, flightOf, getHazard, launchFood, levelFor, previewFlight, probeFlight, replayArcade, servingsForLevel, slamHatch, stepArcade,
+  ARENA, BOUNCERS, FOODS, TUNING, GAME_VERSION, bankMultiplier, cooldownFor, createArcade, drainPerTick,
+  endingFor, flameCone, getHazard, launchFood, levelFor, previewFlight, probeFlight, replayArcade, servingsForLevel, slamHatch, stepArcade,
 } from "../lib/game/arcade.ts";
 
 const GRAVITY = 0.16;
@@ -94,6 +94,10 @@ function feedOnce(state, ingredient = state.wanted, patience = 900) {
 
 function fresh(seed = 1) {
   const state = createArcade(seed);
+  // No crates on the rail: these tests are about the mouth, the props and the
+  // mutations, and a crate coming down mid-flight is a thing the probe cannot
+  // see coming (tests/aim.test.mjs covers the crates).
+  state.crateAt = 1e9;
   // Past the grace period, so the drain is live and the first craving has arrived.
   advance(state, 260);
   return state;
@@ -238,9 +242,12 @@ test("the bouncers are static colliders a snack reflects off, and each one pays 
   assert.ok(food.vy < 0, "it bounced back up");
   assert.equal(food.bank, pan.banks);
   assert.equal(food.lastBank, "pan");
-  // Falls back onto the same pan: reflects again, credited no further.
+  // Every later touch of the same pan reflects, credited no further. (It may
+  // bank off another surface on the way; that is the other surface's bank.)
+  const seen = state.nextEventId;
   for (let i = 0; i < 90 && state.projectiles.includes(food); i += 1) stepArcade(state);
-  assert.ok(food.bank <= pan.banks, "a second contact with the same pan is not a second bank");
+  const panBanks = newEvents(state, seen).filter((e) => e.type === "bounce" && e.name === "pan" && e.value > 0);
+  assert.equal(panBanks.length, 0, "a second contact with the same pan is not a second bank");
 });
 
 test("five catches in a row is a FRENZY: huge mouth, no chewing, half cooldown, triple score, six seconds", () => {

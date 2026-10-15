@@ -281,7 +281,7 @@ or presentation before adding a chain layer or more ingredients.
 ## The cannon — `feat/aim`, GAME_VERSION 6 (October 15, 2026)
 
 FEAST (`docs/FEAST_BRIEF.md`) is still the game; this is what stage 6 changed
-about the one verb, aiming. Decisions D139–D146; numbers in
+about the one verb, aiming. Decisions D139–D150; numbers in
 `docs/qa/aim/STAGE6.md`.
 
 **The problem.** The mouth is big and barely moves, every coin flew the same
@@ -305,9 +305,11 @@ colliders, nowhere near the mouth); the first-shift guide is unchanged.
 The default shot is a HEMI at −30°, and the page loads HEMI first.
 
 **Blocks on the rail.** One at a time, a block (the rules: a crate) is
-lowered through a hatch in the ceiling between the pan and the creature's
-head, shuttles along a short rail and back, swinging on its chain, and is
-hoisted away after five to seven seconds. It carries one coin's mark.
+lowered through a hatch in the ceiling into the open air between the pan
+and the creature's head, shuttles along a short rail and back, swinging on
+its chain, and is hoisted away after five to seven seconds. The first comes
+six seconds into a shift. It carries one coin's mark, in that coin's
+colour, and says whose it is as it comes down (BITCOIN BLOCK.).
 **Only that coin opens it**; any other glances off. Broken open, its three
 coins pour into the mouth and are swallowed whole — no chew, each a full
 serving at ×2, combo and all, so a block is often the fifth catch of a
@@ -315,12 +317,22 @@ FOMO. They are servings of that coin: they meet a craving, they count
 toward its mutation, and fed into a full creature they gorge it. Where a
 block is at any tick is a pure function of the block and the tick
 (`crateAt`), so the guide, the probe, the bots and the replay all see it
-coming exactly.
+coming exactly. The coins pop up out of the broken block one after
+another and each drops into the middle of the mouth on its own lob, so the
+pour reads as a pour.
+
+The rail stays clear of the creature: it ends left of the head, and the
+head takes the right end of it as the creature grows. Past about ×1.6
+there is no room left and no more blocks come — the late shift is about
+the creature, not the rail.
 
 **What a shift asks of the barrel now.** Point HEMI at the mouth, lob
 Bitcoin at full charge, float Ether; switch when it craves; swing up and
 lead a block when one comes down, with the coin it wants. A barrel set once
-and left alone feeds one coin in three and breaks a block only by luck.
+and left alone feeds about a quarter of what an aiming player feeds and
+scores about a tenth (`fixed` bot, `docs/qa/aim/STAGE6.md`). It still
+breaks blocks by luck — a steep barrel's HEMI misses fly up through the
+rail's stretch of room — but what it misses everywhere else costs far more.
 
 ## The loop that now exists — `feat/creature-loop`, GAME_VERSION 3
 

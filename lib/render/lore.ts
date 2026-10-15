@@ -90,13 +90,20 @@ export const CAPTIONS = {
   // A block on the chain under the ceiling, broken open by its own coin: the
   // coins inside pour into the mouth. A literal block, and a literal reward.
   blockReward: 'BLOCK REWARD.',
-  // The first block of a shift, lowered out of the ceiling.
-  newBlock: 'NEW BLOCK.',
+  // A block lowered out of the ceiling says whose it is (BLOCK_NAMES).
+  bitcoinBlock: 'BITCOIN BLOCK.',
+  etherBlock: 'ETHER BLOCK.',
+  hemiBlock: 'HEMI BLOCK.',
   // A block nobody broke is hoisted back up through the ceiling: the block was missed.
   blockMissed: 'MISSED THE BLOCK.',
   // A coin that is not the block's own glances off it.
   wrongToken: 'WRONG TOKEN.',
 } as const;
+
+/** What each block says as it comes down: the coin that opens it. */
+export const BLOCK_NAMES: Record<Ingredient, string> = {
+  metal: CAPTIONS.bitcoinBlock, balloon: CAPTIONS.etherBlock, pepper: CAPTIONS.hemiBlock,
+};
 
 /**
  * The caption for a coin on the floor: Bitcoin being Bitcoin; anything else a

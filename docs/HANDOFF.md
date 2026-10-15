@@ -16,18 +16,34 @@ fixtures regenerated) and on screen.
    (HEMI's jet and speed lines, Ether's bubbles, Bitcoin's heavy wake). The
    chain behind the head no longer catches overcharged shots (D140). The
    default shot is a HEMI at −30° and the page loads HEMI first (D142).
-2. **Blocks on the rail** (D141). The rules' `crates`: one at a time, lowered
-   through a ceiling hatch between the pan and the head, shuttling and
-   swinging, hoisted away after 5.5–7.5 s. Only its own coin opens one; the
-   three coins inside pour into the mouth whole at ×2. Drawn as a cube on a
-   chain with its coin's mark (`drawRail`, `drawCrate`, `drawPour`); BLOCK
-   REWARD. / NEW BLOCK. / MISSED THE BLOCK. / WRONG TOKEN. (D146); four new
+2. **Blocks on the rail** (D141, D147). The rules' `crates`: one at a time,
+   lowered through a ceiling hatch between the pan and the head, shuttling
+   and swinging, hoisted away after 5.5–7.5 s. Only its own coin opens one;
+   the three coins inside pop out one after another and each lobs into the
+   middle of the mouth (`movePour`, D148), swallowed whole at ×2. The rail
+   (`ARENA.rail`, x 420–545) ends left of the head and the head takes its
+   right end as the creature grows (`crateLane`); past about ×1.6 no more
+   blocks come. The pan moved to (370, 185) to make room (D147). Drawn as a
+   cube on a chain with its coin's mark, its trolley running a little ahead
+   so the chain leans (`drawRail`, `drawCrate`, `drawPour`); a local
+   white-hot burst and iron plates when it breaks (D149); BLOCK REWARD. (a
+   small card with a mini coin per coin) / BITCOIN BLOCK. (ETHER, HEMI) /
+   MISSED THE BLOCK. / WRONG TOKEN. (D146); four new
    sounds (`block-in`, `block-hit`, `block-gone`, `wrong-token`); the
    creature's eyes follow a block when nothing is in the air. Never called
    an airdrop (D131, `docs/LORE.md`).
 
+A frame that throws no longer freezes the game (D150): `GameCanvas`
+catches and logs a failed draw once per message, and `scripts/aim-shots.mjs`
+and `scripts/loop-shots.mjs` fail on any page error — a capture of a crashed
+canvas once looked like a frozen shift. The caption is now drawn under the
+coins and the launcher (`drawCaption`, before the projectiles, under an
+undone camera).
+
 Balance moved with it (D144): miss irritation 3, belly start 76 with 300
-ticks of grace, growth 0.010 a feed, levels at 13 / 36 / 110. The bots learnt
+ticks of grace, growth 0.0115 a feed bent harder toward the end
+(`growthShape` −0.45), levels at 13 / 36 / 110. Renderer captions moved off
+the block's stretch of room (`CAPTION` in `lib/render/scene.ts`). The bots learnt
 the coins and the blocks, and there is a `fixed` bot that sets the barrel
 once and never touches it (D145). Report, gate table, the set-and-forget
 comparison and the critic's scores: `docs/qa/aim/STAGE6.md`. Captures:

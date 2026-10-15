@@ -30,6 +30,30 @@ export const STREAM_WIDTH = 960;
 
 export const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Collects every script error and console error the page raises, so a capture
+ * of a broken frame fails the run instead of filming a frozen canvas behind
+ * an error overlay. Call `report(tag)` at the end: it prints them and sets a
+ * failing exit code.
+ */
+export function watchErrors(page) {
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
+  page.on("console", (message) => { if (message.type() === "error") errors.push(`console: ${message.text()}`); });
+  return {
+    errors,
+    report(tag) {
+      // Asset 404s in a dev server are noise; script errors are not.
+      const real = errors.filter((text) => !/Failed to load resource/.test(text));
+      if (!real.length) return true;
+      console.error(`[${tag}] ${real.length} page error(s):`);
+      for (const text of [...new Set(real)].slice(0, 20)) console.error(`  ${text}`);
+      process.exitCode = 1;
+      return false;
+    },
+  };
+}
+
 export async function stopServer(child) {
   // SIGTERM alone does not do it. The dev server spawns a workerd child that
   // ignores it, and every harness run was leaving a server and a workerd behind

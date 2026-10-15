@@ -306,6 +306,10 @@ const BOTS = {
   // like the moderate bot: serves the craving, waits for the mouth to open.
   // The player the stage 6 brief is about: is one setting enough?
   fixed: { fixed: true, latency: Math.round(0.25 * TICKS), noise: 4, feedBelow: 80 },
+  // The same, but the one setting is chosen from shots that go straight in —
+  // no bank off a prop — which is what "set the cannon at the right angle"
+  // means to a person.
+  fixedDirect: { fixed: true, direct: true, latency: Math.round(0.25 * TICKS), noise: 4, feedBelow: 80 },
   moderate: { latency: Math.round(0.25 * TICKS), noise: 4, feedBelow: 80, bankChance: 0.25, crateChance: 0.6, crateBelow: 84 },
   good: { latency: Math.round(0.15 * TICKS), noise: 1.5, feedBelow: 78, bankChance: 1, crateChance: 1, crateBelow: 82 },
 };
@@ -340,10 +344,11 @@ export function playShift(name, seed, { trackDensity = false, timeline = false }
     for (let power = ARENA.minPower; power <= ARENA.maxPower; power += 1) {
       for (let angle = ARENA.minAngle; angle <= ARENA.maxAngle; angle += 1) {
         let coins = 0; let window = 0;
+        const lands = (r) => r.fed && (!config.direct || (r.bank === 0 && r.bounces === 0));
         for (const food of FOODS) {
-          if (!probeFlight(state, food, angle, power, PROBE_TICKS).fed) continue;
+          if (!lands(probeFlight(state, food, angle, power, PROBE_TICKS))) continue;
           coins += 1;
-          for (let d = -4; d <= 4; d += 1) if (probeFlight(state, food, angle + d, power, PROBE_TICKS).fed) window += 1;
+          for (let d = -4; d <= 4; d += 1) if (lands(probeFlight(state, food, angle + d, power, PROBE_TICKS))) window += 1;
         }
         const value = coins * 100 + window;
         if (!best || value > best.value) best = { angle, power, value };
@@ -351,6 +356,7 @@ export function playShift(name, seed, { trackDensity = false, timeline = false }
     }
     setting = best;
   }
+  if (process.env.BOT_DEBUG && setting) console.log(`[${name}] setting ${setting.angle}° p${setting.power} (value ${setting.value})`);
   /** The angle each launch was planned at, before the bot's own noise. */
   const planned = [];
   const samples = [];
@@ -358,6 +364,8 @@ export function playShift(name, seed, { trackDensity = false, timeline = false }
     firstMutation: null, firstStack: null, firstFrenzy: null, end: null,
     // Pacing: the tick each mark was reached, or null if the run never got there.
     firstLevel: null, size15: null, size20: null, firstMax: null, allMax: null,
+    // Stage 6: the first block broken open.
+    firstBlock: null,
   };
 
   while (state.phase === "playing" && state.tick < MAX_TICKS) {
@@ -439,6 +447,7 @@ export function playShift(name, seed, { trackDensity = false, timeline = false }
     if (live >= 1 && markers.firstMutation === null) markers.firstMutation = state.tick;
     if (live >= 2 && markers.firstStack === null) markers.firstStack = state.tick;
     if (state.frenzies >= 1 && markers.firstFrenzy === null) markers.firstFrenzy = state.tick;
+    if ((state.cratesBroken ?? 0) >= 1 && markers.firstBlock === null) markers.firstBlock = state.tick;
     if (markers.firstLevel === null && arcade.mutationLoad(state.mutations) >= 1) markers.firstLevel = state.tick;
     if (markers.size15 === null && state.size >= 1.5) markers.size15 = state.tick;
     if (markers.size20 === null && state.size >= 2) markers.size20 = state.tick;
