@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { ENDINGS, createArcade, endingFor, launchFood, slamHatch, stepArcade } from "../lib/game/arcade.ts";
 import {
-  CAPTIONS, CAUSES, CRAVING_LINES, ENDING_JOKES, HALLOWEEN, HEADLINES, PRESS_E, TOKEN_TRAITS, WALLET_TIERS, forkCaption, missCaption, pressELine, tokenCopy,
+  ALL_VERSES, CAPTIONS, CAUSES, CRAVING_LINES, ENDING_JOKES, HALLOWEEN, HEADLINES, PRESS_E, TOKEN_TRAITS, VERSES, WALLET_TIERS, forkCaption, missCaption, pressELine, tokenCopy, verseAt,
 } from "../lib/render/lore.ts";
 import { FLICKER_DARKEST, flickerAt, seasonFor } from "../lib/render/season.ts";
 
@@ -160,11 +160,30 @@ test("the Hemi callbacks land on what is on screen, and never name anyone", () =
   assert.equal(CAPTIONS.weapon, "veHEMI IS A WEAPON.");
   assert.equal(CAPTIONS.lunge, "IT IS STILL COMING.");
   const page = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
-  for (const line of ["Ding, ding, ding.", "pocket full of quarters", "The ZK talk will continue", "hand-eye coordination of a sloth", "Maximum commitment.", "Press E"]) {
+  for (const line of ["Ding, ding, ding.", "hand-eye coordination of a sloth", "Maximum commitment.", "Press E"]) {
     assert.ok(page.includes(line), line);
   }
-  // Quote the hosts, never name them; and it is never "season two".
+  // Names only ever come from the verses' citations, never from the page or a caption; and it is never "season two".
   const everything = [page, ...Object.values(CAPTIONS).map((c) => (typeof c === "function" ? c(500) : c))].join(" ");
   assert.doesNotMatch(everything, /\b(Rick|Max|Jeremy|Joshua|JCV|John|Marco|Alpha|Alex)\b/);
   assert.doesNotMatch(everything, /season (two|2)/i);
+});
+
+test("the verses are real citations: a book, chapter:verse, a show and a date, nothing religious, nothing in a caption", () => {
+  const books = new Set(["Max", "John", "Rick", "Jeremy", "Marco", "Office Hours"]);
+  for (const v of ALL_VERSES) {
+    assert.ok(books.has(v.who), `${v.who} is a known speaker or the show`);
+    assert.match(v.at, /^\d{1,2}:\d{2}$/, `${v.who} ${v.at} reads as chapter:verse`);
+    assert.ok(v.show === "Midweek with Max" || v.show === "Office Hours");
+    assert.match(v.date, /^(Sept|Oct) \d{1,2}$/);
+    assert.ok(v.text.length >= 12 && v.text.length <= 110, v.text);
+    assert.doesNotMatch(v.text, /\b(God|Jesus|Christ|Lord|amen)\b/i);
+    assert.doesNotMatch(v.text, /price|pump|dump|rug|hack|exploit|airdrop|fat|stairs/i);
+  }
+  const captions = Object.values(CAPTIONS).map((c) => (typeof c === "function" ? c(500) : c)).join(" ");
+  for (const v of ALL_VERSES) assert.ok(!captions.includes(v.text), "a verse is never a caption");
+  assert.equal(`${VERSES.pause[0].who} ${VERSES.pause[0].at}`, "Max 13:06");
+  assert.equal(verseAt(VERSES.title, 0), VERSES.title[0]);
+  assert.equal(verseAt(VERSES.title, VERSES.title.length + 1), VERSES.title[1]);
+  assert.equal(verseAt(VERSES.pause, -1), VERSES.pause[VERSES.pause.length - 1]);
 });

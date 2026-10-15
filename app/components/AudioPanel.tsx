@@ -4,6 +4,8 @@ import type { CSSProperties } from "react";
 
 import { DEFAULT_AUDIO_SETTINGS, type AudioSettings } from "./audioSettings";
 import { useDialogFocusTrap } from "./focusTrap";
+import { Verse } from "./Verse";
+import { VERSES } from "../../lib/render/lore";
 
 /** A fader needs its fill position in CSS; the track is a pseudo-element. */
 type FaderStyle = CSSProperties & Record<"--mix-fill", string>;
@@ -191,6 +193,8 @@ export function AudioPanel({
             );
           })}
         </div>
+
+        <Verse v={VERSES.sound} className="sound-verse" />
 
         <div className="modal-foot mix-foot">
           <button

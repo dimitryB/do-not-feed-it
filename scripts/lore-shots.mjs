@@ -153,6 +153,12 @@ async function main() {
     await shoot("help");
     await page.keyboard.press("Escape");
     await settle(page, 3);
+    // The sound mix lives in the footer the frame hides; open it from script.
+    await page.evaluate(() => [...document.querySelectorAll(".underbar .text-button")].find((b) => b.textContent.includes("Sound mix"))?.click());
+    await settle(page, 4);
+    await shoot("sound-mix");
+    await page.keyboard.press("Escape");
+    await settle(page, 3);
 
     // ---- press E, twice, on the title. The caption's pop is frozen 0.3 s in, so
     // a slow frame cannot film it half faded.

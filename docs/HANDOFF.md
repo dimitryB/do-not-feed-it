@@ -41,7 +41,14 @@ Hemi's own lines (D134), from `hemi-lore-bible.md` (Claude project; ignored
 copy in `research/source-material/`): ten callbacks to the hosts' streams —
 veHEMI IS A WEAPON., IT IS STILL COMING., BITCOIN BEING BITCOIN., GLAMSTERDAM,
 the ZK-talk pause, "Ding, ding, ding.", the pocket full of quarters, the Blind
-Life homage, the sloth and "Press E". Quote, never name.
+Life homage, the sloth and "Press E". Then, at the user's suggestion, the
+hosts' best lines became scripture (D135): "John 28:24", "Max 13:06" — under
+the title, on pause, in the whitepaper, the report and the sound mix.
+
+**Fixed on the way (D136):** the epoch report's restart button ran off the
+bottom of the stage at 1366×768, and at 1920×1080 on a new best — already
+true on the stage-4 branch. The report is now sized to the stage (`cqw`) and
+fits at both with room to spare.
 
 Known: the lunge's FRONT-RUN jam caption is almost always covered by the bite
 caption fired on the same tick (priority 5 over 4); IT TOOK THE TRAY. was

@@ -8,6 +8,9 @@
       "name": "help"
     },
     {
+      "name": "sound-mix"
+    },
+    {
       "name": "press-e-title-1"
     },
     {
@@ -218,9 +221,9 @@
     {
       "key": "dropped",
       "text": "TX DROPPED.",
-      "size": 50,
+      "size": 36,
       "card": false,
-      "width": 358,
+      "width": 262,
       "fits": true
     },
     {
@@ -322,9 +325,9 @@
     {
       "key": "lunge",
       "text": "IT IS STILL COMING.",
-      "size": 50,
+      "size": 44,
       "card": false,
-      "width": 521,
+      "width": 460,
       "fits": true
     },
     {
@@ -338,10 +341,10 @@
     {
       "key": "btcMiss",
       "text": "BITCOIN BEING BITCOIN.",
-      "size": 50,
+      "size": 36,
       "card": false,
-      "width": 635,
-      "fits": false
+      "width": 462,
+      "fits": true
     },
     {
       "key": "frenzy",

@@ -150,3 +150,60 @@ export const HALLOWEEN = {
   ledeFirst: 'Proposal #004 passed. Nobody enforces it.',
   costume: 'Costume: a whale. It is working on it.',
 } as const;
+
+// ---- scripture.
+
+/**
+ * The hosts' own words, set as verses: the speaker is the book and the stream
+ * timestamp is chapter and verse, so "Max 13:06" reads like scripture. Every
+ * line is from the auto-captions of a Hemi stream (stutters removed), cited
+ * at the start of its passage. Lines about the work, the game or the speaker
+ * themselves, in good humour; nothing religious and nothing at anyone's
+ * expense. They go where people read for a moment (title, pause, help, the
+ * report, the sound mix), never in a caption. When the speaker is not certain
+ * the book is the show. See docs/LORE.md, "Scripture".
+ */
+export interface Verse {
+  text: string;
+  /** The book: who said it, or the show when that is not certain. */
+  who: string;
+  /** Chapter and verse: minutes and seconds into the stream. */
+  at: string;
+  show: 'Midweek with Max' | 'Office Hours';
+  date: string;
+}
+const verse = (text: string, who: string, at: string, show: Verse['show'], date: string): Verse => ({ text, who, at, show, date });
+
+export const VERSES = {
+  /** One per visit, under the title. */
+  title: [
+    verse('A new lens to look at Bitcoin through.', 'Max', '18:30', 'Midweek with Max', 'Oct 6'),
+    verse("So they exist. Let's use it. Let's have some fun.", 'Marco', '11:49', 'Midweek with Max', 'Sept 15'),
+    verse('So a guy walks into a blockchain.', 'Jeremy', '46:31', 'Office Hours', 'Sept 23'),
+    verse("Art does not need utility. If it has to have utility, it's not art.", 'John', '7:37', 'Midweek with Max', 'Oct 13'),
+  ],
+  /** One per pause. Judges pause to talk. */
+  pause: [
+    verse('The ZK talk will continue until questions come in.', 'Max', '13:06', 'Midweek with Max', 'Sept 15'),
+    verse('Me, derailed? Never. Come on.', 'Max', '28:44', 'Midweek with Max', 'Sept 29'),
+    verse('Complex systems are complex.', 'John', '52:07', 'Midweek with Max', 'Oct 6'),
+  ],
+  /** The whitepaper's epigraph. */
+  help: verse('Whatever you do with the tokens is cool, but the biggest thing is make a good game.', 'John', '28:24', 'Midweek with Max', 'Oct 13'),
+  /** Cited in the whitepaper's first step. */
+  sloth: verse('I have the hand-eye coordination of a sloth.', 'Max', '29:25', 'Office Hours', 'Oct 7'),
+  /** Under the restart button. */
+  restart: verse('Your job is to make us want to keep giving those games quarters.', 'John', '29:29', 'Midweek with Max', 'Oct 13'),
+  /** Cited on a new personal best. */
+  newBest: verse('Flashing lights and loud noises. Ding, ding, ding, ding, ding.', 'Rick', '29:46', 'Midweek with Max', 'Oct 13'),
+  /** The sound mix: the music is original, and nothing is sampled. */
+  sound: verse('The real horror is copyright strikes.', 'Office Hours', '16:10', 'Office Hours', 'Oct 7'),
+} as const;
+
+/** Every verse, for the tests and the docs. */
+export const ALL_VERSES: readonly Verse[] = [
+  ...VERSES.title, ...VERSES.pause, VERSES.help, VERSES.sloth, VERSES.restart, VERSES.newBest, VERSES.sound,
+];
+
+/** The `n`-th verse of a list, wrapping. */
+export const verseAt = (list: readonly Verse[], n: number): Verse => list[((Math.floor(n) % list.length) + list.length) % list.length];

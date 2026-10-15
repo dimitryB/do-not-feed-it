@@ -146,9 +146,9 @@ screen):
 | IT IS STILL COMING. | the lunge telegraph (was IT IS COMING OUT.) | the community's answer to every "when?" (VBK, the OG role). The creature is, literally, coming |
 | BITCOIN BEING BITCOIN. | a Bitcoin on the floor (other coins still say TX DROPPED.) | Max, Oct 7, on waiting for blocks: "just because Bitcoin being Bitcoin" |
 | GLAMSTERDAM +500 | one fork in three caught in its mouth (the rest HARD FORK +500) | the next Ethereum hard fork; Rick: "sounds like a Dutch rave", Max loves saying it. It is a hard fork; it is a fork |
-| Paused. The ZK talk will continue until you come back. | the pause screen | Max: "The ZK talk will continue until questions come in." Judges pause to talk |
-| ✦ Ding, ding, ding. New personal best. | the epoch report, on a new best | Rick, Oct 13, on what makes an arcade game: "Flashing lights and loud noises. Ding, ding, ding." |
-| Free play. Keep your pocket full of quarters. | under Ape back in | John, Oct 13: "we get a pocket full of quarters … make us want to keep giving those games quarters" |
+| The ZK talk will continue until questions come in. | the pause screen, now as a verse (see Scripture) | Max, Sept 15. Judges pause to talk |
+| ✦ New personal best. Ding, ding, ding. Rick 29:46 | the epoch report, on a new best | Rick, Oct 13, on what makes an arcade game: "Flashing lights and loud noises. Ding, ding, ding." |
+| "Your job is to make us want to keep giving those games quarters." John 29:29 | under Ape back in, as a verse | John, Oct 13 |
 | One mouth. Zero restraint. Maximum commitment. | the title strip (was Three tokens. Unusual side effects.) | an homage to Blind Life Simulator's "one transaction, zero vision, maximum commitment", the Contest 1 game the hosts replayed on Oct 7 |
 | Tuned for the hand-eye coordination of a sloth. | the whitepaper, step 1 | Max, about himself, twice: "I have the hand-eye coordination of a sloth." It is also true: pillar 1 tunes for him |
 | Press E | the end of the title's note line, so the joke gets found | "Press E", the running gag since Contest 1 |
@@ -179,6 +179,37 @@ screen):
   needs new art or a rules change two weeks before the deadline; the
   bouncers are rules geometry. Sacred Waste and Mentora stay friendly by
   staying out.
+
+## Scripture
+
+The hosts' timestamps already read like chapter and verse, so their best
+lines are set as scripture: the speaker is the book, the stream timestamp is
+chapter:verse, the show and date follow. "John 28:24", "Max 13:06". The data
+is `VERSES` in `lib/render/lore.ts`; the component is
+`app/components/Verse.tsx`.
+
+| Verse | Citation | Where |
+| --- | --- | --- |
+| "Whatever you do with the tokens is cool, but the biggest thing is make a good game." | John 28:24 · Midweek with Max, Oct 13 | the whitepaper's epigraph |
+| "A new lens to look at Bitcoin through." | Max 18:30 · Midweek with Max, Oct 6 | under the title, one per visit |
+| "So they exist. Let's use it. Let's have some fun." | Marco 11:49 · Midweek with Max, Sept 15 | under the title |
+| "So a guy walks into a blockchain." | Jeremy 46:31 · Office Hours, Sept 23 | under the title |
+| "Art does not need utility. If it has to have utility, it's not art." | John 7:37 · Midweek with Max, Oct 13 | under the title |
+| "The ZK talk will continue until questions come in." | Max 13:06 · Midweek with Max, Sept 15 | the pause screen, one per pause |
+| "Me, derailed? Never. Come on." | Max 28:44 · Midweek with Max, Sept 29 | the pause screen |
+| "Complex systems are complex." | John 52:07 · Midweek with Max, Oct 6 | the pause screen |
+| "Your job is to make us want to keep giving those games quarters." | John 29:29 · Midweek with Max, Oct 13 | under Ape back in |
+| Ding, ding, ding. | Rick 29:46 · Midweek with Max, Oct 13 | cited on a new personal best |
+| hand-eye coordination of a sloth | Max 29:25 · Office Hours, Oct 7 | cited in the whitepaper's first step |
+| "The real horror is copyright strikes." | Office Hours 16:10 · Oct 7 (speaker not certain, so the book is the show) | the sound mix — the music is original |
+
+Rules for a verse: it is from the auto-captions of a Hemi stream, with
+stutters removed and nothing else changed; it is cited at the start of its
+passage; it is about the work, the game or the speaker, in good humour;
+nothing religious (no God or Jesus lines, even the hosts' own), nothing at
+anyone's expense (falls, weight, outages, ending the stream by accident);
+and it never appears in a gameplay caption, where there is no room for a
+citation. A verse is the only place a host's name appears on screen.
 
 ## Extras
 
@@ -211,9 +242,11 @@ never under reduced motion. Gameplay and the report are unchanged.
    seed phrases, treasuries, foundations or governance votes: people have
    really lost those, and next to REKT they read as an exploit. The creature
    is the joke; the coins are what it eats.
-3. **No real people.** No founders, hosts or influencers by name or likeness.
-   Quote them, never name them (`tests/lore.test.mjs` checks the page and the
-   captions for the hosts' names). It is "Turbo Edition", never "season two".
+3. **No real people as characters.** No founders, hosts or influencers as
+   characters, drawn or written. Their words appear as verses, cited like
+   scripture (see Scripture); that citation is the only place a name appears
+   (`tests/lore.test.mjs` checks the page and the captions). It is "Turbo
+   Edition", never "season two".
    No claim, airdrop or drain jokes either (see above); "Unaudited" on the
    specimen card and the whitepaper is the one audit word, and it stays.
 4. **No endorsement.** The game is a fan-made contest entry. The DAO, the
@@ -250,7 +283,7 @@ and are in the table.
 | help eyebrow, title | EMPLOYEE HANDBOOK · SECTOR 04 / A very questionable job. | WHITEPAPER · UNAUDITED BUT FRIENDLY / A very questionable protocol. |
 | help, HEMI | HEMI gives it turbo breath that cooks coins for double. | … It locks up every HEMI it eats, so technically that breath is veHEMI. |
 | footer | Field guide ↗ | Whitepaper ↗ |
-| pause | Your shift is paused. The creature can wait. | Paused. The ZK talk will continue until you come back. |
+| pause | Your shift is paused. The creature can wait. | Paused. + a verse (Max 13:06, Max 28:44 or John 52:07) |
 | ambience | Low ventilation and the kitchen's electrical hum. | Low ventilation and the hum of the Bitcoin node inside it. |
 | catch, craved | THAT ONE. YES. | ORDER FILLED. |
 | clank | CLANK. | REVERTED. |
@@ -275,8 +308,8 @@ and are in the table.
 | report line | the rules' ending ("…It has eaten the employee handbook.") | the wallet tier ("Wallet tier: shark. The whales have noticed.") |
 | ending jokes | PETTY CASH / YOUR BAGS / THE TREASURY / THE FOUNDATION (stage 4) | IT ATE THE GAS MONEY. / A WHOLE BLOCK. / THE MEMPOOL. / THE CHAIN. |
 | report stats | ON SHIFT · FRENZIES | UPTIME · FOMO |
-| restart | Another shift ↗ | Ape back in ↗, with "Free play. Keep your pocket full of quarters." under it |
-| new best | ✦ New personal best | ✦ Ding, ding, ding. New personal best. |
+| restart | Another shift ↗ | Ape back in ↗, with John 29:29 under it |
+| new best | ✦ New personal best | ✦ New personal best. Ding, ding, ding. RICK 29:46 |
 | title coin strip | Three tokens. Unusual side effects. | One mouth. Zero restraint. Maximum commitment. |
 | lunge telegraph | IT IS COMING OUT. | IT IS STILL COMING. |
 | first breath of a shift | FIRE BREATH | veHEMI IS A WEAPON. (later breaths: TURBO BREATH) |
