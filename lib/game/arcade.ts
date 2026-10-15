@@ -19,7 +19,7 @@ export type Ingredient = "metal" | "balloon" | "pepper";
 export const FOODS: readonly Ingredient[] = ["metal", "balloon", "pepper"];
 
 /** Bumped whenever a rule, the trace format or the scoring changes. */
-export const GAME_VERSION = 5;
+export const GAME_VERSION = 6;
 
 /**
  * A static kitchen collider. A serving that comes off one and is then caught is
@@ -34,7 +34,7 @@ export const BOUNCERS: readonly Bouncer[] = Object.freeze([
   { name: "pan", label: "OFF THE PAN", kind: "circle", x: 500, y: 150, r: 34, restitution: 0.85, banks: 1 },
   { name: "shelf", label: "OFF THE SHELF", kind: "segment", x1: 300, y1: 110, x2: 440, y2: 110, restitution: 0.8, banks: 1 },
   { name: "lamp", label: "OFF THE LAMP", kind: "circle", x: 760, y: 60, r: 26, restitution: 0.9, banks: 2 },
-  { name: "chain", label: "OFF THE CHAIN", kind: "segment", x1: 1040, y1: 0, x2: 1040, y2: 190, restitution: 0.75, banks: 1 },
+  { name: "chain", label: "OFF THE CHAIN", kind: "segment", x1: 1040, y1: 0, x2: 1040, y2: 110, restitution: 0.75, banks: 1 },
   { name: "pot", label: "OFF THE POT", kind: "circle", x: 540, y: 598, r: 36, restitution: 0.8, banks: 1 },
 ] as const);
 
@@ -53,8 +53,11 @@ export const ARENA = Object.freeze({
   /** Endless in practice; the cap exists so a replay is bounded. Twelve minutes. */
   maxTicks: 43200,
   minAngle: -65, maxAngle: -5,
-  /** The default shot lands in the resting mouth. A beginner who never aims still feeds it. */
-  defaultAngle: -40,
+  /**
+   * The default shot: a HEMI at the default charge lands in the resting
+   * mouth, so a beginner who never aims still feeds it something.
+   */
+  defaultAngle: -30,
   /** Half a second between shots; half of that in a frenzy. */
   cooldownTicks: 30, frenzyCooldownTicks: 15, maxProjectiles: 6,
   /** Launch speed. Holding the key charges from `minPower` to `maxPower`. */
@@ -62,6 +65,13 @@ export const ARENA = Object.freeze({
   /** The hatch: how long it stays shut, and how long before it can be used again. */
   hatchTicks: 84, hatchCooldown: 210,
   bouncers: BOUNCERS,
+  /**
+   * The rail under the ceiling the crates ride, in the open stretch of room
+   * between the pan and the creature's head: a crate is lowered through a
+   * hatch in the ceiling at `from`, shuttles back and forth to `to` and back,
+   * and is hoisted away. `lower` is how long the lowering and the hoisting take.
+   */
+  rail: { y: 30, from: 562, to: 716, lower: 32 },
 });
 
 /**
@@ -77,7 +87,7 @@ export const TUNING = Object.freeze({
    * servings count most), negative back-loads it (a big creature grows
    * faster). Back-loaded, because the first frenzy gorges it early anyway.
    */
-  growthPerFeed: 0.014,
+  growthPerFeed: 0.01,
   growthShape: -0.3,
   growthPauseTicks: 60,
   growthPauseMax: 120,
@@ -85,8 +95,8 @@ export const TUNING = Object.freeze({
   growStep: 0.2,
 
   /** Appetite. The belly drains with size, with time on shift, and with appetite. */
-  hungerStart: 70,
-  graceTicks: 240,
+  hungerStart: 76,
+  graceTicks: 300,
   drainBase: 0.06,
   drainPerSize: 0.008,
   drainPerMinute: 0.07,
@@ -116,7 +126,7 @@ export const TUNING = Object.freeze({
   clankRage: 0.5,
   /** Legacy alias of `clankRage`, read by the current HUD copy. */
   snubRage: 0.5,
-  missRage: 5,
+  missRage: 3,
   feedRage: 6,
   /** Irritation is a rate, not a ratchet: it cools while you are landing shots. */
   rageCool: 0.01,
@@ -156,7 +166,7 @@ export const TUNING = Object.freeze({
    * these thresholds (cumulative, per ingredient). Rising, so the first level
    * is quick and the third is a late-shift event. Nothing wears off.
    */
-  levelServings: [10, 28, 70] as readonly number[],
+  levelServings: [13, 36, 110] as readonly number[],
   maxLevel: 3,
 
   /** METAL: a magnet mouth, and cutlery storms. */
@@ -219,7 +229,55 @@ export const TUNING = Object.freeze({
   trackFrom: 46,
   trackRange: 46,
   trackRate: 0.09,
+
+  /**
+   * How each coin flies. Bitcoin is heavy, Ether is gas, HEMI is turbo:
+   * `gravity` is per tick², `speed` multiplies the launch power, and `burn`
+   * is how many ticks it flies dead straight before gravity takes it. The
+   * same barrel and the same charge put each coin somewhere else, so
+   * switching coins is re-aiming.
+   */
+  flight: {
+    metal: { gravity: 0.3, speed: 1, burn: 0 },
+    balloon: { gravity: 0.08, speed: 0.7, burn: 0 },
+    pepper: { gravity: 0.16, speed: 1.25, burn: 18 },
+  } as Readonly<Record<Ingredient, Readonly<{ gravity: number; speed: number; burn: number }>>>,
+
+  /**
+   * Crates on the rail. A crate of coins shuttles along a rail under the
+   * ceiling; its own coin breaks it open, and what was inside pours into the
+   * mouth. Seeded, one at a time: the first a few seconds into the shift, the
+   * next a gap after the last one is gone. A shuttle is one trip out along
+   * the rail and back, and it runs faster as the creature grows.
+   */
+  crateFirst: 480,
+  crateGapMin: 150,
+  crateGapMax: 390,
+  crateShuttleMin: 170,
+  crateShuttleMax: 260,
+  /** How long a crate stays on the rail before it is hoisted away. */
+  crateLifeMin: 330,
+  crateLifeMax: 450,
+  /** Where the crate hangs: the y of its centre. */
+  crateDropMin: 100,
+  crateDropMax: 150,
+  crateSwingMin: 8,
+  crateSwingMax: 22,
+  crateSwingPeriod: 150,
+  /** Collision radius of a crate, before the serving's own. */
+  crateRadius: 29,
+  /** A coin that is not the crate's own glances off it. */
+  crateBounce: 0.55,
+  /** Coins inside. Each one is a serving, swallowed whole. */
+  crateCoins: 3,
+  /** What each coin out of a crate pays, on top of the serving's own multipliers. */
+  crateMult: 2,
+  /** A coin out of a crate is in the mouth by this age, wherever it was. */
+  pourMaxAge: 100,
 });
+
+/** How a coin flies: its gravity and the multiplier on launch power. */
+export const flightOf = (ingredient: Ingredient) => TUNING.flight[ingredient];
 
 /**
  * One player input. The trace is the whole record of a run: a launch carries
@@ -234,10 +292,11 @@ export interface Projectile {
   id: number; ingredient: Ingredient;
   /**
    * `food` is a serving. `junk` is a piece of kitchen metal in a cutlery storm.
+   * `pour` is a coin out of a broken crate, on its way into the mouth.
    * `spit` is no longer produced; it stays in the union so an older renderer
    * still type-checks.
    */
-  kind: "food" | "junk" | "spit";
+  kind: "food" | "junk" | "spit" | "pour";
   x: number; y: number; vx: number; vy: number;
   age: number;
   /** Floor bounces. */
@@ -255,6 +314,8 @@ export interface Projectile {
   cooked: boolean;
   /** It clanked off the teeth. Still flies, feeds nothing, costs nothing more. */
   spent: boolean;
+  /** The crate it hit, on the tick it hit it. */
+  crateId?: number;
 }
 
 export interface MutationLevels { metal: number; balloon: number; pepper: number }
@@ -267,6 +328,47 @@ export interface Craving { ingredient: Ingredient; startedAt: number; endsAt: nu
 
 /** The kitchen damage the creature has done, which does not repair itself. */
 export interface Vent { since: number }
+
+/**
+ * A crate of coins on the rail. Where it is at any tick is a pure function of
+ * these numbers (`crateAt`), so the probe, the guide and the bots can see it
+ * coming exactly as the rules will move it.
+ */
+export interface Crate {
+  id: number;
+  /** What is inside. */
+  ingredient: Ingredient;
+  /** The tick it came down through the hatch. */
+  born: number;
+  /** Ticks for one shuttle: out along the rail and back. */
+  shuttle: number;
+  /** Ticks on the rail, hoisting included. */
+  life: number;
+  /** The y of its centre: how long its cable is. */
+  drop: number;
+  /** How far it swings either side of its hook, and where in the swing it started (0..1). */
+  swing: number; phase: number;
+  /** Ticks before the next crate, once this one is broken or gone. */
+  gap: number;
+}
+
+/**
+ * Where a crate is at `tick`: its hook shuttles along the rail and back, the
+ * crate swings under it like a pendulum (rising a little at each end of the
+ * swing), and it is lowered at the start and hoisted at the end.
+ */
+export function crateAt(crate: Crate, tick: number): { x: number; y: number; hookX: number } {
+  const t = tick - crate.born;
+  const { from, to, lower } = ARENA.rail;
+  const hookX = from + (to - from) * (1 - Math.cos(2 * Math.PI * t / crate.shuttle)) / 2;
+  const offset = crate.swing * Math.sin(2 * Math.PI * (t / TUNING.crateSwingPeriod + crate.phase));
+  const cable = Math.max(1, crate.drop - ARENA.rail.y);
+  const down = Math.min(1, t / lower);
+  const up = Math.max(0, Math.min(1, (t - (crate.life - lower)) / lower));
+  const hang = (1 - (1 - down) ** 2) * (1 - up * up);
+  const y = ARENA.rail.y + (crate.drop - ARENA.rail.y) * hang - offset * offset / (2 * cable) * hang;
+  return { x: quantize(hookX + offset * hang), y: quantize(y), hookX: quantize(hookX) };
+}
 
 /** Fire breath in progress: the tell, then the cone. */
 export interface Flame {
@@ -318,7 +420,7 @@ export interface ArcadeEvent {
   id: number; tick: number;
   type: "launch" | "feed" | "miss" | "chew" | "clank" | "bounce" | "bank" | "frenzy"
   | "utensil" | "cooked" | "fire" | "flame" | "jam" | "mutation" | "grow" | "craving"
-  | "tantrum" | "beat" | "hatch" | "block" | "end"
+  | "tantrum" | "beat" | "hatch" | "block" | "end" | "crate"
   // Legacy types, no longer emitted. Kept so an older renderer type-checks.
   | "snub" | "clog" | "sneeze" | "spit" | "hit" | "burp" | "gust";
   x: number; y: number; label: string;
@@ -377,11 +479,13 @@ export interface ArcadeState {
   slickUntil: number;
   /** The vent it bit off, once it has. */
   vent: Vent | null;
+  /** Crates on the rail right now, the tick the next one comes out, and how many were broken or got away. */
+  crates: Crate[]; crateAt: number; cratesBroken: number; cratesLost: number;
   /** Which of the escalating fail screens this run earned. */
   ending: number;
   announcement: string;
   /** Seeded draw counters. One stream per subsystem. */
-  rolls: { rhythm: number; craving: number; beat: number; flame: number; junk: number };
+  rolls: { rhythm: number; craving: number; beat: number; flame: number; junk: number; crate: number };
   /** Presentation-only: the launcher's charge, mirrored for the HUD. */
   charge: number;
   projectiles: Projectile[]; events: ArcadeEvent[]; nextEventId: number; nextProjectileId: number;
@@ -390,7 +494,6 @@ export interface ArcadeState {
 const MAX_EVENTS = 48;
 const LIFE_TICKS = 300;
 const FOOD_RADIUS = 10;
-const GRAVITY = 0.16;
 const MAX_COMMANDS = Math.ceil(ARENA.maxTicks / ARENA.frenzyCooldownTicks)
   + Math.ceil(ARENA.maxTicks / ARENA.hatchCooldown) + 2;
 
@@ -473,7 +576,7 @@ function roll(seed: number, stream: number, counter: number): number {
   x = (x ^ (x >>> 16)) >>> 0;
   return x / 4294967296;
 }
-const STREAM = { rhythm: 1, craving: 2, beat: 3, flame: 4, junk: 5 } as const;
+const STREAM = { rhythm: 1, craving: 2, beat: 3, flame: 4, junk: 5, crate: 6 } as const;
 
 /** One number per seed: how hungry a creature you drew. */
 const temperOf = (seed: number) => quantize(1 - TUNING.temperSpread / 2 + TUNING.temperSpread * roll(seed, STREAM.rhythm, 7777));
@@ -570,8 +673,9 @@ export function createArcade(seed: number): ArcadeState {
     hatchClosedUntil: 0, hatchReadyAt: 0, hatchSaves: 0, hungerDebt: 0,
     lastServingAt: -1, lastServingSpent: false, paidTicks: 0,
     slickUntil: 0, vent: null, ending: 0, charge: 0,
+    crates: [], crateAt: TUNING.crateFirst, cratesBroken: 0, cratesLost: 0,
     announcement: "Feed it. Not while it is chewing.",
-    rolls: { rhythm: 0, craving: 0, beat: 0, flame: 0, junk: 0 },
+    rolls: { rhythm: 0, craving: 0, beat: 0, flame: 0, junk: 0, crate: 0 },
     projectiles: [], events: [], nextEventId: 1, nextProjectileId: 1,
   };
   stepCreature(creature, seed, 0, 0, state.hunger, null, state.mutations, false);
@@ -623,11 +727,12 @@ function stepCreature(creature: Creature, seed: number, tick: number, rage: numb
 
 function makeProjectile(id: number, ingredient: Ingredient, angle: number, power: number): Projectile {
   const radians = angle * Math.PI / 180;
+  const speed = power * flightOf(ingredient).speed;
   return {
     id, ingredient, kind: "food",
     x: quantize(ARENA.launcher.x + Math.cos(radians) * ARENA.barrelLength),
     y: quantize(ARENA.launcher.y + Math.sin(radians) * ARENA.barrelLength),
-    vx: quantize(Math.cos(radians) * power), vy: quantize(Math.sin(radians) * power),
+    vx: quantize(Math.cos(radians) * speed), vy: quantize(Math.sin(radians) * speed),
     age: 0, bounces: 0, bank: 0, hitMask: 0, lastSurface: "", lastBank: "", hazardBounces: 0,
     assisted: false, cooked: false, spent: false,
   };
@@ -760,6 +865,7 @@ interface Env {
   slick: boolean;
   vent: Vent | null;
   levels: MutationLevels;
+  crates: readonly Crate[];
 }
 
 function envOf(state: ArcadeState): Env {
@@ -769,20 +875,21 @@ function envOf(state: ArcadeState): Env {
     bellyX: c.bx, bellyY: c.by, bellyRx: c.brx, bellyRy: c.bry,
     chewing: !inFrenzy(state) && state.tick < c.chewUntil,
     slick: state.tick < state.slickUntil, vent: state.vent, levels: state.mutations,
+    crates: state.crates,
   };
 }
 
 function envFromCreature(creature: Creature, tick: number, frenzy: boolean, slick: boolean,
-                         vent: Vent | null, levels: MutationLevels): Env {
+                         vent: Vent | null, levels: MutationLevels, crates: readonly Crate[]): Env {
   return {
     tick, mouthX: creature.x, mouthY: creature.y, mouthRx: creature.rx, mouthRy: creature.ry, gape: creature.gape,
     bellyX: creature.bx, bellyY: creature.by, bellyRx: creature.brx, bellyRy: creature.bry,
-    chewing: !frenzy && tick < creature.chewUntil, slick, vent, levels,
+    chewing: !frenzy && tick < creature.chewUntil, slick, vent, levels, crates,
   };
 }
 
 type Outcome = "flying" | "fed" | "utensil" | "clanked" | "banked" | "bounced"
-  | "struck" | "missed" | "dropped";
+  | "struck" | "missed" | "dropped" | "crate";
 
 /** Reflects a velocity about a unit normal, with restitution. */
 function reflect(food: Projectile, nx: number, ny: number, restitution: number) {
@@ -792,13 +899,36 @@ function reflect(food: Projectile, nx: number, ny: number, restitution: number) 
   food.vy = quantize((food.vy - 2 * dot * ny) * restitution);
 }
 
+/**
+ * A coin out of a broken crate. It fans out, then the creature inhales it:
+ * it steers for the mouth faster every tick and is swallowed whole on
+ * arrival, chewing or not. By `pourMaxAge` it is in, wherever it was.
+ */
+function movePour(food: Projectile, env: Env): Outcome {
+  food.age++;
+  const dx = env.mouthX - food.x;
+  const dy = env.mouthY - food.y;
+  const distance = Math.max(1, Math.hypot(dx, dy));
+  const top = 3 + food.age * 0.2;
+  food.vx = quantize(food.vx + (dx / distance * top - food.vx) * 0.12);
+  food.vy = quantize(food.vy + (dy / distance * top - food.vy) * 0.12);
+  food.x = quantize(food.x + food.vx);
+  food.y = quantize(food.y + food.vy);
+  const ex = (food.x - env.mouthX) / (env.mouthRx * env.gape * 0.7);
+  const ey = (food.y - env.mouthY) / (env.mouthRy * env.gape * 0.7);
+  if (ex * ex + ey * ey <= 1 || food.age >= TUNING.pourMaxAge) return "fed";
+  return "flying";
+}
+
 /** One physics step, shared by live play, the probe and the guide. */
 function moveFood(food: Projectile, env: Env): Outcome {
+  if (food.kind === "pour") return movePour(food, env);
   food.age++;
   const previousX = food.x;
   const previousY = food.y;
   let ax = 0;
-  let ay = food.kind === "junk" ? TUNING.utensilGravity : GRAVITY;
+  const flight = flightOf(food.ingredient);
+  let ay = food.kind === "junk" ? TUNING.utensilGravity : food.age <= flight.burn ? 0 : flight.gravity;
   // Magnet mouth: metal, and the kitchen's metal, curve toward it.
   if (env.levels.metal > 0 && food.ingredient === "metal" && !food.spent) {
     const dx = env.mouthX - food.x;
@@ -812,7 +942,7 @@ function moveFood(food: Projectile, env: Env): Outcome {
       food.assisted = true;
     }
   }
-  food.vx = quantize(clamp(food.vx + ax, -18, 18));
+  food.vx = quantize(clamp(food.vx + ax, -20, 20));
   food.vy = quantize(clamp(food.vy + ay, -16, 16));
   food.x = quantize(food.x + food.vx);
   food.y = quantize(food.y + food.vy);
@@ -837,6 +967,33 @@ function moveFood(food: Projectile, env: Env): Outcome {
         return "clanked";
       }
       return food.kind === "junk" ? "utensil" : "fed";
+    }
+  }
+
+  // A crate on the rail. It only opens for its own coin: the right coin
+  // breaks it open, any other glances off it.
+  if (food.kind === "food" && !food.spent && food.lastSurface !== "crate") {
+    for (const crate of env.crates) {
+      // A prediction can run past a crate's life; the live rules have removed it by then.
+      if (env.tick - crate.born >= crate.life) continue;
+      const at = crateAt(crate, env.tick);
+      const dx = food.x - at.x;
+      const dy = food.y - at.y;
+      const reach = TUNING.crateRadius + FOOD_RADIUS;
+      if (dx * dx + dy * dy <= reach * reach) {
+        food.lastSurface = "crate";
+        if (food.ingredient === crate.ingredient) {
+          food.crateId = crate.id;
+          return "crate";
+        }
+        const length = Math.max(0.01, Math.hypot(dx, dy));
+        const nx = dx / length;
+        const ny = dy / length;
+        food.x = quantize(at.x + nx * (reach + 0.5));
+        food.y = quantize(at.y + ny * (reach + 0.5));
+        reflect(food, nx, ny, TUNING.crateBounce);
+        return "bounced";
+      }
     }
   }
 
@@ -1006,6 +1163,8 @@ function bankLabel(food: Projectile, multiplier: number): string {
 function acceptFood(state: ArcadeState, food: Projectile) {
   const creature = state.creature;
   const frenzy = inFrenzy(state);
+  // A coin out of a crate: swallowed whole, no chew, and it pays the crate's multiplier.
+  const pour = food.kind === "pour";
   const craving = state.craving !== null && food.ingredient === state.craving.ingredient;
   state.totalFeeds++;
   if (craving) state.correctFeeds++;
@@ -1018,7 +1177,8 @@ function acceptFood(state: ArcadeState, food: Projectile) {
   // cooking and by the frenzy; the craving bonus rides the frenzy only.
   const multiplier = bankMultiplier(food.bank, food.bounces);
   const base = 100 + TUNING.comboBonus * Math.min(TUNING.comboBonusMax, state.combo - 1);
-  const factor = multiplier * (food.cooked ? TUNING.cookedMult : 1) * (frenzy ? TUNING.frenzyScore : 1);
+  const factor = multiplier * (food.cooked ? TUNING.cookedMult : 1) * (frenzy ? TUNING.frenzyScore : 1)
+    * (pour ? TUNING.crateMult : 1);
   const points = Math.round(base * factor) + (craving ? Math.round(TUNING.cravingBonus * (frenzy ? TUNING.frenzyScore : 1)) : 0);
   state.score += points;
   const restore = (craving ? TUNING.restoreCraved : TUNING.restore) * (gorged ? TUNING.gorgeRestore : 1)
@@ -1043,14 +1203,15 @@ function acceptFood(state: ArcadeState, food: Projectile) {
     }
   }
 
-  // The chew. Not in a frenzy: a frenzy swallows whole.
-  if (!frenzy) {
+  // The chew. Not in a frenzy, and not for a crate's coins: those go down whole.
+  if (!frenzy && !pour) {
     creature.chewUntil = state.tick + TUNING.chewTicks;
     event(state, "chew", creature.x, creature.y, "CHOMP", { value: TUNING.chewTicks });
   }
 
-  const word = food.cooked ? "COOKED" : food.bank > 0 || food.bounces > 0 ? "BANK" : craving ? "CRAVING" : gorged ? "STUFFED" : "NOM";
+  const word = pour ? "CRATE" : food.cooked ? "COOKED" : food.bank > 0 || food.bounces > 0 ? "BANK" : craving ? "CRAVING" : gorged ? "STUFFED" : "NOM";
   state.announcement = gorged ? "It was not even hungry. It got bigger anyway."
+    : pour ? "Straight out of the crate."
     : food.bank > 0 ? "A bank shot. It respects the technique."
     : craving ? "Exactly what it was craving."
     : "It eats anything.";
@@ -1121,6 +1282,54 @@ export function servingsForLevel(level: number): number {
 
 /** Total mutation levels the creature is carrying. */
 export const mutationLoad = (levels: MutationLevels) => levels.metal + levels.balloon + levels.pepper;
+
+/** The next crate out of the wall, drawn from the seed. Faster as the creature grows. */
+function spawnCrate(state: ArcadeState): void {
+  const n = state.rolls.crate;
+  state.rolls.crate += 1;
+  const r = (k: number) => roll(state.seed, STREAM.crate, n * 8 + k);
+  const crate: Crate = {
+    id: state.nextProjectileId++,
+    ingredient: FOODS[Math.min(FOODS.length - 1, Math.floor(r(0) * FOODS.length))],
+    born: state.tick,
+    shuttle: Math.round(mix(TUNING.crateShuttleMin, TUNING.crateShuttleMax, r(1)) / (1 + 0.3 * sizeT(state.creature.size))),
+    life: Math.round(mix(TUNING.crateLifeMin, TUNING.crateLifeMax, r(6))),
+    drop: quantize(mix(TUNING.crateDropMin, TUNING.crateDropMax, r(2))),
+    swing: quantize(mix(TUNING.crateSwingMin, TUNING.crateSwingMax, r(3))),
+    phase: quantize(r(4)),
+    gap: Math.round(mix(TUNING.crateGapMin, TUNING.crateGapMax, r(5))),
+  };
+  state.crates.push(crate);
+  event(state, "crate", ARENA.rail.from, ARENA.rail.y, "CRATE", { ingredient: crate.ingredient, name: "spawn" });
+}
+
+/**
+ * A serving hit a crate. The serving is spent on it; the coins inside fan out
+ * and pour into the mouth. A cooked serving cooks what was inside.
+ */
+function breakCrate(state: ArcadeState, food: Projectile, into: Projectile[]): void {
+  const index = state.crates.findIndex((item) => item.id === food.crateId);
+  if (index < 0) return;
+  const crate = state.crates[index];
+  const at = crateAt(crate, state.tick);
+  state.crates.splice(index, 1);
+  state.cratesBroken += 1;
+  state.crateAt = state.tick + crate.gap;
+  for (let i = 0; i < TUNING.crateCoins; i++) {
+    const a = -Math.PI / 2 + (i - (TUNING.crateCoins - 1) / 2) * 0.7;
+    const speed = 3 + i * 0.8;
+    into.push({
+      id: state.nextProjectileId++, ingredient: crate.ingredient, kind: "pour",
+      x: at.x, y: at.y,
+      vx: quantize(Math.cos(a) * speed + food.vx * 0.25), vy: quantize(Math.sin(a) * speed),
+      age: 0, bounces: 0, bank: 0, hitMask: 0, lastSurface: "crate", lastBank: "", hazardBounces: 0,
+      assisted: true, cooked: food.cooked, spent: false,
+    });
+  }
+  state.announcement = "Crate. Everything in it is going down.";
+  event(state, "crate", at.x, at.y, `CRATE ×${TUNING.crateCoins}`,
+    { ingredient: crate.ingredient, name: "hit", value: TUNING.crateCoins });
+}
 
 function jam(state: ArcadeState, ticks: number, cause: string, label: string, x: number, y: number) {
   state.reloadUntil = Math.max(state.reloadUntil, state.tick + ticks);
@@ -1272,6 +1481,20 @@ export function stepArcade(state: ArcadeState): void {
     event(state, "fire", (ARENA.bench.from + ARENA.bench.to) / 2, ARENA.floor, "FIRE OUT", { name: "out" });
   }
 
+  // Crates on the rail: one comes down through the hatch when it is time, and
+  // one nobody broke is hoisted away at the end of its life.
+  for (let i = state.crates.length - 1; i >= 0; i--) {
+    const crate = state.crates[i];
+    const at = crateAt(crate, state.tick);
+    if (state.tick - crate.born >= crate.life) {
+      state.crates.splice(i, 1);
+      state.cratesLost += 1;
+      state.crateAt = state.tick + crate.gap;
+      event(state, "crate", at.x, at.y, "CRATE GONE", { ingredient: crate.ingredient, name: "gone" });
+    }
+  }
+  if (state.crates.length === 0 && state.tick >= state.crateAt) spawnCrate(state);
+
   // The body moves before the food does.
   let nearest: Projectile | null = null;
   for (const item of state.projectiles) if (item.kind === "food" && (!nearest || item.x > nearest.x)) nearest = item;
@@ -1310,6 +1533,8 @@ export function stepArcade(state: ArcadeState): void {
       }
       event(state, "clank", food.x, food.y, "CLANK", { ingredient: food.ingredient });
       remaining.push(food);
+    } else if (outcome === "crate") {
+      breakCrate(state, food, remaining);
     } else if (outcome === "struck") {
       state.announcement = "A fork in the works.";
       jam(state, TUNING.utensilJams, "utensil", "FORK IN THE WORKS", ARENA.launcher.x, ARENA.launcher.y - 40);
@@ -1333,7 +1558,8 @@ export function stepArcade(state: ArcadeState): void {
         const label = bouncer ? bouncer.label : food.lastSurface === "belly" ? "OFF THE BELLY" : "OFF THE VENT";
         event(state, "bounce", food.x, food.y, label, { ingredient: food.ingredient, name: food.lastSurface, value: food.bank });
       } else if (outcome === "bounced") {
-        const label = food.lastSurface === "floor" ? "OFF THE FLOOR" : food.lastSurface === "belly" ? "OFF THE BELLY" : "BOUNCE";
+        const label = food.lastSurface === "floor" ? "OFF THE FLOOR" : food.lastSurface === "belly" ? "OFF THE BELLY"
+          : food.lastSurface === "crate" ? "WRONG COIN" : "BOUNCE";
         event(state, "bounce", food.x, food.y, label, { ingredient: food.ingredient, name: food.lastSurface, value: 0 });
         // A cooked snack landing on the bench lights it, even if it bounces on.
         if (food.lastSurface === "floor" && food.cooked && food.kind === "food" && !food.spent
@@ -1360,7 +1586,7 @@ export function stepArcade(state: ArcadeState): void {
   }
 
   // THE LAST SERVING — once a shift, a serving already in the air gets to land.
-  const inFlight = state.projectiles.some((p) => p.kind === "food" && !p.spent);
+  const inFlight = state.projectiles.some((p) => (p.kind === "food" || p.kind === "pour") && !p.spent);
   if (state.hunger > 0 && state.lastServingAt >= 0) {
     state.lastServingAt = -1;
     state.lastServingSpent = true;
@@ -1402,6 +1628,8 @@ function projectCreature(state: ArcadeState): Creature {
 export interface FlightResult {
   fed: boolean; clanked: boolean; ticks: number; bounces: number; bank: number;
   x: number; y: number;
+  /** It broke a crate open (and so fed nothing itself). */
+  crate?: boolean;
 }
 
 /**
@@ -1422,10 +1650,13 @@ export function probeFlight(state: ArcadeState, ingredient: Ingredient, angle: n
     const tick = state.tick + i;
     const frenzy = tick < state.frenzyUntil;
     stepCreature(creature, state.seed, tick, state.rage, state.hunger, food, state.mutations, frenzy);
-    const env = envFromCreature(creature, tick, frenzy, tick < state.slickUntil, state.vent, state.mutations);
+    const env = envFromCreature(creature, tick, frenzy, tick < state.slickUntil, state.vent, state.mutations, state.crates);
     const outcome = moveFood(food, env);
     if (outcome === "fed") return { fed: true, clanked: false, ticks: i, bounces: food.bounces, bank: food.bank, x: food.x, y: food.y };
     if (outcome === "clanked") return { fed: false, clanked: true, ticks: i, bounces: food.bounces, bank: food.bank, x: food.x, y: food.y };
+    if (outcome === "crate") {
+      return { fed: false, clanked: false, crate: true, ticks: i, bounces: food.bounces, bank: food.bank, x: food.x, y: food.y };
+    }
     if (outcome === "missed" || outcome === "dropped") {
       return { fed: false, clanked: false, ticks: i, bounces: food.bounces, bank: food.bank, x: food.x, y: food.y };
     }
@@ -1462,11 +1693,11 @@ export function previewFlight(state: ArcadeState, ingredient: Ingredient, angle:
     const tick = state.tick + i;
     const frenzy = tick < state.frenzyUntil;
     stepCreature(creature, state.seed, tick, state.rage, state.hunger, food, state.mutations, frenzy);
-    const env = envFromCreature(creature, tick, frenzy, tick < state.slickUntil, state.vent, state.mutations);
+    const env = envFromCreature(creature, tick, frenzy, tick < state.slickUntil, state.vent, state.mutations, state.crates);
     const outcome = moveFood(food, env);
     if (i % 3 === 0) points.push({ x: food.x, y: food.y });
     if (!settled && outcome !== "flying") { settled = true; ticks = i; arrival = { x: food.x, y: food.y }; }
-    if (outcome === "fed" || outcome === "missed" || outcome === "dropped") break;
+    if (outcome === "fed" || outcome === "missed" || outcome === "dropped" || outcome === "crate") break;
   }
   return { points, ticks, settled, arrival };
 }

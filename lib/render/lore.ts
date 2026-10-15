@@ -17,6 +17,12 @@ import type { ArcadeState, Ingredient } from '../game/arcade';
 /** The three mutations, as the chips, the deck, the legend and the help name them. */
 export const TOKEN_TRAITS: Record<Ingredient, string> = { metal: 'HODL jaws', balloon: 'Gas belly', pepper: 'Turbo breath' };
 
+/**
+ * How each coin flies, in plain words: the deck, the help and the legend say
+ * it where the player picks a coin (tone rule 7: literal where you act).
+ */
+export const TOKEN_FLIGHT: Record<Ingredient, string> = { metal: 'Heavy', balloon: 'Floats', pepper: 'Straight' };
+
 /** What it wants, by ticker. */
 export const CRAVING_LINES: Record<Ingredient, string> = { metal: 'IT WANTS BTC.', balloon: 'IT WANTS ETH.', pepper: 'IT WANTS HEMI.' };
 
@@ -40,6 +46,8 @@ const PHRASES: readonly [string, string][] = [
   ['TANTRUM', 'MAXI TANTRUM'],
   ['IT ATE THE VENT', 'EXTRACTOR: EATEN'],
   ['THE LAST SERVING', 'ONE TX PENDING'],
+  // The rules' crates on the rail are blocks on a chain.
+  ['CRATE', 'BLOCK'],
 ];
 export function tokenCopy(label: string): string {
   let out = label;
@@ -79,6 +87,15 @@ export const CAPTIONS = {
   btcMiss: 'BITCOIN BEING BITCOIN.',
   frenzy: 'FOMO',
   combo: 'COMBO',
+  // A block on the chain under the ceiling, broken open by its own coin: the
+  // coins inside pour into the mouth. A literal block, and a literal reward.
+  blockReward: 'BLOCK REWARD.',
+  // The first block of a shift, lowered out of the ceiling.
+  newBlock: 'NEW BLOCK.',
+  // A block nobody broke is hoisted back up through the ceiling: the block was missed.
+  blockMissed: 'MISSED THE BLOCK.',
+  // A coin that is not the block's own glances off it.
+  wrongToken: 'WRONG TOKEN.',
 } as const;
 
 /**

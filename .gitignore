@@ -30,3 +30,8 @@ docs/qa/loop/**/*.jpg
 # Lore review captures, regenerable with
 # `node --experimental-strip-types scripts/lore-shots.mjs --iter N`.
 docs/qa/lore/**/*.png
+
+# Aim review captures (stage 6), regenerable with
+# `node --experimental-strip-types scripts/aim-shots.mjs --iter N`.
+docs/qa/aim/**/*.png
+docs/qa/aim/**/*.jpg

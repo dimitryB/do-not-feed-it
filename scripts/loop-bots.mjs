@@ -40,7 +40,6 @@ const { ARENA, FOODS, TUNING, createArcade, launchFood, stepArcade, replayArcade
 
 const TICKS = ARENA.tickRate;
 const MAX_TICKS = ARENA.maxTicks;
-const GRAVITY = 0.16;
 const PROBE_TICKS = 200;
 
 /* ------------------------------------------------------------------ *
@@ -68,7 +67,7 @@ function viewOf(state) {
     size: state.size, creature: { ...state.creature },
     mutations: state.mutations, craving: state.craving, threat: state.threat,
     servings: state.servings, frenzyUntil: state.frenzyUntil, slickUntil: state.slickUntil,
-    vent: state.vent, flame: state.flame,
+    vent: state.vent, flame: state.flame, crates: state.crates,
     lastLaunchTick: state.lastLaunchTick, projectiles: state.projectiles,
     hatchClosedUntil: state.hatchClosedUntil, hatchReadyAt: state.hatchReadyAt, reloadUntil: state.reloadUntil,
   };
@@ -84,29 +83,37 @@ function viewOf(state) {
 const POWERS = [];
 for (let p = ARENA.maxPower; p >= ARENA.minPower; p -= 1) POWERS.push(p);
 
-/** The two launch angles (degrees, arena convention: negative is up) that put a shot of `power` through (tx, ty). */
-function solveAngles(tx, ty, power) {
-  const out = [];
-  // The barrel moves the start point with the angle; two passes settle it.
-  let sx = ARENA.launcher.x + Math.cos(-0.7) * ARENA.barrelLength;
-  let sy = ARENA.launcher.y + Math.sin(-0.7) * ARENA.barrelLength;
-  for (let pass = 0; pass < 2; pass += 1) {
-    out.length = 0;
-    const dx = tx - sx;
-    const up = sy - ty;
-    const v2 = power * power;
-    const disc = v2 * v2 - GRAVITY * (GRAVITY * dx * dx + 2 * up * v2);
-    if (disc < 0 || dx <= 0) return [];
-    const root = Math.sqrt(disc);
-    for (const sign of [1, -1]) {
-      const tan = (v2 + sign * root) / (GRAVITY * dx);
-      const degrees = -Math.atan(tan) * 180 / Math.PI;
-      if (degrees >= ARENA.minAngle - 1 && degrees <= ARENA.maxAngle + 1) out.push(degrees);
+/**
+ * The launch angles (degrees, arena convention: negative is up) whose flight,
+ * with nothing in the way, passes closest to (tx, ty) at `power` — the coin's
+ * own gravity, speed and straight burn included. A free-flight model only
+ * seeds the candidates; the rules' `probeFlight` decides.
+ */
+function solveAngles(tx, ty, power, ingredient = "metal") {
+  const flight = arcade.flightOf ? arcade.flightOf(ingredient) : { gravity: 0.16, speed: 1, burn: 0 };
+  const errs = [];
+  for (let angle = ARENA.minAngle; angle <= ARENA.maxAngle; angle += 1) {
+    const r = angle * Math.PI / 180;
+    let x = ARENA.launcher.x + Math.cos(r) * ARENA.barrelLength;
+    let y = ARENA.launcher.y + Math.sin(r) * ARENA.barrelLength;
+    let vx = Math.cos(r) * power * flight.speed;
+    let vy = Math.sin(r) * power * flight.speed;
+    let err = Infinity;
+    for (let age = 1; age <= 240 && x < tx + 4 && y < 720; age += 1) {
+      if (age > flight.burn) vy += flight.gravity;
+      x += vx; y += vy;
+      if (x >= tx) { err = Math.abs(y - ty); break; }
     }
-    if (!out.length) return [];
-    const radians = out[out.length - 1] * Math.PI / 180;
-    sx = ARENA.launcher.x + Math.cos(radians) * ARENA.barrelLength;
-    sy = ARENA.launcher.y + Math.sin(radians) * ARENA.barrelLength;
+    errs.push({ angle, err });
+  }
+  // Local minima that pass within the mouth's height of its centre.
+  const out = [];
+  for (let i = 0; i < errs.length; i += 1) {
+    const e = errs[i];
+    if (e.err > 70) continue;
+    const left = i > 0 ? errs[i - 1].err : Infinity;
+    const right = i < errs.length - 1 ? errs[i + 1].err : Infinity;
+    if (e.err <= left && e.err <= right) out.push(e.angle);
   }
   return out;
 }
@@ -194,7 +201,7 @@ function bestAction(view, config, pending, wantBank, now = view.tick) {
     return bestRun;
   };
   for (const power of POWERS) {
-    for (const degrees of solveAngles(mouth.x, mouth.y, power)) {
+    for (const degrees of solveAngles(mouth.x, mouth.y, power, ingredient)) {
       const run = widest(clampAngle(degrees), power);
       if (run) offer(Math.round(run.start + (run.length - 1) / 2), power, run.length);
     }
@@ -217,6 +224,44 @@ function bestAction(view, config, pending, wantBank, now = view.tick) {
   // belly is nearly empty, in which case anything is better than nothing.
   const needed = frenzy ? spread : spread + 1;
   if (best.robustness < needed && !urgent) return { verb: "wait" };
+  return best;
+}
+
+/**
+ * The best shot at a crate on the rail, or null. A coarse sweep of the barrel
+ * at a few charges finds the shots the rules say will break it; the widest
+ * run of neighbouring angles that also break it is what the bot's own noise
+ * can live with. The coin is the crate's own: no other opens it.
+ */
+function crateAction(view, config, now) {
+  if (!view.crates || !view.crates.length) return null;
+  // A crate only opens for its own coin.
+  const ingredient = view.crates[0].ingredient;
+  const base = now === view.tick ? view : { ...view, tick: now };
+  const spread = Math.ceil(config.noise) + 1;
+  const cache = new Map();
+  const hits = (angle, power) => {
+    if (angle < ARENA.minAngle || angle > ARENA.maxAngle) return false;
+    const key = angle * 100 + power;
+    let result = cache.get(key);
+    if (result === undefined) { result = probeFlight(base, ingredient, angle, power, 160); cache.set(key, result); }
+    return result.crate === true;
+  };
+  let best = null;
+  for (const power of [16, 14, 12, 10]) {
+    for (let angle = ARENA.minAngle; angle <= ARENA.maxAngle; angle += 2) {
+      if (!hits(angle, power)) continue;
+      // The run of neighbouring angles that also break it.
+      let lo = angle; while (lo - 1 >= angle - spread && hits(lo - 1, power)) lo -= 1;
+      let hi = angle; while (hi + 1 <= angle + spread && hits(hi + 1, power)) hi += 1;
+      const robustness = hi - lo + 1;
+      const centre = Math.round((lo + hi) / 2);
+      const ticks = cache.get(centre * 100 + power)?.ticks ?? 99;
+      const value = robustness * 30 - ticks;
+      if (!best || value > best.value) best = { verb: "launch", ingredient, angle: centre, power, ticks, bank: 1, robustness, value, crate: true };
+    }
+  }
+  if (!best || best.robustness < Math.max(2, spread)) return null;
   return best;
 }
 
@@ -256,8 +301,13 @@ function canLaunch(state) {
  */
 const BOTS = {
   naive: { blind: true, latency: 0, noise: 0 },
-  moderate: { latency: Math.round(0.25 * TICKS), noise: 4, feedBelow: 80, bankChance: 0.25 },
-  good: { latency: Math.round(0.15 * TICKS), noise: 1.5, feedBelow: 78, bankChance: 1 },
+  // Sets the barrel once — the one angle and charge that lands the most coins
+  // at the start of the shift — and never touches it again. Otherwise plays
+  // like the moderate bot: serves the craving, waits for the mouth to open.
+  // The player the stage 6 brief is about: is one setting enough?
+  fixed: { fixed: true, latency: Math.round(0.25 * TICKS), noise: 4, feedBelow: 80 },
+  moderate: { latency: Math.round(0.25 * TICKS), noise: 4, feedBelow: 80, bankChance: 0.25, crateChance: 0.6, crateBelow: 84 },
+  good: { latency: Math.round(0.15 * TICKS), noise: 1.5, feedBelow: 78, bankChance: 1, crateChance: 1, crateBelow: 82 },
 };
 
 function mutationCount(state) {
@@ -281,6 +331,28 @@ export function playShift(name, seed, { trackDensity = false, timeline = false }
   let counted = null;
   let pending = [];
   let cycle = 0;
+  const crateWanted = new Map();
+  let crateShots = 0;
+  let setting = null;
+  if (config.fixed) {
+    // The single best setting at the start: most coins landing, then the widest window.
+    let best = null;
+    for (let power = ARENA.minPower; power <= ARENA.maxPower; power += 1) {
+      for (let angle = ARENA.minAngle; angle <= ARENA.maxAngle; angle += 1) {
+        let coins = 0; let window = 0;
+        for (const food of FOODS) {
+          if (!probeFlight(state, food, angle, power, PROBE_TICKS).fed) continue;
+          coins += 1;
+          for (let d = -4; d <= 4; d += 1) if (probeFlight(state, food, angle + d, power, PROBE_TICKS).fed) window += 1;
+        }
+        const value = coins * 100 + window;
+        if (!best || value > best.value) best = { angle, power, value };
+      }
+    }
+    setting = best;
+  }
+  /** The angle each launch was planned at, before the bot's own noise. */
+  const planned = [];
   const samples = [];
   const markers = {
     firstMutation: null, firstStack: null, firstFrenzy: null, end: null,
@@ -305,7 +377,19 @@ export function playShift(name, seed, { trackDensity = false, timeline = false }
       }
     }
 
-    if (config.blind) {
+    if (config.fixed) {
+      const frenzy = view.tick < view.frenzyUntil;
+      const urgentCraving = view.craving && view.craving.endsAt - view.tick < 180;
+      const open = frenzy || view.tick >= view.creature.chewUntil;
+      if (canLaunch(state) && open && (view.hunger < config.feedBelow || urgentCraving || frenzy)) {
+        const ingredient = pickIngredient(view);
+        const angle = clampAngle(setting.angle + (noise() * 2 - 1) * config.noise);
+        if (launchFood(state, ingredient, angle, setting.power)) {
+          commands.push({ tick: state.tick, kind: "launch", ingredient, angle, power: setting.power });
+          planned.push(setting.angle);
+        }
+      }
+    } else if (config.blind) {
       if (canLaunch(state)) {
         const ingredient = FOODS[cycle % FOODS.length];
         if (launchFood(state, ingredient, ARENA.defaultAngle, ARENA.defaultPower)) {
@@ -313,6 +397,24 @@ export function playShift(name, seed, { trackDensity = false, timeline = false }
           commands.push({ tick: state.tick, kind: "launch", ingredient, angle: ARENA.defaultAngle, power: ARENA.defaultPower });
         }
       }
+    } else if (canLaunch(state) && (() => {
+      // A crate on the rail: a bot that has decided to go for this one shoots
+      // at it whenever it has a shot, and does not wait for the belly.
+      const crate = view.crates && view.crates[0];
+      if (!crate || view.hunger >= config.crateBelow) return false;
+      if (!crateWanted.has(crate.id)) crateWanted.set(crate.id, config.crateChance >= 1 || noise() < config.crateChance);
+      if (!crateWanted.get(crate.id)) return false;
+      const action = crateAction(view, config, state.tick);
+      if (!action) return false;
+      const jitter = (noise() * 2 - 1) * config.noise;
+      const angle = clampAngle(action.angle + jitter);
+      if (!launchFood(state, action.ingredient, angle, action.power)) return false;
+      commands.push({ tick: state.tick, kind: "launch", ingredient: action.ingredient, angle, power: action.power });
+      planned.push(action.angle);
+      crateShots += 1;
+      return true;
+    })()) {
+      // fired at a crate
     } else if (canLaunch(state)) {
       const frenzy = view.tick < view.frenzyUntil;
       const urgentCraving = view.craving && view.craving.endsAt - view.tick < 180;
@@ -325,6 +427,7 @@ export function playShift(name, seed, { trackDensity = false, timeline = false }
           const angle = clampAngle(action.angle + jitter);
           if (launchFood(state, action.ingredient, angle, action.power)) {
             commands.push({ tick: state.tick, kind: "launch", ingredient: action.ingredient, angle, power: action.power });
+            planned.push(action.angle);
             pending.push(state.tick + action.ticks);
             if (process.env.BOT_DEBUG) console.log(`[bot] t=${state.tick} plan a=${action.angle} p=${action.power} robust=${action.robustness} bank=${action.bank} ticks=${action.ticks} wantBank=${wantBank} fired a=${angle} hunger=${view.hunger.toFixed(0)} frenzy=${frenzy}`);
           }
@@ -362,6 +465,10 @@ export function playShift(name, seed, { trackDensity = false, timeline = false }
     banks: state.banks,
     cooked: state.cooked,
     utensils: state.utensils,
+    cratesBroken: state.cratesBroken ?? 0,
+    cratesLost: state.cratesLost ?? 0,
+    crateShots,
+    ...aimMoves(commands, state.tick, planned),
     bestCombo: state.bestCombo,
     size: state.size,
     mutations: { ...state.mutations },
@@ -370,6 +477,40 @@ export function playShift(name, seed, { trackDensity = false, timeline = false }
     commands,
     timeline: timeline ? samples : null,
     density: trackDensity && ticksObserved > 0 ? changes / (ticksObserved / TICKS / 60) : null,
+  };
+}
+
+/**
+ * How much the barrel moves between shots: re-aims per minute (a launch at
+ * least 5° from the one before it), and the mean move in degrees.
+ */
+function aimMoves(commands, ticks, planned = []) {
+  // The share of planned shots within 4° of the shift's single best angle:
+  // how far one setting of the barrel would have got this bot.
+  let oneAngle = 0;
+  if (planned.length) {
+    for (let a = ARENA.minAngle; a <= ARENA.maxAngle; a += 1) {
+      const n = planned.filter((x) => Math.abs(x - a) <= 4).length;
+      if (n > oneAngle) oneAngle = n;
+    }
+    oneAngle /= planned.length;
+  }
+  let laneChanges = 0;
+  for (let i = 1; i < planned.length; i += 1) if (Math.abs(planned[i] - planned[i - 1]) >= 8) laneChanges += 1;
+  let moves = 0; let total = 0; let previous = null; let shots = 0;
+  for (const command of commands) {
+    if (command.kind !== "launch") continue;
+    shots += 1;
+    if (previous !== null) {
+      const delta = Math.abs(command.angle - previous);
+      total += delta;
+      if (delta >= 5) moves += 1;
+    }
+    previous = command.angle;
+  }
+  return {
+    reaimsPerMin: ticks > 0 ? moves / (ticks / TICKS / 60) : 0, meanMove: shots > 1 ? total / (shots - 1) : 0,
+    oneAngle, laneChangesPerMin: ticks > 0 ? laneChanges / (ticks / TICKS / 60) : 0,
   };
 }
 
@@ -439,6 +580,17 @@ function summarise(name, runs) {
     clanks: { mean: round(mean(runs.map((r) => r.clanks)), 1) },
     cooked: { mean: round(mean(runs.map((r) => r.cooked)), 1) },
     utensils: { mean: round(mean(runs.map((r) => r.utensils)), 2) },
+    aim: {
+      reaimsPerMin: round(mean(runs.map((r) => r.reaimsPerMin)), 1),
+      meanMove: round(mean(runs.map((r) => r.meanMove)), 1),
+      oneAngle: round(mean(runs.map((r) => r.oneAngle)) * 100),
+      laneChangesPerMin: round(mean(runs.map((r) => r.laneChangesPerMin)), 1),
+    },
+    crates: {
+      brokenPerRun: round(mean(runs.map((r) => r.cratesBroken)), 2),
+      shotsPerRun: round(mean(runs.map((r) => r.crateShots)), 2),
+      hitRate: round(runs.reduce((a, r) => a + r.cratesBroken, 0) / Math.max(1, runs.reduce((a, r) => a + r.cratesBroken + r.cratesLost, 0)) * 100),
+    },
     bestCombo: { median: median(runs.map((r) => r.bestCombo)) },
     score: { median: round(median(runs.map((r) => r.score))) },
     size: { median: round(median(runs.map((r) => r.size)), 2) },
@@ -549,6 +701,8 @@ async function main() {
   console.log("");
   for (const row of report.bots) {
     console.log(`${row.bot.padEnd(9)} causes: ${JSON.stringify(row.causes)}  clanks/run ${row.clanks.mean}  cooked/run ${row.cooked.mean}  utensils/run ${row.utensils.mean}  best combo ${row.bestCombo.median}  first frenzy ${row.firstFrenzy.median}s (${row.frenzies.withAtLeastOne}% of runs)`);
+    console.log(`${"".padEnd(9)} aim: ${row.aim.oneAngle}% of planned shots within 4° of one barrel setting; ${row.aim.laneChangesPerMin} planned moves of 8°+ per min; ${row.aim.reaimsPerMin} actual moves of 5°+ per min, mean move ${row.aim.meanMove}°`);
+    console.log(`${"".padEnd(9)} crates: broken/run ${row.crates.brokenPerRun}, shots at crates/run ${row.crates.shotsPerRun}, crates broken ${row.crates.hitRate}% of those that came`);
     console.log(`${"".padEnd(9)} deaths: ${row.deathSpread.map((b) => `${b.bucket} ${b.share}%`).join(", ")}`);
   }
   console.log("");

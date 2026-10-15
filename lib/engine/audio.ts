@@ -13,7 +13,9 @@ export type SfxId =
   | "chew" | "clank" | "bank" | "bounce" | "frenzy-start" | "frenzy-end" | "utensil" | "cooked"
   | "flame-tell" | "flame" | "fire" | "jam" | "grow" | "tantrum" | "craving"
   // The coins: a clink on launch and on a catch, pitched by token.
-  | "clink-btc" | "clink-eth" | "clink-hemi";
+  | "clink-btc" | "clink-eth" | "clink-hemi"
+  // Blocks on the chain: lowered in, broken open, hooked on at the end, and a coin that glances off.
+  | "block-in" | "block-hit" | "block-gone" | "wrong-token";
 export interface MixerAudioEngine {
   unlock(): void;
   play(id: SfxId): void;
@@ -334,6 +336,27 @@ export function createAudioEngine(): MixerAudioEngine {
         case "craving":
           tone("sfx", 523.25, 523.25, time, .18, .1, "sine", .01);
           tone("sfx", 783.99, 783.99, time + .14, .28, .1, "sine", .01);
+          break;
+        case "block-in":
+          // A hatch in the ceiling and a chain paying out: a clunk and a rattle.
+          tone("sfx", 140, 90, time, .18, .14, "square", .004);
+          for (let i = 0; i < 5; i++) noise("sfx", time + .08 + i * .06, .04, 3600, .05);
+          break;
+        case "block-hit":
+          // The block cracks and the coins come out: a crack, then a run of dings.
+          noise("sfx", time, .12, 900, .26);
+          tone("sfx", 120, 55, time, .25, .24, "triangle", .004);
+          for (const [i, f] of [1318.5, 1567.98, 1975.53, 2637].entries()) tone("sfx", f, f, time + .07 + i * .07, .32, .11, "triangle", .004);
+          break;
+        case "block-gone":
+          // It hooks onto the chain: two links meeting.
+          tone("sfx", 1046.5, 1000, time, .12, .07, "square", .003);
+          tone("sfx", 784, 760, time + .09, .2, .06, "triangle", .003);
+          break;
+        case "wrong-token":
+          // A coin on a block it does not open: a dull knock.
+          tone("sfx", 260, 180, time, .12, .14, "square", .003);
+          noise("sfx", time, .05, 1200, .08);
           break;
       }
     },

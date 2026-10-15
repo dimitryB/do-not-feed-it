@@ -15,7 +15,7 @@
  * Springs on top of that give anticipation and overshoot for free: a target
  * snaps, the body arrives late and settles.
  */
-import { ARENA, TUNING, inFrenzy, type ArcadeEvent, type ArcadeState, type Ingredient } from "../../game/arcade";
+import { ARENA, TUNING, crateAt, inFrenzy, type ArcadeEvent, type ArcadeState, type Ingredient } from "../../game/arcade";
 
 export interface CreaturePose {
   headX: number; headY: number; headTilt: number; lean: number;
@@ -779,6 +779,11 @@ export class CreatureAnimator {
       const at = state?.creature ?? ARENA.mouth;
       target.headTilt += clamp(-9, 9, (nearest.x - at.x) * 0.022);
       target.headX += clamp(-16, 16, (nearest.x - at.x) * 0.03);
+    } else if (playing && state && state.crates && state.crates.length) {
+      // Nothing in the air: it watches the block on the chain go by.
+      const block = crateAt(state.crates[0], state.tick);
+      target.pupilX = clamp(-1, 1, (block.x - 838) / 340);
+      target.pupilY = clamp(-1, 1, (block.y - 250) / 240);
     }
     if (miss && miss.age > 0.06) {
       const look = clamp01((miss.age - 0.06) / 0.2);

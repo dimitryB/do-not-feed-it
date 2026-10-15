@@ -40,6 +40,16 @@ good; nothing wears off.
 | Ether | **Gas belly** | Ether is gas, so the belly fills with it. It floats, and the belly bounces coins back up into its mouth. A bounce off it is a GAS SPIKE. |
 | HEMI | **Turbo breath** | It breathes out heat. A coin through the breath comes out TURBO'D, worth double. A turbo'd coin that hits the bench burns. It locks up every HEMI it eats, so technically the breath is veHEMI — the only veHEMI that is also a weapon. |
 
+**How each coin flies** (stage 6). Same launcher, three different shots, so
+switching coins is re-aiming. On the deck, the legend and in the whitepaper
+in plain words (tone rule 7): **Heavy**, **Floats**, **Straight**.
+
+| Coin | Flight | Why it is that coin |
+| --- | --- | --- |
+| Bitcoin | **Heavy.** Falls hardest; short of a near-full charge it does not reach the mouth. Lob it. | Digital gold. The heavy one. HODL jaws later pull it in. |
+| Ether | **Floats.** The slow, soft lob; the charge moves it a lot. Trails bubbles. | Ether is gas. |
+| HEMI | **Straight.** Fast, and dead straight for its first stretch, with a jet behind it; point it at the mouth. | Turbo. |
+
 **The room, translated.** The painting is a kitchen and stays one. Every
 crypto word on screen has to be true of what the viewer sees in the kitchen
 too (see the double-meaning rule below).
@@ -60,6 +70,8 @@ too (see the double-meaning rule below).
 | It wanted one coin and you sent another | A **MAXI TANTRUM.** It only wants the one coin. |
 | A craving met | **ORDER FILLED.** It ordered; you filled it. |
 | The last coin in the air when the belly empties | **ONE TX PENDING.** The night waits for it. |
+| The cube on a chain under the ceiling, with a coin's mark on it | **A block.** It is lowered through a hatch, shuttles along the rail and is hoisted away. Its own coin breaks it open — **BLOCK REWARD.** — and the coins inside pour into the mouth. The first of a shift is a **NEW BLOCK.**; one nobody breaks is a **MISSED THE BLOCK.** |
+| Another coin glancing off a block | **WRONG TOKEN.** A block only opens for its own. |
 
 **How the night ends.** One cause, one joke, one wallet tier.
 
@@ -116,6 +128,13 @@ the transcripts in the user's "hemi-game-contest" project).
   "Unaudited" is always about Munch, always next to "friendly", and never
   near a contract, a claim, an exploit or Hemi. Nothing else on screen says
   claim, airdrop, re-entrancy or drained.
+- **The moving target is a block, not an airdrop** (stage 6). A crate of
+  coins that the player shoots down is, on the face of it, an airdrop, and
+  that is the one word this lore cannot use (the exploited claim contract
+  above). It is drawn as a cube on a chain and called a block: a block on a
+  chain is literally what is on screen, its coins are a BLOCK REWARD, and a
+  block nobody breaks is a MISSED THE BLOCK. No parachute, no "claim", no
+  "drop" anywhere near it.
 - **They do this kind of joke themselves.** Jeremy's own demo is "proof of
   stake → what if we staked some vampires": a crypto term made literal in
   the game. That is the double-meaning rule, from the judges' side.
@@ -365,6 +384,11 @@ and are in the table.
 | lunge telegraph | IT IS COMING OUT. | IT IS STILL COMING. |
 | first breath of a shift | FIRE BREATH | veHEMI IS A WEAPON. (later breaths: TURBO BREATH) |
 | fork caught, one in three | UTENSIL +500 | GLAMSTERDAM +500 (the rest: HARD FORK +500) |
+| a crate broken open (stage 6) | CRATE ×3 | BLOCK REWARD. (card) and ×3 at the block |
+| the first crate of a shift (stage 6) | CRATE | NEW BLOCK. |
+| a crate hoisted away unbroken (stage 6) | CRATE GONE | MISSED THE BLOCK. |
+| a coin glancing off another coin's crate (stage 6) | WRONG COIN | WRONG TOKEN. |
+| coin buttons and legend (stage 6) | HODL jaws / Bitcoin · HODL jaws | Heavy · HODL jaws / Bitcoin · heavy (Ether: Floats, HEMI: Straight) |
 
 Kept on purpose: SNEEZE., IT INHALES,
 SINGED, COMBO, HATCH SHUT, IT TOOK THE TRAY., the prop names (OFF THE PAN, OFF THE

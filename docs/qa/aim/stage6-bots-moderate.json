@@ -1,0 +1,215 @@
+{
+  "generatedAt": "2026-10-15T18:38:01.806Z",
+  "gameVersion": 6,
+  "shifts": 200,
+  "seedBase": 1,
+  "bots": [
+    {
+      "bot": "moderate",
+      "shifts": 200,
+      "survival": {
+        "p10": 117.4,
+        "median": 162.7,
+        "p90": 228.2,
+        "max": 312.6
+      },
+      "feeds": {
+        "median": 266,
+        "mean": 262.8
+      },
+      "accuracy": 90.5,
+      "frenzies": {
+        "mean": 8.74,
+        "withAtLeastOne": 100
+      },
+      "banks": {
+        "mean": 48.92
+      },
+      "clanks": {
+        "mean": 22.6
+      },
+      "cooked": {
+        "mean": 37.1
+      },
+      "utensils": {
+        "mean": 5.47
+      },
+      "aim": {
+        "reaimsPerMin": 56.8,
+        "meanMove": 7.4,
+        "oneAngle": 38,
+        "laneChangesPerMin": 35.8
+      },
+      "crates": {
+        "brokenPerRun": 6.35,
+        "shotsPerRun": 11.58,
+        "hitRate": 37.6
+      },
+      "bestCombo": {
+        "median": 28
+      },
+      "score": {
+        "median": 246302
+      },
+      "size": {
+        "median": 2.1
+      },
+      "firstFrenzy": {
+        "median": 14.8
+      },
+      "pacing": {
+        "firstLevel": {
+          "reached": 100,
+          "p10": 24.5,
+          "median": 32.7,
+          "p90": 48.2,
+          "medianOfReached": 32.7
+        },
+        "size15": {
+          "reached": 99.5,
+          "p10": 57.8,
+          "median": 81.5,
+          "p90": 108.5,
+          "medianOfReached": 81.3
+        },
+        "size20": {
+          "reached": 63,
+          "p10": 123.8,
+          "median": 164.3,
+          "p90": null,
+          "medianOfReached": 144.8
+        },
+        "firstMax": {
+          "reached": 20.5,
+          "p10": 208,
+          "median": null,
+          "p90": null,
+          "medianOfReached": 208
+        },
+        "allMax": {
+          "reached": 18,
+          "p10": 212,
+          "median": null,
+          "p90": null,
+          "medianOfReached": 211.2
+        }
+      },
+      "causes": {
+        "empty-belly": 200
+      },
+      "deathSpread": [
+        {
+          "bucket": "60-90s",
+          "count": 1,
+          "share": 0.5
+        },
+        {
+          "bucket": "90-120s",
+          "count": 25,
+          "share": 12.5
+        },
+        {
+          "bucket": "120-150s",
+          "count": 48,
+          "share": 24
+        },
+        {
+          "bucket": "150-180s",
+          "count": 54,
+          "share": 27
+        },
+        {
+          "bucket": "180-210s",
+          "count": 38,
+          "share": 19
+        },
+        {
+          "bucket": "210-240s",
+          "count": 19,
+          "share": 9.5
+        },
+        {
+          "bucket": "240-270s",
+          "count": 11,
+          "share": 5.5
+        },
+        {
+          "bucket": "270-300s",
+          "count": 2,
+          "share": 1
+        },
+        {
+          "bucket": "300-330s",
+          "count": 2,
+          "share": 1
+        }
+      ],
+      "worstBucketShare": 27
+    }
+  ],
+  "sampleRun": {
+    "seed": 1,
+    "markers": {
+      "firstMutation": 1759,
+      "firstStack": 1806,
+      "firstFrenzy": 585,
+      "end": 9872,
+      "firstLevel": 1759,
+      "size15": 5555,
+      "size20": null,
+      "firstMax": null,
+      "allMax": null
+    },
+    "ticks": 9872,
+    "seconds": 164.53333333333333,
+    "score": 255129,
+    "feeds": 297,
+    "shots": 325,
+    "clanks": 26,
+    "misses": 15,
+    "frenzies": 10,
+    "banks": 47,
+    "cooked": 28,
+    "utensils": 7,
+    "cratesBroken": 7,
+    "cratesLost": 10,
+    "crateShots": 13,
+    "reaimsPerMin": 61.9935170178282,
+    "meanMove": 7.302469135802469,
+    "oneAngle": 0.3569230769230769,
+    "laneChangesPerMin": 37.92544570502431,
+    "bestCombo": 30,
+    "size": 1.9832,
+    "mutations": {
+      "metal": 2,
+      "balloon": 2,
+      "pepper": 2
+    },
+    "phase": "lost",
+    "cause": "empty-belly",
+    "commands": 325,
+    "timeline": null,
+    "density": null
+  },
+  "decisionDensity": {
+    "shifts": 8,
+    "median": 109.17,
+    "min": 85.61,
+    "max": 112.93
+  },
+  "gates": {
+    "moderateMedian100to180": true,
+    "moderateAccuracyAtLeast55": true,
+    "moderateFrenziesAtLeast1": true,
+    "moderateDeathSpread": true,
+    "moderateFirstLevel25to45": true,
+    "moderateSize15At60to90": true,
+    "moderateSize20At120to180": true,
+    "moderateFirstMaxNotBefore150": true,
+    "moderateAllMaxNotBefore240": true,
+    "moderateFirstFrenzyInside40": true,
+    "decisionDensityAtLeast6": true
+  },
+  "gatesPass": true,
+  "elapsedSeconds": 1188.9
+}

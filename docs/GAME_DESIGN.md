@@ -278,6 +278,50 @@ mutation and changes their next action because of it. An observer understands
 the resulting success or failure. If that does not happen, change the mechanic
 or presentation before adding a chain layer or more ingredients.
 
+## The cannon — `feat/aim`, GAME_VERSION 6 (October 15, 2026)
+
+FEAST (`docs/FEAST_BRIEF.md`) is still the game; this is what stage 6 changed
+about the one verb, aiming. Decisions D139–D146; numbers in
+`docs/qa/aim/STAGE6.md`.
+
+**The problem.** The mouth is big and barely moves, every coin flew the same
+way, and an overcharged shot came off the chain into the mouth for ×2. So
+one barrel setting fed every coin for the whole shift, and the barrel was
+set once.
+
+**Every coin flies its own way.** Same launcher, three shots:
+
+- **Bitcoin is heavy.** It falls hardest and needs a near-full charge to
+  reach the mouth at all. Lob it.
+- **Ether floats.** The slow, soft lob, and the charge moves where it lands
+  a long way.
+- **HEMI is straight.** Fast, and dead straight for its first 18 ticks with
+  a jet behind it. Point it at the mouth; the charge barely matters.
+
+At any one charge the three coins land at different angles, so the coin
+the craving asks for decides where the barrel points. The barrel's lance
+bends the way the loaded coin will fly over its first stretch (no
+colliders, nowhere near the mouth); the first-shift guide is unchanged.
+The default shot is a HEMI at −30°, and the page loads HEMI first.
+
+**Blocks on the rail.** One at a time, a block (the rules: a crate) is
+lowered through a hatch in the ceiling between the pan and the creature's
+head, shuttles along a short rail and back, swinging on its chain, and is
+hoisted away after five to seven seconds. It carries one coin's mark.
+**Only that coin opens it**; any other glances off. Broken open, its three
+coins pour into the mouth and are swallowed whole — no chew, each a full
+serving at ×2, combo and all, so a block is often the fifth catch of a
+FOMO. They are servings of that coin: they meet a craving, they count
+toward its mutation, and fed into a full creature they gorge it. Where a
+block is at any tick is a pure function of the block and the tick
+(`crateAt`), so the guide, the probe, the bots and the replay all see it
+coming exactly.
+
+**What a shift asks of the barrel now.** Point HEMI at the mouth, lob
+Bitcoin at full charge, float Ether; switch when it craves; swing up and
+lead a block when one comes down, with the coin it wants. A barrel set once
+and left alone feeds one coin in three and breaks a block only by luck.
+
 ## The loop that now exists — `feat/creature-loop`, GAME_VERSION 3
 
 This section describes the game as implemented, not as planned. Everything above

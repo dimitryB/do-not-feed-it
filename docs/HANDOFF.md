@@ -1,5 +1,43 @@
 # Current handoff
 
+## FEAST stage 6 — the cannon, October 15, 2026 (branch `feat/aim`, from `feat/feast`, not merged)
+
+The user: once the cannon was set at the right angle there was almost no
+need to touch it again. Measured, it was worse: one angle fed every coin at
+almost any charge for the whole shift. The user chose two fixes; both are in
+the rules (`lib/game/arcade.ts`, GAME_VERSION 6, trace format unchanged,
+fixtures regenerated) and on screen.
+
+1. **Every coin flies its own way** (D139, D143). Bitcoin is heavy and needs
+   a near-full charge; Ether floats and its angle moves with the charge;
+   HEMI is fast and dead straight for 18 ticks. `TUNING.flight` /
+   `flightOf()`. The barrel's lance now bends the way the loaded coin will
+   fly (`lancePath` in `lib/render/scene.ts`); each coin draws its own trail
+   (HEMI's jet and speed lines, Ether's bubbles, Bitcoin's heavy wake). The
+   chain behind the head no longer catches overcharged shots (D140). The
+   default shot is a HEMI at −30° and the page loads HEMI first (D142).
+2. **Blocks on the rail** (D141). The rules' `crates`: one at a time, lowered
+   through a ceiling hatch between the pan and the head, shuttling and
+   swinging, hoisted away after 5.5–7.5 s. Only its own coin opens one; the
+   three coins inside pour into the mouth whole at ×2. Drawn as a cube on a
+   chain with its coin's mark (`drawRail`, `drawCrate`, `drawPour`); BLOCK
+   REWARD. / NEW BLOCK. / MISSED THE BLOCK. / WRONG TOKEN. (D146); four new
+   sounds (`block-in`, `block-hit`, `block-gone`, `wrong-token`); the
+   creature's eyes follow a block when nothing is in the air. Never called
+   an airdrop (D131, `docs/LORE.md`).
+
+Balance moved with it (D144): miss irritation 3, belly start 76 with 300
+ticks of grace, growth 0.010 a feed, levels at 13 / 36 / 110. The bots learnt
+the coins and the blocks, and there is a `fixed` bot that sets the barrel
+once and never touches it (D145). Report, gate table, the set-and-forget
+comparison and the critic's scores: `docs/qa/aim/STAGE6.md`. Captures:
+`scripts/aim-shots.mjs --iter N` → `docs/qa/aim/iter-N` (the moments), and
+`scripts/loop-shots.mjs` for a whole shift.
+
+Tests: `tests/aim.test.mjs` (flight per coin, no shared lane, the crate's
+life, breaking one, a wrong coin glancing off, seeded and replayable); four
+`tests/arcade.test.mjs` cases moved to the new default coin.
+
 ## FEAST stage 5 — the lore, October 12, 2026 (branch `feat/feast`, not merged)
 
 The world around the coins is crypto now. Copy only: `lib/game/arcade.ts`,

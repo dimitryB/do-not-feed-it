@@ -1,0 +1,115 @@
+{
+  "iteration": 3,
+  "seed": 20261015,
+  "capturedAt": "2026-10-15T18:29:08.145Z",
+  "scenes": [
+    {
+      "name": "flights",
+      "seed": 20261015,
+      "commands": [
+        {
+          "tick": 330,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -48,
+          "power": 12
+        },
+        {
+          "tick": 361,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -49,
+          "power": 16
+        },
+        {
+          "tick": 392,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -30,
+          "power": 11
+        }
+      ],
+      "frames": [
+        394,
+        400,
+        406,
+        412,
+        418,
+        424
+      ]
+    },
+    {
+      "name": "block",
+      "seed": 20261015,
+      "commands": [],
+      "frames": [
+        500,
+        525,
+        550
+      ]
+    },
+    {
+      "name": "block-hit",
+      "seed": 20261015,
+      "commands": [
+        {
+          "tick": 550,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -49,
+          "power": 16
+        }
+      ],
+      "frames": [
+        546,
+        604,
+        611,
+        618,
+        630,
+        644,
+        660,
+        680
+      ]
+    },
+    {
+      "name": "wrong-token",
+      "seed": 20261015,
+      "commands": [
+        {
+          "tick": 520,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -48,
+          "power": 16
+        }
+      ],
+      "frames": [
+        538,
+        544,
+        548,
+        554,
+        562,
+        572
+      ]
+    },
+    {
+      "name": "lances",
+      "seed": 20261015,
+      "commands": [],
+      "frames": [
+        200,
+        200,
+        200
+      ]
+    },
+    {
+      "name": "late",
+      "seed": 20261015,
+      "commands": [],
+      "frames": [
+        1470,
+        1500
+      ]
+    }
+  ]
+}

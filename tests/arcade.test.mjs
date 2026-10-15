@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  ARENA, BOUNCERS, FOODS, TUNING, GAME_VERSION, bankMultiplier, cooldownFor, createArcade, drainPerTick,
-  endingFor, flameCone, getHazard, launchFood, levelFor, previewFlight, probeFlight, replayArcade, servingsForLevel, slamHatch, stepArcade,
+  ARENA, BOUNCERS, FOODS, TUNING, GAME_VERSION, bankMultiplier, cooldownFor, crateAt, createArcade, drainPerTick,
+  endingFor, flameCone, flightOf, getHazard, launchFood, levelFor, previewFlight, probeFlight, replayArcade, servingsForLevel, slamHatch, stepArcade,
 } from "../lib/game/arcade.ts";
 
 const GRAVITY = 0.16;
@@ -121,8 +121,8 @@ function mutate(state, ingredient, level) {
   assert.equal(state.mutations[ingredient], level);
 }
 
-test("the version is 5, the shift is endless, and the pillars' constants hold", () => {
-  assert.equal(GAME_VERSION, 5);
+test("the version is 6, the shift is endless, and the pillars' constants hold", () => {
+  assert.equal(GAME_VERSION, 6);
   assert.equal(ARENA.maxTicks, 43200);
   assert.equal(ARENA.cooldownTicks, 30);
   assert.equal(ARENA.frenzyCooldownTicks, 15);
@@ -139,7 +139,8 @@ test("the mouth is open by default and the default shot lands in it", () => {
   assert.equal(state.creature.aperture, 1);
   assert.equal(state.creature.untilOpen, -1);
   assert.equal(state.creature.chewUntil, 0);
-  const result = probeFlight(state, "metal", ARENA.defaultAngle, ARENA.defaultPower);
+  // The default is a HEMI: the coin the page loads first, the one that flies straight.
+  const result = probeFlight(state, "pepper", ARENA.defaultAngle, ARENA.defaultPower);
   assert.ok(result.fed, "the default angle and power must feed a resting creature");
   assert.ok(result.ticks < 70, "and quickly");
 });
@@ -168,13 +169,14 @@ test("a snack arriving mid-chew clanks off the teeth: lost, combo reset, almost 
   // the next thirty ticks meets teeth; the probe says so before we fire it.
   state.lastLaunchTick = state.tick - ARENA.cooldownTicks;
   state.reloadUntil = 0;
-  const shot = landingShot(state, "metal", (r) => r.clanked);
+  // HEMI: the fast one, so it arrives inside the chew.
+  const shot = landingShot(state, "pepper", (r) => r.clanked);
   assert.ok(shot, "a shot the probe says will clank");
   state.combo = 3;
   const rage = state.rage;
   const feeds = state.totalFeeds;
   const seen = state.nextEventId;
-  assert.ok(launchFood(state, "metal", shot.angle, shot.power));
+  assert.ok(launchFood(state, "pepper", shot.angle, shot.power));
   const id = state.projectiles[state.projectiles.length - 1].id;
   advance(state, state.tick + shot.ticks + 2);
   const snack = state.projectiles.find((p) => p.id === id);
@@ -184,7 +186,7 @@ test("a snack arriving mid-chew clanks off the teeth: lost, combo reset, almost 
   assert.equal(state.combo, 0);
   assert.ok(state.rage - rage <= TUNING.clankRage + 0.01, "a clank costs no more than a pinch of irritation");
   const clank = newEvents(state, seen).find((e) => e.type === "clank");
-  assert.ok(clank && clank.ingredient === "metal");
+  assert.ok(clank && clank.ingredient === "pepper");
   // When it eventually drops it is not a miss: paid for already.
   const misses = state.misses;
   while (state.projectiles.some((p) => p.id === id) && state.phase === "playing") stepArcade(state);
@@ -203,11 +205,12 @@ test("bank multipliers: floor is a lesser bank, bouncers double, triple, quadrup
 
 test("a serving off a kitchen bouncer is caught as a named bank and pays the multiplier", () => {
   const state = fresh(3);
-  const shot = landingShot(state, "metal", (r) => r.fed && r.bank >= 1);
+  let coin = null; let shot = null;
+  for (const food of FOODS) { shot = landingShot(state, food, (r) => r.fed && r.bank >= 1); if (shot) { coin = food; break; } }
   assert.ok(shot, "a bank shot exists from the resting state");
   const seen = state.nextEventId;
   const score = state.score;
-  assert.ok(launchFood(state, "metal", shot.angle, shot.power));
+  assert.ok(launchFood(state, coin, shot.angle, shot.power));
   advance(state, state.tick + shot.ticks + 1);
   const events = newEvents(state, seen);
   const bounce = events.find((e) => e.type === "bounce" && e.name !== "floor");

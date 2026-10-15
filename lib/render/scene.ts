@@ -1,6 +1,6 @@
 import {
-  ARENA, TUNING, flameCone, getHazard, inFrenzy, previewFlight,
-  type ArcadeState, type Bouncer, type Ingredient, type Projectile,
+  ARENA, TUNING, crateAt, flameCone, flightOf, getHazard, inFrenzy, previewFlight,
+  type ArcadeState, type Bouncer, type Crate, type Ingredient, type Projectile,
 } from '../game/arcade';
 import { CreatureAnimator } from './creature/pose';
 import { buildRig, type CreatureRig } from './creature/rig';
@@ -192,6 +192,8 @@ export function createScene() {
   /** How many lines it has spat back this shift, and when the last one went, so a frenzy does not strobe them. */
   let talked = 0;
   let lastTalkAt = -10;
+  /** Whether this shift's first block has been named yet. */
+  let blockSaid = false;
   let lastMouth = { x: 600, y: 300 };
 
   function burst(x: number, y: number, n: number, color: string, speed: number, time: number, kind: Particle['kind'] = 'dot', seed = 0, life = 0.7, gravity = 260) {
@@ -219,7 +221,7 @@ export function createScene() {
     if (state.seed !== seenRun || state.tick < seenTick) {
       // A new run, or one we have never seen: start from here rather than
       // replaying its whole history into the screen.
-      seenRun = state.seed; particles.length = 0; pops.length = 0; rings.length = 0; caption = null; shake = 0; wobble.clear(); breathed = false; eHitIndex = -1; talked = 0; lastTalkAt = -10;
+      seenRun = state.seed; particles.length = 0; pops.length = 0; rings.length = 0; caption = null; shake = 0; wobble.clear(); breathed = false; eHitIndex = -1; talked = 0; lastTalkAt = -10; blockSaid = false;
       camera.zoom = camera.from = camera.target = 1; camera.since = -10; camera.said = false;
       seenEvent = Math.max(0, (state.events[state.events.length - 1]?.id ?? 0) - 1);
       if (state.tick < 2) seenEvent = 0;
@@ -260,6 +262,7 @@ export function createScene() {
           rings.push({ x: e.x, y: e.y, born: time, color: surface === 'belly' ? '#9be9df' : credited ? '#ffd36a' : '#cdd8c4', big: credited });
           if (surface !== 'floor') nudge(surface, surface === 'lamp' ? 0.9 : 0.6);
           if (surface === 'belly') say(CAPTIONS.gasSpike, '#9be9df', 1, time, 40, 0.7);
+          if (surface === 'crate') say(CAPTIONS.wrongToken, '#cfd8e8', 2, time, 40, 0.8);
           if (surface === 'floor') burst(e.x, ARENA.floor - 4, reduced ? 3 : 7, '#b9ae95', 70, time, 'dust', e.id, 0.5, 60);
           else burst(e.x, e.y, reduced ? 3 : 6, '#fff2c0', 150, time, 'spark', e.id, 0.35);
           break;
@@ -338,6 +341,24 @@ export function createScene() {
         }
         case 'launch':
           burst(e.x, e.y, reduced ? 1 : 3, '#fff2c0', 90, time, 'spark', e.id, 0.25);
+          break;
+        case 'crate':
+          if (e.name === 'hit') {
+            // Its own coin breaks it open: a card, shards, a flash, a beat of hit-stop.
+            say(CAPTIONS.blockReward, tint, 6, time, 58, 1.4, true);
+            burst(e.x, e.y, reduced ? 10 : 30, tint, 360, time, 'spark', e.id, 0.8);
+            burst(e.x, e.y, reduced ? 6 : 18, '#3b4a44', 280, time, 'dot', e.id + 3, 1.0, 560);
+            burst(e.x, e.y, reduced ? 5 : 14, '#fff2c0', 240, time, 'spark', e.id + 5, 0.55);
+            pops.push({ x: e.x, y: e.y - 44, text: `×${e.value ?? 3}`, color: tint, born: time, size: 54 });
+            rings.push({ x: e.x, y: e.y, born: time, color: tint, big: true });
+            if (!reduced) { shake = Math.max(shake, 0.45); freezeUntil = time + 0.06; frozenAt = time; }
+          } else if (e.name === 'spawn') {
+            burst(e.x, e.y + 14, reduced ? 3 : 8, '#b9ae95', 80, time, 'dust', e.id, 0.6, 120);
+            if (!blockSaid) { blockSaid = true; say(CAPTIONS.newBlock, tint, 1, time, 40, 1.0); }
+          } else {
+            burst(e.x, e.y, reduced ? 3 : 8, '#cdd8c4', 120, time, 'spark', e.id, 0.4);
+            say(CAPTIONS.blockMissed, '#cdd8c4', 1, time, 36, 1.0);
+          }
           break;
         default:
           break;
@@ -691,8 +712,148 @@ export function createScene() {
     ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-14, -9); ctx.lineTo(12, -9); ctx.stroke();
   }
 
+
+  // ---- the rail under the ceiling and the blocks on it.
+  //
+  // A short steel rail in the open stretch of room between the pan and the
+  // creature's head, with a hatch in the ceiling at its left end. The rules
+  // call what rides it a crate; it is drawn as a block — a cube with its
+  // coin's mark on the face, hung on a chain — so it is a block on a chain,
+  // which is the joke and also exactly what is on screen.
+  function drawRail(ctx: CanvasRenderingContext2D) {
+    const { y, from, to } = ARENA.rail;
+    const left = from - 40; const right = to + 40;
+    ctx.save();
+    // Two brackets up to the ceiling.
+    ctx.fillStyle = '#121917';
+    for (const x of [left + 30, right - 30]) ctx.fillRect(x - 3, 0, 6, y - 3);
+    // The hatch the blocks come down through.
+    ctx.fillStyle = '#040808'; ctx.beginPath(); ctx.roundRect(from - 38, y - 30, 76, 22, 4); ctx.fill();
+    ctx.strokeStyle = `${RIM}0.5)`; ctx.lineWidth = 1.5; ctx.stroke();
+    // The bar: dark steel, the lamp's amber along its top edge, a stop at each end.
+    const bar = ctx.createLinearGradient(0, y - 5, 0, y + 5);
+    bar.addColorStop(0, '#3d4844'); bar.addColorStop(0.5, '#1b2321'); bar.addColorStop(1, '#0a100f');
+    ctx.fillStyle = bar; ctx.fillRect(left, y - 4, right - left, 8);
+    ctx.strokeStyle = `${RIM}0.42)`; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(left, y - 4); ctx.lineTo(right, y - 4); ctx.stroke();
+    ctx.fillStyle = '#2a3430';
+    for (const x of [left, right]) { ctx.beginPath(); ctx.roundRect(x - 4, y - 8, 8, 16, 2); ctx.fill(); }
+    ctx.restore();
+  }
+
+  /** A short run of chain links from (x0, y0) to (x1, y1). */
+  function links(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, color: string) {
+    const dx = x1 - x0; const dy = y1 - y0; const len = Math.hypot(dx, dy);
+    const n = Math.max(2, Math.round(len / 8));
+    const along = Math.atan2(dy, dx);
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    for (let i = 0; i < n; i++) {
+      const f = (i + 0.5) / n;
+      ctx.beginPath();
+      ctx.ellipse(x0 + dx * f, y0 + dy * f, 5, i % 2 ? 1.6 : 3, along, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  /** A block on the chain: trolley, links, a glow in its coin's colour, the cube, the mark. */
+  function drawCrate(ctx: CanvasRenderingContext2D, c: Crate, tick: number, time: number, reduced: boolean) {
+    const at = crateAt(c, tick);
+    const railY = ARENA.rail.y;
+    const tint = COLORS[c.ingredient];
+    const swing = Math.atan2(at.x - at.hookX, Math.max(1, at.y - railY));
+    const s = 27; const d = 11;
+    ctx.save();
+    // The trolley on the rail.
+    ctx.fillStyle = '#2b3531'; ctx.beginPath(); ctx.roundRect(at.hookX - 11, railY - 8, 22, 13, 3); ctx.fill();
+    ctx.fillStyle = '#a9b3a8';
+    ctx.beginPath(); ctx.arc(at.hookX - 5, railY - 2, 2.6, 0, Math.PI * 2); ctx.arc(at.hookX + 5, railY - 2, 2.6, 0, Math.PI * 2); ctx.fill();
+    // The chain down to the block's top.
+    const topX = at.x + Math.sin(swing) * -(s + d * 0.5); const topY = at.y - Math.cos(swing) * (s + d * 0.5);
+    links(ctx, at.hookX, railY + 5, topX, topY, '#8d9a92');
+    // A glow in its coin's colour, so it reads against the dark ceiling at stream size.
+    const pulse = reduced ? 0.6 : 0.5 + 0.5 * Math.sin(time * 3.6 + c.id);
+    const glow = ctx.createRadialGradient(at.x, at.y, 8, at.x, at.y, 82);
+    glow.addColorStop(0, `${tint}66`); glow.addColorStop(1, `${tint}00`);
+    ctx.globalAlpha = 0.65 + 0.35 * pulse; ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(at.x, at.y, 82, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+    // The cube, swinging with its chain.
+    ctx.translate(at.x, at.y); ctx.rotate(swing);
+    softShadow(ctx, 6, s + 10, s + 6, 5, 0.25);
+    ctx.fillStyle = '#34423d';
+    ctx.beginPath(); ctx.moveTo(-s, -s); ctx.lineTo(-s + d, -s - d); ctx.lineTo(s + d, -s - d); ctx.lineTo(s, -s); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#121a18';
+    ctx.beginPath(); ctx.moveTo(s, -s); ctx.lineTo(s + d, -s - d); ctx.lineTo(s + d, s - d); ctx.lineTo(s, s); ctx.closePath(); ctx.fill();
+    const face = ctx.createLinearGradient(0, -s, 0, s);
+    face.addColorStop(0, '#2a3632'); face.addColorStop(1, '#141c1a');
+    ctx.fillStyle = face; ctx.beginPath(); ctx.roundRect(-s, -s, 2 * s, 2 * s, 4); ctx.fill();
+    // Edges in its coin's colour: the outline is what says which coin it wants.
+    ctx.strokeStyle = tint; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.roundRect(-s, -s, 2 * s, 2 * s, 4); ctx.stroke();
+    ctx.lineWidth = 2; ctx.globalAlpha = 0.8;
+    ctx.beginPath(); ctx.moveTo(-s, -s); ctx.lineTo(-s + d, -s - d); ctx.lineTo(s + d, -s - d); ctx.lineTo(s + d, s - d); ctx.lineTo(s, s); ctx.moveTo(s + d, -s - d); ctx.lineTo(s, -s); ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+    // The coin it holds, on its face.
+    coin(ctx, c.ingredient, at.x, at.y, 40, swing, reduced ? 0.8 : time * 1.4 + c.id, 0.7);
+  }
+
+  /** A coin out of a broken block, on its way into the mouth. */
+  function drawPour(ctx: CanvasRenderingContext2D, p: Projectile, reduced: boolean) {
+    const tint = COLORS[p.ingredient];
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(4,12,10,0.45)'; ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.moveTo(p.x - p.vx * 2.6, p.y - p.vy * 2.6); ctx.lineTo(p.x, p.y); ctx.stroke();
+    ctx.strokeStyle = p.cooked ? '#ffb060' : tint; ctx.globalAlpha = 0.7; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(p.x - p.vx * 2.4, p.y - p.vy * 2.4); ctx.lineTo(p.x, p.y); ctx.stroke();
+    ctx.restore();
+    coin(ctx, p.ingredient, p.x, p.y, 38, Math.atan2(p.vy, p.vx), reduced ? 0.8 : p.age * 0.3 + p.id, 1);
+  }
+
+  /**
+   * How a coin flies, drawn on it. HEMI is turbo: dead straight with a jet
+   * behind it until its burn runs out. Ether is gas: it trails bubbles.
+   * Bitcoin is heavy: a thicker, darker wake.
+   */
+  function drawFlightTrait(ctx: CanvasRenderingContext2D, p: Projectile, time: number, reduced: boolean) {
+    const speed = Math.max(0.01, Math.hypot(p.vx, p.vy));
+    const ux = p.vx / speed; const uy = p.vy / speed;
+    ctx.save();
+    if (p.ingredient === 'pepper' && p.age <= flightOf('pepper').burn && !p.spent) {
+      ctx.globalCompositeOperation = 'screen';
+      for (let i = 0; i < (reduced ? 2 : 5); i++) {
+        const back = 18 + i * 11;
+        const r = 13 - i * 1.8 + (reduced ? 0 : Math.sin(time * 37 + i * 2) * 1.6);
+        const jx = p.x - ux * back; const jy = p.y - uy * back;
+        const f = ctx.createRadialGradient(jx, jy, 1, jx, jy, r);
+        f.addColorStop(0, 'rgba(255,248,210,0.95)'); f.addColorStop(0.45, 'rgba(255,150,60,0.6)'); f.addColorStop(1, 'rgba(255,90,20,0)');
+        ctx.fillStyle = f; ctx.beginPath(); ctx.arc(jx, jy, r, 0, Math.PI * 2); ctx.fill();
+      }
+      // Speed lines either side of the jet.
+      ctx.strokeStyle = 'rgba(255,220,170,0.5)'; ctx.lineWidth = 1.6;
+      for (const side of [-1, 1]) {
+        const ox = -uy * side * 15; const oy = ux * side * 15;
+        ctx.beginPath(); ctx.moveTo(p.x - ux * 22 + ox, p.y - uy * 22 + oy); ctx.lineTo(p.x - ux * 70 + ox, p.y - uy * 70 + oy); ctx.stroke();
+      }
+    } else if (p.ingredient === 'balloon' && !p.spent) {
+      ctx.strokeStyle = 'rgba(190,240,232,0.75)'; ctx.lineWidth = 1.6;
+      for (let i = 0; i < (reduced ? 2 : 4); i++) {
+        const back = 26 + i * 15;
+        const wobble = reduced ? 0 : Math.sin(time * 6 + p.id + i * 1.7) * 6;
+        const bx = p.x - ux * back - uy * wobble; const by = p.y - uy * back + ux * wobble - i * 3;
+        ctx.globalAlpha = 0.85 - i * 0.18;
+        ctx.beginPath(); ctx.arc(bx, by, 5.5 - i, 0, Math.PI * 2); ctx.stroke();
+      }
+    } else if (p.ingredient === 'metal' && !p.spent) {
+      ctx.lineCap = 'round'; ctx.strokeStyle = 'rgba(10,8,4,0.45)'; ctx.lineWidth = 16;
+      ctx.beginPath(); ctx.moveTo(p.x - p.vx * 3, p.y - p.vy * 3); ctx.lineTo(p.x, p.y); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   function drawFood(ctx: CanvasRenderingContext2D, p: Projectile, time: number, reduced: boolean) {
     const tint = COLORS[p.ingredient];
+    drawFlightTrait(ctx, p, time, reduced);
     ctx.save();
     if (p.spent) ctx.globalAlpha = 0.55;
     // A dark snack crossing the dark half of the room disappears at stream
@@ -732,6 +893,51 @@ export function createScene() {
     ctx.save(); if (p.spent) ctx.globalAlpha = 0.6;
     coin(ctx, p.ingredient, p.x, p.y, 46, Math.atan2(p.vy, p.vx), reduced ? 0.8 : p.age * 0.16 + p.id, p.spent ? 0.3 : 1);
     ctx.restore();
+  }
+
+  /** The first second of a coin's free flight from the muzzle: its own gravity, speed and burn, nothing in the way. */
+  function lancePath(food: Ingredient, rad: number, power: number, px: number, py: number): { x: number; y: number }[] {
+    const fl = flightOf(food);
+    let x = px + Math.cos(rad) * ARENA.barrelLength; let y = py + Math.sin(rad) * ARENA.barrelLength;
+    const vx = Math.cos(rad) * power * fl.speed; let vy = Math.sin(rad) * power * fl.speed;
+    const out = [{ x, y }];
+    for (let age = 1; age <= 60; age++) {
+      if (age > fl.burn) vy += fl.gravity;
+      x += vx; y += vy; out.push({ x, y });
+    }
+    return out;
+  }
+  /** The point `distance` along a polyline, with the unit tangent there. */
+  function pointAlong(path: { x: number; y: number }[], distance: number): { x: number; y: number; nx: number; ny: number } {
+    let left = distance;
+    for (let i = 1; i < path.length; i++) {
+      const a = path[i - 1]; const b = path[i];
+      const len = Math.hypot(b.x - a.x, b.y - a.y);
+      if (len > 0 && left <= len) {
+        const f = left / len;
+        return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, nx: (b.x - a.x) / len, ny: (b.y - a.y) / len };
+      }
+      left -= len;
+    }
+    const a = path[path.length - 2]; const b = path[path.length - 1];
+    const len = Math.max(0.01, Math.hypot(b.x - a.x, b.y - a.y));
+    return { x: b.x, y: b.y, nx: (b.x - a.x) / len, ny: (b.y - a.y) / len };
+  }
+  /** Strokes the stretch of a polyline between two distances along it. */
+  function strokeAlong(ctx: CanvasRenderingContext2D, path: { x: number; y: number }[], from: number, to: number) {
+    if (to <= from) return;
+    const start = pointAlong(path, from);
+    ctx.beginPath(); ctx.moveTo(start.x, start.y);
+    let walked = 0;
+    for (let i = 1; i < path.length; i++) {
+      const a = path[i - 1]; const b = path[i];
+      walked += Math.hypot(b.x - a.x, b.y - a.y);
+      if (walked <= from) continue;
+      if (walked >= to) break;
+      ctx.lineTo(b.x, b.y);
+    }
+    const end = pointAlong(path, to);
+    ctx.lineTo(end.x, end.y); ctx.stroke();
   }
 
   function drawText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, size: number, color: string, alpha: number, font = DISPLAY, align: CanvasTextAlign = 'center', outline = 6) {
@@ -805,6 +1011,11 @@ export function createScene() {
 
     // The kitchen's bouncers, there for the whole shift: they are the playground.
     if (playing) drawProps(ctx, t, reduced, dt);
+    // The chain under the ceiling, and whatever block is riding it.
+    if (playing && state) {
+      drawRail(ctx);
+      for (const c of state.crates ?? []) drawCrate(ctx, c, tick, t, reduced);
+    }
 
     if (playing && state && guideSteps > 0 && !(DEV_HOOKS && devRender.hideAim)) {
       // The dotted guide is a first-shift aid and then it is gone.
@@ -887,6 +1098,7 @@ export function createScene() {
       for (const p of state.projectiles) {
         if (p.kind === 'junk') drawUtensil(ctx, p, t, reduced, mouth);
         else if (p.kind === 'food') drawFood(ctx, p, t, reduced);
+        else if (p.kind === 'pour') drawPour(ctx, p, reduced);
       }
     }
 
@@ -922,14 +1134,22 @@ export function createScene() {
       const loaded = !state || tick >= waitEnd;
       const refill = state ? clampAlpha(1 - (waitEnd - tick) / cooldown) : 1;
       const notch = 78 + clampAlpha((power - ARENA.minPower) / (ARENA.maxPower - ARENA.minPower)) * 128;
-      ctx.save(); ctx.translate(x, y); ctx.rotate(rad); ctx.lineCap = 'round';
+      // The lance bends the way the loaded coin will: it is the first stretch
+      // of that coin's own flight at this charge — Bitcoin droops, Ether
+      // floats, HEMI is a straight line — so each coin's character is on the
+      // barrel before it is fired. It stops a long way short of anything it
+      // could hit; where the coin lands is still the player's read.
+      const lance = lancePath(selected, rad, Math.round(power), x, y);
+      const solid = Math.max(8, notch - ARENA.barrelLength);
+      ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       ctx.globalAlpha = loaded ? .92 : .4; ctx.strokeStyle = loaded ? '#e0f4be' : '#7f8f6e'; ctx.lineWidth = 3.5;
-      ctx.beginPath(); ctx.moveTo(74, 0); ctx.lineTo(notch, 0); ctx.stroke();
+      strokeAlong(ctx, lance, 4, solid);
       ctx.globalAlpha = loaded ? .4 : .18; ctx.lineWidth = 2; ctx.setLineDash([4, 10]);
-      ctx.beginPath(); ctx.moveTo(notch, 0); ctx.lineTo(notch + 62, 0); ctx.stroke(); ctx.setLineDash([]);
+      strokeAlong(ctx, lance, solid, solid + 110); ctx.setLineDash([]);
+      const bar = pointAlong(lance, solid);
       ctx.globalAlpha = loaded ? 1 : .45; ctx.lineWidth = 4;
       ctx.strokeStyle = charge > 0.92 ? '#fff0a8' : loaded ? '#dded92' : '#7f8f6e';
-      ctx.beginPath(); ctx.moveTo(notch, -11); ctx.lineTo(notch, 11); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(bar.x - bar.ny * 11, bar.y + bar.nx * 11); ctx.lineTo(bar.x + bar.ny * 11, bar.y - bar.nx * 11); ctx.stroke();
       ctx.restore();
       // The loaded serving sits in the breech whether or not it can be fired.
       const jammed = state ? tick < state.reloadUntil : false;

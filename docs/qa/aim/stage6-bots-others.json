@@ -1,0 +1,427 @@
+{
+  "generatedAt": "2026-10-15T18:38:01.879Z",
+  "gameVersion": 6,
+  "shifts": 200,
+  "seedBase": 1,
+  "bots": [
+    {
+      "bot": "naive",
+      "shifts": 200,
+      "survival": {
+        "p10": 33.9,
+        "median": 48.4,
+        "p90": 70.5,
+        "max": 92
+      },
+      "feeds": {
+        "median": 29,
+        "mean": 30.2
+      },
+      "accuracy": 31,
+      "frenzies": {
+        "mean": 0,
+        "withAtLeastOne": 0
+      },
+      "banks": {
+        "mean": 0.05
+      },
+      "clanks": {
+        "mean": 0.7
+      },
+      "cooked": {
+        "mean": 42
+      },
+      "utensils": {
+        "mean": 0
+      },
+      "aim": {
+        "reaimsPerMin": 0,
+        "meanMove": 0,
+        "oneAngle": 0,
+        "laneChangesPerMin": 0
+      },
+      "crates": {
+        "brokenPerRun": 0.04,
+        "shotsPerRun": 0,
+        "hitRate": 1.1
+      },
+      "bestCombo": {
+        "median": 1
+      },
+      "score": {
+        "median": 4897
+      },
+      "size": {
+        "median": 1.23
+      },
+      "firstFrenzy": {
+        "median": 0
+      },
+      "pacing": {
+        "firstLevel": {
+          "reached": 99.5,
+          "p10": 20,
+          "median": 21.6,
+          "p90": 23.3,
+          "medianOfReached": 21.6
+        },
+        "size15": {
+          "reached": 0.5,
+          "p10": null,
+          "median": null,
+          "p90": null,
+          "medianOfReached": 89.2
+        },
+        "size20": {
+          "reached": 0,
+          "p10": null,
+          "median": null,
+          "p90": null,
+          "medianOfReached": null
+        },
+        "firstMax": {
+          "reached": 0,
+          "p10": null,
+          "median": null,
+          "p90": null,
+          "medianOfReached": null
+        },
+        "allMax": {
+          "reached": 0,
+          "p10": null,
+          "median": null,
+          "p90": null,
+          "medianOfReached": null
+        }
+      },
+      "causes": {
+        "empty-belly": 200
+      },
+      "deathSpread": [
+        {
+          "bucket": "0-30s",
+          "count": 2,
+          "share": 1
+        },
+        {
+          "bucket": "30-60s",
+          "count": 145,
+          "share": 72.5
+        },
+        {
+          "bucket": "60-90s",
+          "count": 52,
+          "share": 26
+        },
+        {
+          "bucket": "90-120s",
+          "count": 1,
+          "share": 0.5
+        }
+      ],
+      "worstBucketShare": 72.5
+    },
+    {
+      "bot": "fixed",
+      "shifts": 200,
+      "survival": {
+        "p10": 62.6,
+        "median": 101.8,
+        "p90": 187.9,
+        "max": 275.6
+      },
+      "feeds": {
+        "median": 61,
+        "mean": 67.1
+      },
+      "accuracy": 43.2,
+      "frenzies": {
+        "mean": 0.99,
+        "withAtLeastOne": 55.5
+      },
+      "banks": {
+        "mean": 29.75
+      },
+      "clanks": {
+        "mean": 17
+      },
+      "cooked": {
+        "mean": 14.5
+      },
+      "utensils": {
+        "mean": 1.38
+      },
+      "aim": {
+        "reaimsPerMin": 16,
+        "meanMove": 2.7,
+        "oneAngle": 100,
+        "laneChangesPerMin": 0
+      },
+      "crates": {
+        "brokenPerRun": 4.03,
+        "shotsPerRun": 0,
+        "hitRate": 36.2
+      },
+      "bestCombo": {
+        "median": 6
+      },
+      "score": {
+        "median": 24349
+      },
+      "size": {
+        "median": 1.25
+      },
+      "firstFrenzy": {
+        "median": 60.5
+      },
+      "pacing": {
+        "firstLevel": {
+          "reached": 79.5,
+          "p10": 51.9,
+          "median": 72.9,
+          "p90": null,
+          "medianOfReached": 69.4
+        },
+        "size15": {
+          "reached": 12.5,
+          "p10": 191.6,
+          "median": null,
+          "p90": null,
+          "medianOfReached": 165.1
+        },
+        "size20": {
+          "reached": 0.5,
+          "p10": null,
+          "median": null,
+          "p90": null,
+          "medianOfReached": 237.1
+        },
+        "firstMax": {
+          "reached": 0,
+          "p10": null,
+          "median": null,
+          "p90": null,
+          "medianOfReached": null
+        },
+        "allMax": {
+          "reached": 0,
+          "p10": null,
+          "median": null,
+          "p90": null,
+          "medianOfReached": null
+        }
+      },
+      "causes": {
+        "empty-belly": 200
+      },
+      "deathSpread": [
+        {
+          "bucket": "30-60s",
+          "count": 16,
+          "share": 8
+        },
+        {
+          "bucket": "60-90s",
+          "count": 64,
+          "share": 32
+        },
+        {
+          "bucket": "90-120s",
+          "count": 45,
+          "share": 22.5
+        },
+        {
+          "bucket": "120-150s",
+          "count": 34,
+          "share": 17
+        },
+        {
+          "bucket": "150-180s",
+          "count": 17,
+          "share": 8.5
+        },
+        {
+          "bucket": "180-210s",
+          "count": 15,
+          "share": 7.5
+        },
+        {
+          "bucket": "210-240s",
+          "count": 5,
+          "share": 2.5
+        },
+        {
+          "bucket": "240-270s",
+          "count": 3,
+          "share": 1.5
+        },
+        {
+          "bucket": "270-300s",
+          "count": 1,
+          "share": 0.5
+        }
+      ],
+      "worstBucketShare": 32
+    },
+    {
+      "bot": "good",
+      "shifts": 200,
+      "survival": {
+        "p10": 130,
+        "median": 170.5,
+        "p90": 242.3,
+        "max": 390.7
+      },
+      "feeds": {
+        "median": 327,
+        "mean": 335.2
+      },
+      "accuracy": 99.2,
+      "frenzies": {
+        "mean": 12.7,
+        "withAtLeastOne": 100
+      },
+      "banks": {
+        "mean": 95.45
+      },
+      "clanks": {
+        "mean": 15.5
+      },
+      "cooked": {
+        "mean": 42.2
+      },
+      "utensils": {
+        "mean": 8.18
+      },
+      "aim": {
+        "reaimsPerMin": 47.9,
+        "meanMove": 6.7,
+        "oneAngle": 36,
+        "laneChangesPerMin": 37.9
+      },
+      "crates": {
+        "brokenPerRun": 15.42,
+        "shotsPerRun": 26.6,
+        "hitRate": 71.5
+      },
+      "bestCombo": {
+        "median": 28
+      },
+      "score": {
+        "median": 357399
+      },
+      "size": {
+        "median": 2.39
+      },
+      "firstFrenzy": {
+        "median": 10.4
+      },
+      "pacing": {
+        "firstLevel": {
+          "reached": 100,
+          "p10": 24.4,
+          "median": 29.4,
+          "p90": 38.7,
+          "medianOfReached": 29.4
+        },
+        "size15": {
+          "reached": 100,
+          "p10": 48.3,
+          "median": 63.4,
+          "p90": 77.9,
+          "medianOfReached": 63.4
+        },
+        "size20": {
+          "reached": 94,
+          "p10": 96.7,
+          "median": 119,
+          "p90": 151,
+          "medianOfReached": 117.8
+        },
+        "firstMax": {
+          "reached": 51.5,
+          "p10": 156.2,
+          "median": 206.8,
+          "p90": null,
+          "medianOfReached": 173
+        },
+        "allMax": {
+          "reached": 46,
+          "p10": 162.8,
+          "median": null,
+          "p90": null,
+          "medianOfReached": 181.1
+        }
+      },
+      "causes": {
+        "empty-belly": 200
+      },
+      "deathSpread": [
+        {
+          "bucket": "90-120s",
+          "count": 12,
+          "share": 6
+        },
+        {
+          "bucket": "120-150s",
+          "count": 42,
+          "share": 21
+        },
+        {
+          "bucket": "150-180s",
+          "count": 60,
+          "share": 30
+        },
+        {
+          "bucket": "180-210s",
+          "count": 36,
+          "share": 18
+        },
+        {
+          "bucket": "210-240s",
+          "count": 26,
+          "share": 13
+        },
+        {
+          "bucket": "240-270s",
+          "count": 16,
+          "share": 8
+        },
+        {
+          "bucket": "270-300s",
+          "count": 5,
+          "share": 2.5
+        },
+        {
+          "bucket": "300-330s",
+          "count": 1,
+          "share": 0.5
+        },
+        {
+          "bucket": "330-360s",
+          "count": 1,
+          "share": 0.5
+        },
+        {
+          "bucket": "390-420s",
+          "count": 1,
+          "share": 0.5
+        }
+      ],
+      "worstBucketShare": 30
+    }
+  ],
+  "decisionDensity": {
+    "shifts": 0,
+    "median": 0,
+    "min": 0,
+    "max": 0
+  },
+  "gates": {
+    "naiveMedian40to80": true,
+    "naiveFeedsAtLeast6": true,
+    "goodAtLeast1p8xNaive": true
+  },
+  "gatesPass": true,
+  "elapsedSeconds": 1402.2
+}
