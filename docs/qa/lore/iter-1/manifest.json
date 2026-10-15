@@ -41,6 +41,18 @@
       "label": "OFF THE BELLY"
     },
     {
+      "name": null,
+      "tick": 1218
+    },
+    {
+      "name": null,
+      "tick": 1282
+    },
+    {
+      "name": "cap-sign-hit",
+      "tick": 1292
+    },
+    {
       "name": "drool",
       "tick": 1387,
       "type": "beat",

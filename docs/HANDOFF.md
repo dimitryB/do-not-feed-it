@@ -50,6 +50,10 @@ bottom of the stage at 1366×768, and at 1920×1080 on a new best — already
 true on the stage-4 branch. The report is now sized to the stage (`cqw`) and
 fits at both with room to spare.
 
+**Press E, findable (D137):** the creature now spits out a PRESS [E] sign 20 s
+into a shift and every 75 s; E while it is up gives IT WORKED., a coin burst and
+ding ding ding. Never scored, never in the trace.
+
 Known: the lunge's FRONT-RUN jam caption is almost always covered by the bite
 caption fired on the same tick (priority 5 over 4); IT TOOK THE TRAY. was
 kept as kitchen-literal. The harness measures captions in the container's

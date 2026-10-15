@@ -26,6 +26,7 @@ import { playShift } from "./loop-bots.mjs";
 import { ARENA, createArcade, launchFood, slamHatch, stepArcade } from "../lib/game/arcade.ts";
 import { CAPTIONS, CRAVING_LINES, TOKEN_TRAITS } from "../lib/render/lore.ts";
 import { flickerAt } from "../lib/render/season.ts";
+import { PRESS_E_FIRST, PRESS_E_FLIGHT } from "../lib/render/pressE.ts";
 import { CHROMIUM, WIDTH, makeStreamCopies, settle, startDevServer, stopServer, waitForScene } from "./shot-kit.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -178,7 +179,10 @@ async function main() {
     const commands = run.commands;
     const planned = firstTicks(args.seed >>> 0, commands);
     const pending = new Set(TARGETS.map((t) => t.key).filter((k) => planned.has(k)));
-    const queue = [...pending].map((key) => ({ key, ...planned.get(key) })).sort((a, b) => a.tick - b.tick);
+    const queue = [...pending].map((key) => ({ key, ...planned.get(key) }));
+    // The PRESS E sign: mid-flight, hanging in the slot, and the hit when E is pressed.
+    queue.push({ key: "sign-flying", tick: PRESS_E_FIRST + 18, lag: 0 }, { key: "sign-open", tick: PRESS_E_FIRST + PRESS_E_FLIGHT + 40, lag: 0, press: true });
+    queue.sort((a, b) => a.tick - b.tick);
     let index = 0;
     /** Fires every command whose tick has arrived, then steps up to `span` ticks without passing the next one. */
     const advance = async (span) => {
@@ -196,7 +200,7 @@ async function main() {
     };
     let state = await page.evaluate(() => window.__dnfi.play.state());
     for (const target of queue) {
-      const lag = TARGETS.find((t) => t.key === target.key).lag ?? 8;
+      const lag = target.lag ?? TARGETS.find((t) => t.key === target.key)?.lag ?? 8;
       // Close in fast, then the last few ticks one by one so the renderer sees the event as it happens.
       while (state && state.phase === "playing" && state.tick < target.tick + lag) {
         const gap = target.tick - 6 - state.tick;
@@ -205,6 +209,11 @@ async function main() {
       if (!state || state.phase !== "playing") break;
       pending.delete(target.key);
       await shoot(`cap-${target.key}`, { tick: target.tick, type: target.type, name: target.name ?? null, label: target.label });
+      if (target.press) {
+        await page.keyboard.press("e");
+        for (let i = 0; i < 10 && state && state.phase === "playing"; i += 1) state = await advance(1);
+        await shoot("cap-sign-hit", { tick: state?.tick ?? null });
+      }
     }
     while (state && state.phase === "playing") state = await advance(600);
     manifest.notReached = [...pending];

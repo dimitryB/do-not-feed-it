@@ -137,10 +137,14 @@ export const HEADLINES = {
 /**
  * Press E. Contest 1's judges could not get a game's E key to work on stream
  * and it became the hosts' running joke ("Press E, Jeremy." "I pressed E. I
- * did it."). E does nothing to the rules; it only says so, a little more each
- * time.
+ * did it."). Now and then the creature spits out a PRESS E sign
+ * (`./pressE.ts`); pressing E while it is up is a hit (PRESS_E_HIT, a burst of
+ * coins, ding ding ding). Pressing E any other time gets these, a little drier
+ * each time. E never touches the rules.
  */
-export const PRESS_E: readonly string[] = ['YOU PRESSED E.', 'IT WORKED.', 'E IS NOT A TOKEN.', 'STILL WORKS.'];
+export const PRESS_E: readonly string[] = ['YOU PRESSED E.', 'NOTHING HAPPENED.', 'E IS NOT A TOKEN.', 'WAIT FOR IT.'];
+/** What a hit says, as a card. */
+export const PRESS_E_HIT = 'IT WORKED.';
 /** The line for the `count`-th press (1-based); the last line repeats. */
 export const pressELine = (count: number) => PRESS_E[Math.min(PRESS_E.length - 1, Math.max(0, Math.floor(count) - 1))];
 

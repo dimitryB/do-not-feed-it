@@ -215,10 +215,16 @@ citation. A verse is the only place a host's name appears on screen.
 
 **Press E.** Contest 1's judges could not get a game's E key to work on
 stream, and "Press E" has been the hosts' running joke since ("Press E,
-Jeremy." "I pressed E. I did it."). In this game E does nothing to the rules
-and is never recorded in the trace; it only says so, a little more each time:
-YOU PRESSED E. → IT WORKED. → E IS NOT A TOKEN. → STILL WORKS. On the title
-it sits low on the left; during a shift, in the caption slot.
+Jeremy." "I pressed E. I did it."). Twenty seconds into a shift, and every
+seventy-five seconds after, the creature spits a **PRESS [E]** sign out of its
+mouth: it arcs into the caption slot and hangs there for about two and a half
+seconds with a bar running down and the E key tapping itself. Press E while it
+is up and it worked: an **IT WORKED.** card, a burst in all three coins'
+colours out of the mouth, and ding ding ding (three coin clinks). One hit per
+sign. Press E any other time — on the title too — and it says so, drier each
+time: YOU PRESSED E. → NOTHING HAPPENED. → E IS NOT A TOKEN. → WAIT FOR IT.
+None of it is scored or recorded: E is never a command, the sign is timed off
+the shift's tick (`lib/render/pressE.ts`), and replays are untouched.
 
 **Halloween** (October 15 to November 2, local time; `?season=halloween`
 previews it, `?season=none` turns it off). The judging stream is October 29

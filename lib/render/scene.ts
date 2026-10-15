@@ -8,7 +8,8 @@ import { drawCreature, REST_MOUTH } from './creature/draw';
 import { EYE, ANTENNA_BULB } from './creature/anatomy';
 import { DEV_HOOKS, devRender, frameCells } from '../dev/hook';
 import { TOKENS, createTokenSprites } from './tokens';
-import { CAPTIONS, CRAVING_LINES, forkCaption, missCaption, tokenCopy } from './lore';
+import { CAPTIONS, CRAVING_LINES, PRESS_E_HIT, forkCaption, missCaption, tokenCopy } from './lore';
+import { pressEPhase, type PressEPhase } from './pressE';
 import { FLICKER_DARKEST, flickerAt, type Season } from './season';
 
 /**
@@ -182,6 +183,9 @@ export function createScene() {
   let jamWallet = false;
   /** Whether this shift has breathed yet: the first breath is the weapon, the rest are turbo breath. */
   let breathed = false;
+  /** The PRESS E sign this shift has already been hit on (one hit per sign), and where the mouth was last frame. */
+  let eHitIndex = -1;
+  let lastMouth = { x: 600, y: 300 };
 
   function burst(x: number, y: number, n: number, color: string, speed: number, time: number, kind: Particle['kind'] = 'dot', seed = 0, life = 0.7, gravity = 260) {
     for (let i = 0; i < n; i++) {
@@ -207,7 +211,7 @@ export function createScene() {
     if (state.seed !== seenRun || state.tick < seenTick) {
       // A new run, or one we have never seen: start from here rather than
       // replaying its whole history into the screen.
-      seenRun = state.seed; particles.length = 0; pops.length = 0; rings.length = 0; caption = null; shake = 0; wobble.clear(); breathed = false;
+      seenRun = state.seed; particles.length = 0; pops.length = 0; rings.length = 0; caption = null; shake = 0; wobble.clear(); breathed = false; eHitIndex = -1;
       camera.zoom = camera.from = camera.target = 1; camera.since = -10; camera.said = false;
       seenEvent = Math.max(0, (state.events[state.events.length - 1]?.id ?? 0) - 1);
       if (state.tick < 2) seenEvent = 0;
@@ -1103,8 +1107,15 @@ export function createScene() {
       }
     }
 
+    // The PRESS E sign, spat out of the mouth into the caption slot. While it
+    // is up it is the caption: the ordinary one waits underneath.
+    const sign = playing && state && !(DEV_HOOKS && devRender.hideLabels) ? pressEPhase(state.tick) : null;
+    const signUp = sign !== null && sign.index !== eHitIndex;
+    if (state) lastMouth = { x: state.creature.x, y: state.creature.y };
+    if (signUp && sign && state) drawPressE(ctx, sign, toScreenX(state.creature.x), toScreenY(state.creature.y), t, reduced);
+
     // The one caption.
-    if (caption && !(DEV_HOOKS && devRender.hideLabels)) {
+    if (caption && !signUp && !(DEV_HOOKS && devRender.hideLabels)) {
       const age = t - caption.born;
       if (age > caption.life) caption = null;
       else {
@@ -1161,6 +1172,70 @@ export function createScene() {
       }
     }
   }
+  /**
+   * The sign: a card that reads PRESS with a keyboard key that reads E. It
+   * flies out of the mouth on an arc, spinning straight as it lands, then
+   * hangs with a bar for how long is left and the key tapping itself.
+   */
+  function drawPressE(ctx: CanvasRenderingContext2D, ph: PressEPhase, mouthX: number, mouthY: number, time: number, reduced: boolean) {
+    let x = CAPTION.x, y = CAPTION.y, s = 1, rot = 0, alpha = 1;
+    if (ph.phase === 'flying') {
+      if (reduced) alpha = ph.t;
+      else {
+        const e = easeOut(ph.t);
+        x = mouthX + (CAPTION.x - mouthX) * e;
+        y = mouthY + (CAPTION.y - mouthY) * e - Math.sin(Math.PI * ph.t) * 90;
+        s = 0.25 + 0.75 * e + 0.12 * Math.sin(Math.PI * ph.t);
+        rot = (1 - e) * -0.9;
+      }
+    } else {
+      if (!reduced) s = 1 + 0.035 * Math.sin(time * 9);
+      if (ph.t > 0.86) alpha = (1 - ph.t) / 0.14;
+    }
+    const word = 'PRESS', key = 64, gap = 16, padX = 26, h = 86;
+    ctx.save();
+    ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s); ctx.globalAlpha = clampAlpha(alpha);
+    ctx.font = `700 54px ${DISPLAY}`;
+    const ww = ctx.measureText(word).width;
+    const w = padX + ww + gap + key + padX;
+    ctx.fillStyle = '#060e0cf2'; ctx.strokeStyle = '#dded92'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, 14); ctx.fill(); ctx.stroke();
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillStyle = '#f1ffc8';
+    ctx.fillText(word, -w / 2 + padX, 3);
+    // The key: a base, and a face that taps down twice a second while the sign is open.
+    const down = ph.phase === 'open' && !reduced && Math.floor(time * 2.5) % 2 === 0 ? 4 : 0;
+    const kx = -w / 2 + padX + ww + gap, ky = -key / 2 + 2;
+    ctx.fillStyle = '#7f8a72'; ctx.beginPath(); ctx.roundRect(kx, ky + 6, key, key - 4, 10); ctx.fill();
+    const face = ctx.createLinearGradient(0, ky + down, 0, ky + down + key - 8);
+    face.addColorStop(0, '#ffffff'); face.addColorStop(1, '#cdd5c1');
+    ctx.fillStyle = face; ctx.beginPath(); ctx.roundRect(kx, ky + down, key, key - 8, 10); ctx.fill();
+    ctx.fillStyle = '#16211c'; ctx.textAlign = 'center'; ctx.font = `700 40px ${DISPLAY}`;
+    ctx.fillText('E', kx + key / 2, ky + down + (key - 8) / 2 + 2);
+    if (ph.phase === 'open') {
+      const bw = w - padX * 2;
+      ctx.fillStyle = '#22301f'; ctx.beginPath(); ctx.roundRect(-bw / 2, h / 2 + 10, bw, 7, 4); ctx.fill();
+      ctx.fillStyle = '#dded92'; ctx.beginPath(); ctx.roundRect(-bw / 2, h / 2 + 10, Math.max(6, bw * (1 - ph.t)), 7, 4); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /**
+   * A hit on the PRESS E sign: the sign goes, IT WORKED. comes up as a card,
+   * and the mouth throws out a burst in all three coins' colours. The page
+   * plays the ding ding ding. Nothing here is scored.
+   */
+  function pressE(time: number, index: number, reduced: boolean) {
+    eHitIndex = index;
+    say(PRESS_E_HIT, '#f1ffc8', 9, time, 64, 1.6, true);
+    const m = lastMouth;
+    burst(m.x, m.y, reduced ? 8 : 22, COLORS.metal, 320, time, 'dot', 9001 + index, 1.1);
+    burst(m.x, m.y, reduced ? 8 : 22, COLORS.balloon, 300, time, 'dot', 9101 + index, 1.1);
+    burst(m.x, m.y, reduced ? 8 : 22, COLORS.pepper, 340, time, 'dot', 9201 + index, 1.1);
+    burst(m.x, m.y, reduced ? 4 : 16, '#fff7d6', 380, time, 'spark', 9301 + index, 0.7);
+    if (!reduced) shake = Math.max(shake, 0.6);
+    pulseAt = time;
+  }
+
   const ready = () => [kitchen, cannon].every(image => image.complete && image.naturalWidth > 0) && tokens.ready() && (rig !== null || rigFailed);
   /** Whether the HEMI coin on screen is the kit's mark (true), the stand-in (false) or undecided (null). */
   const hemiFromKit = () => tokens.hemiFromKit();
@@ -1175,5 +1250,5 @@ export function createScene() {
   const worldTime = () => lastWorldTime;
   /** The camera in force on the last frame: arena -> screen is `anchor + (p - anchor) * zoom`. */
   const cameraNow = () => ({ zoom: camera.zoom, target: camera.target, ax: CAMERA.ax, ay: CAMERA.ay, said: camera.said });
-  return { draw, ready, debugRig, debugPose, warm, worldTime, camera: cameraNow, hemiFromKit };
+  return { draw, ready, debugRig, debugPose, warm, worldTime, camera: cameraNow, hemiFromKit, pressE };
 }

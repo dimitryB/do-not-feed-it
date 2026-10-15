@@ -5,15 +5,15 @@ import { createScene } from "../../lib/render/scene";
 import type { Season } from "../../lib/render/season";
 import { DEV_HOOKS, devHookBag, devRender, drawCostSummary, drawProfileSummary, frameCells, recordDrawCost, recordFrameProfile, resetDrawCost } from "../../lib/dev/hook";
 
-export function GameCanvas({runRef,angle,selected,playing,reduced,guideSteps,season=null,onAim}:{runRef:RefObject<ArcadeState|null>;angle:number;selected:Ingredient;playing:boolean;reduced:boolean;guideSteps:number;season?:Season;onAim:(angle:number)=>void}) {
+export function GameCanvas({runRef,angle,selected,playing,reduced,guideSteps,season=null,pressE=null,onAim}:{runRef:RefObject<ArcadeState|null>;angle:number;selected:Ingredient;playing:boolean;reduced:boolean;guideSteps:number;season?:Season;pressE?:{n:number;index:number}|null;onAim:(angle:number)=>void}) {
   const canvasRef=useRef<HTMLCanvasElement>(null);
   const sceneRef=useRef<ReturnType<typeof createScene>|null>(null);
-  const propsRef=useRef({angle,selected,playing,reduced,guideSteps,season});
-  useEffect(()=>{propsRef.current={angle,selected,playing,reduced,guideSteps,season};},[angle,selected,playing,reduced,guideSteps,season]);
+  const propsRef=useRef({angle,selected,playing,reduced,guideSteps,season,pressE});
+  useEffect(()=>{propsRef.current={angle,selected,playing,reduced,guideSteps,season,pressE};},[angle,selected,playing,reduced,guideSteps,season,pressE]);
   useEffect(()=>{
     const canvas=canvasRef.current;if(!canvas)return;
     const context=canvas.getContext('2d');if(!context)return;
-    const scene=createScene();sceneRef.current=scene;let frame=0;let disposed=false;
+    const scene=createScene();sceneRef.current=scene;let frame=0;let disposed=false;let seenHit=0;
     const resize=()=>{const rect=canvas.getBoundingClientRect();const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);};
     const observer=new ResizeObserver(resize);observer.observe(canvas);resize();
     const draw=(now:number)=>{
@@ -26,6 +26,8 @@ export function GameCanvas({runRef,angle,selected,playing,reduced,guideSteps,sea
         const pose=devRender.pose;
         if(pose){state=pose.state;aim=pose.angle;food=pose.selected;live=pose.playing;}
       }
+      // A hit on the PRESS E sign, handed over once.
+      if(p.pressE&&p.pressE.n!==seenHit){seenHit=p.pressE.n;scene.pressE(time,p.pressE.index,motion);}
       const started=performance.now();
       scene.draw(context,canvas.width,canvas.height,state,aim,food,live,motion,time,p.guideSteps,p.season);
       if(DEV_HOOKS){const cost=performance.now()-started;recordDrawCost(cost);recordFrameProfile(frameCells.count,0,cost);}

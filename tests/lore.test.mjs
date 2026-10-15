@@ -6,6 +6,7 @@ import {
   ALL_VERSES, CAPTIONS, CAUSES, CRAVING_LINES, ENDING_JOKES, HALLOWEEN, HEADLINES, PRESS_E, TOKEN_TRAITS, VERSES, WALLET_TIERS, forkCaption, missCaption, pressELine, tokenCopy, verseAt,
 } from "../lib/render/lore.ts";
 import { FLICKER_DARKEST, flickerAt, seasonFor } from "../lib/render/season.ts";
+import { PRESS_E_EVERY, PRESS_E_FIRST, PRESS_E_FLIGHT, PRESS_E_OPEN, pressEPhase } from "../lib/render/pressE.ts";
 
 /**
  * The lore is presentation only (`docs/LORE.md`): the rules keep their kitchen
@@ -113,7 +114,7 @@ test("the page says nothing about claims, drains, exploits or prices", () => {
 });
 
 test("press E says a little more each time, then repeats its last line", () => {
-  assert.deepEqual([1, 2, 3, 4, 5, 40].map(pressELine), ["YOU PRESSED E.", "IT WORKED.", "E IS NOT A TOKEN.", "STILL WORKS.", "STILL WORKS.", "STILL WORKS."]);
+  assert.deepEqual([1, 2, 3, 4, 5, 40].map(pressELine), ["YOU PRESSED E.", "NOTHING HAPPENED.", "E IS NOT A TOKEN.", "WAIT FOR IT.", "WAIT FOR IT.", "WAIT FOR IT."]);
   assert.equal(pressELine(0), PRESS_E[0]);
   for (const line of PRESS_E) assert.ok(line.length <= 24 && line === line.toUpperCase() && line.endsWith("."), line);
 });
@@ -186,4 +187,20 @@ test("the verses are real citations: a book, chapter:verse, a show and a date, n
   assert.equal(verseAt(VERSES.title, 0), VERSES.title[0]);
   assert.equal(verseAt(VERSES.title, VERSES.title.length + 1), VERSES.title[1]);
   assert.equal(verseAt(VERSES.pause, -1), VERSES.pause[VERSES.pause.length - 1]);
+});
+
+test("the PRESS E sign: first at 20 s, then every 75 s, flying then open, and gone in between", () => {
+  assert.equal(pressEPhase(0), null);
+  assert.equal(pressEPhase(PRESS_E_FIRST - 1), null);
+  assert.deepEqual(pressEPhase(PRESS_E_FIRST), { index: 0, phase: "flying", t: 0 });
+  assert.equal(pressEPhase(PRESS_E_FIRST + PRESS_E_FLIGHT).phase, "open");
+  assert.equal(pressEPhase(PRESS_E_FIRST + PRESS_E_FLIGHT + PRESS_E_OPEN - 1).phase, "open");
+  assert.equal(pressEPhase(PRESS_E_FIRST + PRESS_E_FLIGHT + PRESS_E_OPEN), null, "it goes");
+  assert.equal(pressEPhase(PRESS_E_FIRST + PRESS_E_EVERY).index, 1, "and comes back");
+  assert.equal(pressEPhase(PRESS_E_FIRST + 3 * PRESS_E_EVERY + 10).index, 3);
+  assert.ok(PRESS_E_FIRST / 60 <= 30, "a judge sees it in the first half minute");
+  assert.ok((PRESS_E_FLIGHT + PRESS_E_OPEN) / 60 >= 2.5, "long enough to react on a stream");
+  let up = 0;
+  for (let tick = 0; tick < 12 * 3600; tick += 1) if (pressEPhase(tick)) up += 1;
+  assert.ok(up / (12 * 3600) < 0.06, "it is up less than 6 % of a shift, so it never crowds out the captions");
 });
