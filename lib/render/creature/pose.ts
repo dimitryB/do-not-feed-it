@@ -686,9 +686,9 @@ export class CreatureAnimator {
     const block = latest(state, ["crate"], 1.0, "hit");
     if (block) {
       const k = Math.exp(-block.age * 2.6);
-      target.pupilScale = Math.max(target.pupilScale, 1 + 0.45 * k);
+      target.pupilScale = Math.max(target.pupilScale, 1 + 0.65 * k);
       target.browRaise = Math.max(target.browRaise, k);
-      target.bodyRise += 12 * k;
+      target.bodyRise += 22 * k;
       this.wear("startle", 0.8 * k);
     }
     if (belly) {
@@ -793,6 +793,13 @@ export class CreatureAnimator {
       const block = crateAt(state.crates[0], state.tick);
       target.pupilX = clamp(-1, 1, (block.x - 838) / 340);
       target.pupilY = clamp(-1, 1, (block.y - 250) / 240);
+    }
+    // A block breaking: the eyes snap to it for half a second.
+    const broke = latest(state, ["crate"], 0.6, "hit");
+    if (broke) {
+      const look = 1 - clamp01((broke.age - 0.4) / 0.2);
+      target.pupilX = mix(target.pupilX, clamp(-1, 1, (broke.x - 838) / 300), look);
+      target.pupilY = mix(target.pupilY, clamp(-1, 1, (broke.y - 250) / 240), look);
     }
     if (miss && miss.age > 0.06) {
       const look = clamp01((miss.age - 0.06) / 0.2);

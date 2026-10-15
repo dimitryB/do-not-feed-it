@@ -287,14 +287,18 @@ export const TUNING = Object.freeze({
   crateMult: 2,
   /** A coin out of a crate is in the mouth by this age, wherever it was. */
   pourMaxAge: 100,
-  /** A coin out of a crate lands in the middle of the mouth this many ticks after it comes out. */
-  pourArrive: 32,
+  /** A coin out of a crate lands in the mouth this many ticks after it comes out. */
+  pourArrive: 34,
   /** Ticks between one coin coming out of a crate and the next. */
   pourStagger: 8,
-  /** The fall the pour's arcs are drawn with: a lob, not a beam. */
+  /** A coin first pops straight up out of the crate, under this fall, for this many ticks... */
+  pourPop: 10,
+  pourPopGravity: 0.45,
+  /** ...at this speed... */
+  pourSpeed: 8,
+  /** ...then turns, over this many ticks, onto a lob under `pourGravity` into the mouth. */
+  pourTurn: 6,
   pourGravity: 0.14,
-  /** Ticks over which a coin's pop out of the crate turns into its arc for the mouth. */
-  pourTurn: 12,
 });
 
 /** How a coin flies: its gravity and the multiplier on launch power. */
@@ -935,24 +939,32 @@ function movePour(food: Projectile, env: Env): Outcome {
   food.age++;
   // Still in the broken crate, waiting its turn to come out.
   if (food.age <= 0) return "flying";
+  if (food.age <= TUNING.pourPop) {
+    // The pop: straight up out of the top of the crate.
+    food.vy = quantize(food.vy + TUNING.pourPopGravity);
+    food.x = quantize(food.x + food.vx);
+    food.y = quantize(food.y + food.vy);
+    return "flying";
+  }
   const arrive = food.arrive ?? TUNING.pourArrive;
   const g = TUNING.pourGravity;
   // Ticks left to the mouth, this one included.
   const left = Math.max(1, arrive - food.age + 1);
-  const dx = env.mouthX - food.x;
-  const dy = env.mouthY - food.y;
-  // The velocity that lands it on the mouth's centre in `left` ticks under `g`.
+  // Aimed a little low and left of the mouth's middle, so it drops in under the eyes.
+  const dx = env.mouthX - env.mouthRx * env.gape * 0.22 - food.x;
+  const dy = env.mouthY + env.mouthRy * env.gape * 0.17 - food.y;
+  // The velocity that lands it there in `left` ticks under `g`.
   const wantX = dx / left;
   const wantY = (dy - g * left * (left + 1) / 2) / left;
-  // Eased: it keeps most of its pop for the first few ticks, then commits.
-  const turn = Math.min(1, (food.age / TUNING.pourTurn) ** 2);
+  // Eased: the top of the pop rounds over, then it commits.
+  const turn = Math.min(1, ((food.age - TUNING.pourPop) / TUNING.pourTurn) ** 2);
   food.vx = quantize(food.vx + (wantX - food.vx) * turn);
   food.vy = quantize(food.vy + (wantY - food.vy) * turn + g);
   food.x = quantize(food.x + food.vx);
   food.y = quantize(food.y + food.vy);
   const ex = (food.x - env.mouthX) / (env.mouthRx * env.gape * 0.6);
   const ey = (food.y - env.mouthY) / (env.mouthRy * env.gape * 0.6);
-  const inside = food.age >= TUNING.pourTurn && ex * ex + ey * ey <= 1;
+  const inside = ex * ex + ey * ey <= 1;
   if (inside || food.age >= arrive || food.age >= TUNING.pourMaxAge) return "fed";
   return "flying";
 }
@@ -1366,11 +1378,10 @@ function breakCrate(state: ArcadeState, food: Projectile, into: Projectile[]): v
   state.cratesBroken += 1;
   state.crateAt = state.tick + crate.gap;
   for (let i = 0; i < TUNING.crateCoins; i++) {
-    // Up out of the top of the crate one after another, fanned about 23°
-    // either side of a line leaning well toward the mouth (so the pour stays
-    // under the creature's eyes), then each on its own lob into it.
-    const a = -Math.PI / 2 + 0.85 + (i - (TUNING.crateCoins - 1) / 2) * 0.4;
-    const speed = 3.6;
+    // Straight up out of the top of the crate one after another, fanned a
+    // little and leaning toward the mouth, then each on its own lob into it.
+    const a = -Math.PI / 2 + 0.12 + (i - (TUNING.crateCoins - 1) / 2) * 0.16;
+    const speed = TUNING.pourSpeed;
     into.push({
       id: state.nextProjectileId++, ingredient: crate.ingredient, kind: "pour",
       x: at.x, y: at.y,

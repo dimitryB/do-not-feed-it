@@ -22,7 +22,7 @@
  *     manifest.json           schedule, render timing, bot result
  *
  * Usage: node --experimental-strip-types scripts/loop-shots.mjs --iter 1
- *        [--seed 20260911] [--port 4321] [--headed]
+ *        [--seed 20260911] [--port 4321] [--headed] [--bot moderate|good]
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -85,7 +85,7 @@ const stamp = (tick) => {
 };
 
 function parseArgs(argv) {
-  const args = { iter: 0, seed: 20260911, port: 4321, headed: false, cause: null };
+  const args = { iter: 0, seed: 20260911, port: 4321, headed: false, cause: null, bot: "moderate" };
   for (let i = 0; i < argv.length; i += 1) {
     const item = argv[i];
     if (item === "--iter") args.iter = Number(argv[++i]);
@@ -93,6 +93,7 @@ function parseArgs(argv) {
     else if (item === "--port") args.port = Number(argv[++i]);
     else if (item === "--headed") args.headed = true;
     else if (item === "--cause") args.cause = argv[++i];
+    else if (item === "--bot") args.bot = argv[++i];
   }
   if (!Number.isInteger(args.iter) || args.iter < 0) throw new Error("--iter must be a non-negative integer");
   return args;
@@ -261,15 +262,15 @@ async function main() {
     let found = null;
     for (let i = 0; i < 400 && !found; i += 1) {
       const candidate = (args.seed + i * 7919) >>> 0;
-      const trial = playShift("moderate", candidate);
+      const trial = playShift(args.bot, candidate);
       if (trial.cause === args.cause) found = { seed: candidate, run: trial };
     }
     if (!found) throw new Error(`no seed within 400 tries ended in "${args.cause}"`);
     seed = found.seed;
     console.log(`[loop-shots] seed ${seed} ends in ${args.cause}`);
   }
-  console.log(`[loop-shots] running the moderate bot on seed ${seed}`);
-  const run = playShift("moderate", seed);
+  console.log(`[loop-shots] running the ${args.bot} bot on seed ${seed}`);
+  const run = playShift(args.bot, seed);
   console.log(`[loop-shots] ${(run.ticks / TICKS).toFixed(1)}s, ${run.feeds} feeds, ${run.commands.length} commands, cause ${run.cause}`);
   const schedule = buildSchedule(run);
   console.log(`[loop-shots] ${schedule.length} frames scheduled across ${new Set(schedule.map((s) => s.group)).size} groups`);
@@ -433,7 +434,7 @@ async function main() {
       capturedAt: new Date().toISOString(),
       seed,
       viewport: { width: WIDTH, height: HEIGHT },
-      bot: { name: "moderate", ticks: run.ticks, seconds: run.ticks / TICKS, feeds: run.feeds, score: run.score, cause: run.cause, markers: run.markers },
+      bot: { name: args.bot, ticks: run.ticks, seconds: run.ticks / TICKS, feeds: run.feeds, score: run.score, cause: run.cause, markers: run.markers },
       browserFinal: finalState,
       groups: [...groups.keys()],
       renderTiming: timing,

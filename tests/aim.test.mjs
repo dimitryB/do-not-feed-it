@@ -139,8 +139,8 @@ test("its own coin breaks a crate open, and the coins inside pour into the mouth
   // They pop up out of the block before they drop into the mouth.
   const broke = { x: pour[0].x, y: pour[0].y };
   let highest = broke.y;
-  for (let i = 0; i < 12; i += 1) { stepArcade(state); for (const p of state.projectiles) if (p.kind === "pour") highest = Math.min(highest, p.y); }
-  assert.ok(highest < broke.y - 10, "the pour rises out of the block first");
+  for (let i = 0; i < 14; i += 1) { stepArcade(state); for (const p of state.projectiles) if (p.kind === "pour") highest = Math.min(highest, p.y); }
+  assert.ok(highest < broke.y - TUNING.crateRadius, "the pour pops up out of the top of the block first");
   advance(state, state.tick + TUNING.pourMaxAge + TUNING.pourStagger * TUNING.crateCoins + 1);
   assert.equal(state.totalFeeds - feeds, TUNING.crateCoins, "every coin inside is swallowed");
   assert.ok(state.combo >= TUNING.crateCoins);

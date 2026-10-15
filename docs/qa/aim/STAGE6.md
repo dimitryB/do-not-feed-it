@@ -68,10 +68,10 @@ coin buttons, the legend and the whitepaper say Heavy / Floats / Straight.
   more blocks come (D147). The pan moved from (500, 150) to (370, 185) to
   make room.
 - **Only its own coin opens it.** That coin is spent; the three coins inside
-  pop out of the top one after another, 8 ticks apart, and each drops into
-  the middle of the mouth on its own lob 32 ticks later (D148) — swallowed
-  whole, no chew, each a full serving at ×2, combo included. Any other coin
-  glances off it.
+  pop straight up out of the top one after another, 8 ticks apart, and
+  each drops into the mouth on its own lob 34 ticks after it came out
+  (D148) — swallowed whole, no chew, each a full serving at ×2, combo
+  included. Any other coin glances off it.
 - Its coins are servings of its coin: they meet a craving, count toward
   that coin's mutation, and into a full creature they gorge it. A turbo'd
   coin cooks what is inside.
@@ -79,17 +79,21 @@ coin buttons, the legend and the whitepaper say Heavy / Floats / Straight.
   so the probe, the first-shift guide, the bots and the replay all see it
   exactly; a prediction that runs past a block's life ignores it.
 
-On screen it is a riveted cube on a chain, its coin's mark on the face and
-its edges in that coin's colour, on a trolley that runs a little ahead of
-it so the chain leans; it says whose it is as it comes down (BITCOIN
-BLOCK. / ETHER BLOCK. / HEMI BLOCK.). Broken: a white-hot burst where it
-was, the room lit in its colour for three frames, a shock ring, iron plates
-tumbling, a kick of the camera and a beat of hit-stop, and a small BLOCK
-REWARD. card under it with a mini coin per coin while the coins go in.
-MISSED THE BLOCK. when one is hoisted away, WRONG TOKEN. and a red outline
-when another coin glances off. Four sounds. The creature watches a block
-when nothing is in the air. It is never called an airdrop (D131,
-`docs/LORE.md`).
+On screen it is a riveted iron cube on a chain, its coin's mark on the
+face, let down through a hatch whose doors swing open, on a trolley that
+runs a little ahead of it so the chain leans; it says whose it is as it
+comes down (BITCOIN BLOCK. / ETHER BLOCK. / HEMI BLOCK.). It calls for its
+coin while that coin is in the barrel — a thick outline in the coin's
+colour and a ring pulsing out of it twice a second — and steps back, dimmed,
+while another is. Broken: a white-hot burst with rays where it was, the
+room lit in its colour for a few frames, a shock ring, iron plates with hot
+edges thrown back toward the launcher, a kick of the camera, a beat of
+hit-stop and the creature's eyes snapping to it; then a BLOCK REWARD. card
+under it that lands solid in the coin's colour, lights a mini coin as each
+coin is swallowed and carries the running total. MISSED THE BLOCK. when one
+is hoisted away, WRONG TOKEN. and a red outline when another coin glances
+off. Four sounds. The creature watches a block when nothing is in the air.
+It is never called an airdrop (D131, `docs/LORE.md`).
 
 **Balance** (D144): miss irritation 5 → 3, belly start 70 → 76 with 300
 ticks of grace (was 240), growth per feed 0.014 → 0.0115 bent harder
@@ -104,10 +108,10 @@ from 1. Stage 5 numbers are `feat/feast` with the same harness.
 | Bot | Stage 5 survival | Stage 6 survival | Stage 5 feeds | Stage 6 feeds | Stage 6 accuracy | Stage 6 blocks broken |
 | --- | --- | --- | --- | --- | --- | --- |
 | naive (never aims, cycles the coins) | 74.2 s | 48.8 s | 71 | 29 | 31 % | 0.09 (2 %) |
-| moderate | 142.7 s | 136.8 s | 194 | 212 | 88.8 % | 4 (41 %) |
-| good | 163.9 s | 151.1 s | 217 | 264 | 92.2 % | 6.22 (68 %) |
+| moderate | 142.7 s | 138.5 s | 194 | 219 | 89 % | 4 (41 %) |
+| good | 163.9 s | 151.4 s | 217 | 258 | 92.9 % | 6.51 (68 %) |
 
-Every FEAST gate passes: naive 48.8 s (40–80) with 29 feeds (≥ 6); moderate 136.8 s (100–180), 88.8 % accuracy (≥ 55), 7.43 frenzies a run (≥ 1), worst 30-s bucket 28.5 % (≤ 40), first level 27.7 s (25–45), ×1.5 at 69.5 s (60–90), ×2.0 at 169 s (120–180), first ×3 and all three ×3 never before 150 / 240 s, first frenzy 10 s (≤ 40); decision density 102.54 / min (≥ 6); good 151.1 s ≥ 1.8 × naive. Reports: `docs/qa/aim/stage6-bots-moderate.json`, `stage6-bots-others.json`.
+Every FEAST gate passes: naive 48.8 s (40–80) with 29 feeds (≥ 6); moderate 138.5 s (100–180), 89 % accuracy (≥ 55), 7.43 frenzies a run (≥ 1), worst 30-s bucket 28.5 % (≤ 40), first level 27.6 s (25–45), ×1.5 at 67.2 s (60–90), ×2.0 at 160.9 s (120–180), first ×3 and all three ×3 never before 150 / 240 s, first frenzy 10 s (≤ 40); decision density 103.45 / min (≥ 6); good 151.4 s ≥ 1.8 × naive. Reports: `docs/qa/aim/stage6-bots-moderate.json`, `stage6-bots-others.json`.
 
 ## Is one setting still enough? The `fixed` bot
 
@@ -121,21 +125,21 @@ same but only counts shots that go straight in.
 | 200 shifts each | Stage 5 `fixed` | Stage 5 moderate | Stage 6 `fixed` | Stage 6 `fixedDirect` | Stage 6 moderate |
 | --- | --- | --- | --- | --- | --- |
 | setting it chose | −58° at charge 11, all three coins straight in | — | −61° at 15: Bitcoin straight in, Ether and HEMI off the pan, in the fresh state only | −39° at 16: Bitcoin and Ether straight in, HEMI never | — |
-| survival, median | 117.5 s | 142.7 s | 92 s | 105 s | 136.8 s |
-| feeds | 103 | 194 | 51 | 42 | 212 |
-| score, median | 47,377 | 163,572 | 19,769 | 14,046 | 185,076 |
-| FOMO (frenzies) a run | 1.8 | 5.8 | 0.96 | 0.18 | 7.43 |
-| blocks broken a run (share of those that came) | — | — | 5.05 (44 %) | 0.49 (4 %) | 4 (41 %) |
+| survival, median | 117.5 s | 142.7 s | 92.3 s | 105.5 s | 138.5 s |
+| feeds | 103 | 194 | 52 | 42 | 219 |
+| score, median | 47,377 | 163,572 | 18,179 | 14,046 | 196,559 |
+| FOMO (frenzies) a run | 1.8 | 5.8 | 0.88 | 0.19 | 7.43 |
+| blocks broken a run (share of those that came) | — | — | 4.96 (43 %) | 0.5 (5 %) | 4 (41 %) |
 
 As a share of what the moderate bot gets, one barrel setting used to be worth
 53 % of the feeds and 29 % of the score; it is now worth 24 % and
-11 % (20 % and 8 % if the setting has to go
+9 % (19 % and 7 % if the setting has to go
 straight in). Survival moves less than feeds because a creature that is fed
 less also grows and empties more slowly — the stage 3 "do not feed it"
 economy — so feeds and score are the honest measure here.
 
 **The blocks do not separate the two bots, and that is reported as it is.**
-The `fixed` bot breaks 5.05 (44 %) — about what the moderate bot breaks
+The `fixed` bot breaks 4.96 (43 %) — about what the moderate bot breaks
 (4 (41 %)), which goes for 60 % of blocks on purpose. Its barrel is
 left at −61°: its Ether shots bank off the pan and its HEMI misses fly up,
 and both cross the rail's stretch of room, so whenever the block's own coin

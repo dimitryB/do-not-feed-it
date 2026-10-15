@@ -217,7 +217,9 @@ export function createScene() {
   /** A block breaking: a white-hot burst where it was, rimmed in its coin's colour. */
   let flashAt = -10;
   let flashColor = '#ffffff';
-  let flashX = 0; let flashY = 0;
+  let flashX = 0; let flashY = 0; let flashSeed = 0;
+  /** The coins of the last broken block swallowed so far, and their running total, for its card. */
+  let cardEaten = 0; let cardTotal = 0;
   let lastMouth = { x: 600, y: 300 };
 
   function burst(x: number, y: number, n: number, color: string, speed: number, time: number, kind: Particle['kind'] = 'dot', seed = 0, life = 0.7, gravity = 260) {
@@ -254,7 +256,7 @@ export function createScene() {
       freezeUntil = -1; frozenAt = 0; pulseAt = -10;
       // A new run, or one we have never seen: start from here rather than
       // replaying its whole history into the screen.
-      seenRun = state.seed; particles.length = 0; pops.length = 0; rings.length = 0; caption = null; shake = 0; wobble.clear(); breathed = false; eHitIndex = -1; talked = 0; lastTalkAt = -10; blockAt = -10; crateKick.clear(); flashAt = -10;
+      seenRun = state.seed; particles.length = 0; pops.length = 0; rings.length = 0; caption = null; shake = 0; wobble.clear(); breathed = false; eHitIndex = -1; talked = 0; lastTalkAt = -10; blockAt = -10; crateKick.clear(); flashAt = -10; cardEaten = 0; cardTotal = 0;
       camera.zoom = camera.from = camera.target = 1; camera.since = -10; camera.said = false;
       seenEvent = Math.max(0, (state.events[state.events.length - 1]?.id ?? 0) - 1);
       if (state.tick < 2) seenEvent = 0;
@@ -273,13 +275,12 @@ export function createScene() {
           burst(e.x, e.y, reduced ? 4 : 10, '#fff7d6', 300, time, 'spark', e.id + 1, 0.5);
           const value = e.value ?? 0;
           if (e.label.startsWith('CRATE')) {
-            // Each coin out of a block is its own gulp at the mouth...
+            // Each coin out of a block is its own gulp at the mouth, a small
+            // pop over the upper teeth, and a pip lit on the block's card,
+            // which carries the running total.
             rings.push({ x: e.x, y: e.y, born: time, color: tint, big: true });
-            // ...and they add up as one running total, not three stacked pops.
-            const open = pops.find(p => p.tag === 'pour' && time - p.born < 0.9);
-            if (open) { open.total = (open.total ?? 0) + value; open.text = `+${open.total}`; open.born = time; open.size = clamp(34 + open.total / 40, 34, 78); }
-            // Under the mouth's left corner, not on the face.
-            else pops.push({ x: e.x - 120, y: e.y + 96, text: `+${value}`, color: '#ffe28a', born: time, size: clamp(34 + value / 40, 34, 78), tag: 'pour', total: value });
+            pops.push({ x: e.x + 80, y: e.y - 46, text: `+${value}`, color: '#ffe28a', born: time, size: 24 });
+            cardEaten += 1; cardTotal += value;
           } else {
             pops.push({ x: e.x, y: e.y - 30, text: `+${value}`, color: e.craved ? '#ffe28a' : '#e7ffb0', born: time, size: clamp(22 + value / 40, 22, 64) });
           }
@@ -401,21 +402,23 @@ export function createScene() {
             const n = e.value ?? 3;
             // The card sits right under where the block was, clear of the
             // aim line and under the coins' path into the mouth.
-            const card = say(CAPTIONS.blockReward, tint, 6, time, 34, 1.0, true, null, { ingredient: e.ingredient ?? 'metal', n });
+            cardEaten = 0; cardTotal = 0;
+            const card = say(CAPTIONS.blockReward, tint, 8, time, 28, 1.6, true, null, { ingredient: e.ingredient ?? 'metal', n });
             if (card) card.at = { x: toScreenX(clamp(e.x, 330, 560)), y: toScreenY(e.y + 104), right: toScreenX(CARD_RIGHT) };
             if (!reduced) {
-              for (let i = 0; i < 10; i++) {
-                const a = -Math.PI / 2 + (i - 4.5) * 0.36 + (hashed(e.id + i) - 0.5) * 0.3;
-                const sp = 260 + hashed(e.id * 3 + i) * 260;
-                particles.push({ x: e.x + (hashed(e.id + i * 9) - 0.5) * 30, y: e.y + (hashed(e.id + i * 13) - 0.5) * 30, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, born: time, life: 1.0, size: 24 + hashed(e.id + i * 5) * 16, color: tint, gravity: 1150, kind: 'shard' });
+              // Plates of its iron, thrown up and back toward the launcher and
+              // falling hard: none of them reach the creature.
+              for (let i = 0; i < 7; i++) {
+                const a = -Math.PI * (0.48 + 0.07 * i) + (hashed(e.id + i) - 0.5) * 0.25;
+                const sp = 240 + hashed(e.id * 3 + i) * 200;
+                particles.push({ x: e.x + (hashed(e.id + i * 9) - 0.5) * 30, y: e.y + (hashed(e.id + i * 13) - 0.5) * 30, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, born: time, life: 0.95, size: 26 + hashed(e.id + i * 5) * 14, color: tint, gravity: 1700, kind: 'shard' });
               }
             }
             burst(e.x, e.y, reduced ? 6 : 16, '#fff2c0', 420, time, 'spark', e.id + 5, 0.55);
             burst(e.x, e.y, reduced ? 4 : 12, tint, 340, time, 'spark', e.id, 0.65);
             rings.push({ x: e.x, y: e.y, born: time, color: tint, big: true, huge: true });
-            rings.push({ x: e.x, y: e.y, born: time + 0.06, color: '#fff6dc', big: true });
-            flashAt = time; flashColor = tint; flashX = e.x; flashY = e.y;
-            if (!reduced) { shake = Math.max(shake, 0.8); freezeUntil = time + 0.07; frozenAt = time; }
+            flashAt = time; flashColor = tint; flashX = e.x; flashY = e.y; flashSeed = e.id;
+            if (!reduced) { shake = Math.max(shake, 1.0); freezeUntil = time + 0.07; frozenAt = time; }
           } else if (e.name === 'spawn') {
             // Every block says whose it is, in its coin's colour, at the lowest priority.
             blockAt = time;
@@ -789,23 +792,37 @@ export function createScene() {
   // a chain, which is the joke and also exactly what is on screen.
   const RAIL_LEFT = ARENA.rail.from - 30;
   const RAIL_RIGHT = ARENA.rail.to + 30;
-  function drawRail(ctx: CanvasRenderingContext2D) {
-    const { y, from } = ARENA.rail;
+  function drawRail(ctx: CanvasRenderingContext2D, state: ArcadeState, tick: number) {
+    const { y, from, lower } = ARENA.rail;
+    // How far open the hatch is: open while a block is let down or hoisted.
+    let open = 0;
+    for (const c of state.crates ?? []) {
+      const t = tick - c.born;
+      open = Math.max(open, clampAlpha(1 - t / (lower + 10)), clampAlpha((t - (c.life - lower - 10)) / 10));
+    }
     ctx.save();
     // Brackets down from the ceiling, in the room's rusted iron.
     for (const x of [RAIL_LEFT + 26, (RAIL_LEFT + RAIL_RIGHT) / 2 + 20, RAIL_RIGHT - 26]) {
       ctx.fillStyle = '#1c1714'; ctx.fillRect(x - 3, 0, 6, y - 4);
       ctx.fillStyle = `${RIM}0.35)`; ctx.fillRect(x + 2, 0, 1, y - 4);
     }
-    // The hatch the blocks come down through: a riveted plate, a dark slot.
+    // The hatch the blocks come down through: a riveted plate, a dark slot
+    // whose two doors swing down while a block is let down or hoisted.
     ctx.fillStyle = '#2a211b'; ctx.beginPath(); ctx.roundRect(from - 34, 0, 68, y - 8, 3); ctx.fill();
-    ctx.fillStyle = '#050707'; ctx.beginPath(); ctx.roundRect(from - 22, y - 16, 44, 7, 2); ctx.fill();
+    ctx.fillStyle = '#050707'; ctx.beginPath(); ctx.roundRect(from - 22 - 6 * open, y - 16, 44 + 12 * open, 7 + 6 * open, 2); ctx.fill();
+    if (open > 0.02) {
+      ctx.fillStyle = '#3a2c22'; ctx.strokeStyle = `${RIM}0.6)`; ctx.lineWidth = 1;
+      for (const side of [-1, 1]) {
+        ctx.save(); ctx.translate(from + side * (22 + 6 * open), y - 10); ctx.rotate(side * open * 1.1);
+        ctx.beginPath(); ctx.rect(side > 0 ? 0 : -20, 0, 20, 4); ctx.fill(); ctx.stroke(); ctx.restore();
+      }
+    }
     ctx.fillStyle = '#8a6d52';
     for (const [rx, ry] of [[-28, 5], [28, 5], [-28, y - 14], [28, y - 14]]) { ctx.beginPath(); ctx.arc(from + rx, ry, 1.8, 0, Math.PI * 2); ctx.fill(); }
-    // The track: a worn brass bar the lamps catch, so it reads against the
-    // dark ceiling at stream size, exactly as long as the trolley's run.
+    // The track: a rusted iron bar with the lamps' warm rim along its top, so
+    // it reads against the dark ceiling, exactly as long as the trolley's run.
     const pipe = ctx.createLinearGradient(0, y - 5, 0, y + 5);
-    pipe.addColorStop(0, '#e2bd86'); pipe.addColorStop(0.35, '#a47e55'); pipe.addColorStop(0.75, '#5a4230'); pipe.addColorStop(1, '#3a2a1e');
+    pipe.addColorStop(0, '#8f6a48'); pipe.addColorStop(0.3, '#55402e'); pipe.addColorStop(0.7, '#2c2018'); pipe.addColorStop(1, '#1a120d');
     ctx.fillStyle = pipe; ctx.beginPath(); ctx.roundRect(RAIL_LEFT, y - 5, RAIL_RIGHT - RAIL_LEFT, 10, 4); ctx.fill();
     ctx.strokeStyle = `${RIM}0.85)`; ctx.lineWidth = 1.4;
     ctx.beginPath(); ctx.moveTo(RAIL_LEFT + 4, y - 4); ctx.lineTo(RAIL_RIGHT - 4, y - 4); ctx.stroke();
@@ -836,7 +853,10 @@ export function createScene() {
   }
 
   /** A block on its chain: trolley, chain, its coin's glow, the riveted cube, the embossed coin. */
-  function drawCrate(ctx: CanvasRenderingContext2D, c: Crate, tick: number, time: number, reduced: boolean) {
+  function drawCrate(ctx: CanvasRenderingContext2D, c: Crate, tick: number, time: number, reduced: boolean, loaded: Ingredient) {
+    // The block calls for its coin when that coin is in the barrel, and steps
+    // back when it is not, so swinging the barrel up at it reads as a choice.
+    const wanted = loaded === c.ingredient;
     const at = crateAt(c, tick);
     const railY = ARENA.rail.y;
     const tint = COLORS[c.ingredient];
@@ -846,7 +866,7 @@ export function createScene() {
     // The trolley runs a little ahead of where the rules hang the block, so
     // the chain leans and the block trails it: it reads as moving in a still.
     const speed = (crateAt(c, tick + 1).hookX - crateAt(c, tick - 1).hookX) / 2;
-    const trolley = at.hookX + (reduced ? 0 : clamp(speed * 9, -18, 18));
+    const trolley = at.hookX + (reduced ? 0 : clamp(speed * 14, -26, 26));
     const swing = Math.atan2(at.x - trolley, Math.max(1, at.y - railY)) + knock;
     const s = 30; const d = 12;
     ctx.save();
@@ -861,14 +881,20 @@ export function createScene() {
     // A soft dark backplate, so the block parts from the painted kitchen
     // behind it (the pan, the shelf, the lamp) instead of joining them.
     const back = ctx.createRadialGradient(at.x, at.y, 20, at.x, at.y, 78);
-    back.addColorStop(0, 'rgba(2,5,5,0.6)'); back.addColorStop(1, 'rgba(2,5,5,0)');
+    back.addColorStop(0, 'rgba(2,5,5,0.75)'); back.addColorStop(1, 'rgba(2,5,5,0)');
     ctx.fillStyle = back; ctx.beginPath(); ctx.arc(at.x, at.y, 78, 0, Math.PI * 2); ctx.fill();
     // Its coin's light on the wall behind it, so it reads at stream size.
     const pulse = reduced ? 0.6 : 0.5 + 0.5 * Math.sin(time * 3.6 + c.id);
     const glow = ctx.createRadialGradient(at.x, at.y, 10, at.x, at.y, 92);
     glow.addColorStop(0, `${tint}55`); glow.addColorStop(1, `${tint}00`);
-    ctx.globalAlpha = 0.6 + 0.4 * pulse; ctx.fillStyle = glow;
+    ctx.globalAlpha = wanted ? 0.7 + 0.3 * pulse : 0.35; ctx.fillStyle = glow;
     ctx.beginPath(); ctx.arc(at.x, at.y, 92, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+    // Wanted: a ring pulsing out of it twice a second.
+    if (wanted && !reduced) {
+      const k = (time * 2 + c.id * 0.37) % 1;
+      ctx.save(); ctx.globalAlpha = 0.75 * (1 - k); ctx.strokeStyle = tint; ctx.lineWidth = 3.5 * (1 - k) + 1;
+      ctx.beginPath(); ctx.arc(at.x, at.y, 42 + k * 22, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    }
     // The cube, swinging with its chain.
     ctx.translate(at.x, at.y); ctx.rotate(swing);
     softShadow(ctx, 8, s + 14, s + 8, 6, 0.3);
@@ -886,12 +912,15 @@ export function createScene() {
     ctx.fillStyle = face; ctx.beginPath(); ctx.roundRect(-s, -s, 2 * s, 2 * s, 3); ctx.fill();
     ctx.fillStyle = '#4a3c31';
     for (const sy of [-s + 6, s - 12]) ctx.fillRect(-s, sy, 2 * s, 6);
-    ctx.fillStyle = '#a3825f';
-    for (const [rx, ry] of [[-s + 5, -s + 5], [s - 5, -s + 5], [-s + 5, s - 5], [s - 5, s - 5]]) { ctx.beginPath(); ctx.arc(rx, ry, 2.2, 0, Math.PI * 2); ctx.fill(); }
+    // Lamplight along its top edge, and rivets big enough to read.
+    ctx.fillStyle = `${RIM}0.75)`; ctx.fillRect(-s + 2, -s, 2 * s - 4, 2.5);
+    ctx.fillStyle = '#c9a072';
+    for (const [rx, ry] of [[-s + 6, -s + 6], [s - 6, -s + 6], [-s + 6, s - 6], [s - 6, s - 6]]) { ctx.beginPath(); ctx.arc(rx, ry, 3, 0, Math.PI * 2); ctx.fill(); }
     // Its coin's colour on the edges: thin, with a soft glow, not a neon frame.
     ctx.save();
-    ctx.shadowColor = tint; ctx.shadowBlur = reduced ? 6 : 10 + 6 * pulse;
-    ctx.strokeStyle = tint; ctx.lineWidth = 2.6; ctx.lineJoin = 'round';
+    ctx.shadowColor = tint; ctx.shadowBlur = wanted ? (reduced ? 8 : 12 + 8 * pulse) : 4;
+    ctx.strokeStyle = tint; ctx.lineWidth = wanted ? 4.5 : 1.6; ctx.lineJoin = 'round';
+    if (!wanted) ctx.globalAlpha = 0.6;
     ctx.beginPath(); ctx.roundRect(-s, -s, 2 * s, 2 * s, 3); ctx.stroke();
     ctx.globalAlpha = 0.7;
     ctx.beginPath(); ctx.moveTo(-s, -s); ctx.lineTo(-s + d, -s - d); ctx.lineTo(s + d, -s - d); ctx.lineTo(s + d, s - d); ctx.lineTo(s, s); ctx.moveTo(s + d, -s - d); ctx.lineTo(s, -s); ctx.stroke();
@@ -900,7 +929,9 @@ export function createScene() {
     ctx.fillStyle = '#0b0908'; ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#8a6d52'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 26, Math.PI * 0.9, Math.PI * 1.9); ctx.stroke();
     ctx.restore();
-    coin(ctx, c.ingredient, at.x, at.y, 48, swing, reduced ? 0.8 : time * 1.4 + c.id, 0.75);
+    ctx.save(); if (!wanted) ctx.globalAlpha = 0.6;
+    coin(ctx, c.ingredient, at.x, at.y, 48, swing, reduced ? 0.8 : time * 1.4 + c.id, wanted ? 1 : 0.4);
+    ctx.restore();
     // A wrong coin: a red cross over its mark for a moment.
     if (kick && kickAge < 0.35) {
       ctx.save(); ctx.translate(at.x, at.y); ctx.rotate(swing);
@@ -969,9 +1000,9 @@ export function createScene() {
       for (let i = 2; i <= Math.floor(span / 4) + 1; i++) {
         const at = past(i * 4);
         const wob = reduced ? 0 : Math.sin(time * 6 + p.id + i * 1.7) * 5;
-        const r = Math.max(4, 11 - i * 1.1);
-        ctx.globalAlpha = Math.max(0, 0.95 - i * 0.13);
-        ctx.fillStyle = 'rgba(200,245,238,0.18)'; ctx.strokeStyle = 'rgba(214,250,244,0.95)';
+        const r = Math.max(6, 10.5 - i * 0.6);
+        ctx.globalAlpha = Math.max(0, 1 - i * 0.12);
+        ctx.fillStyle = 'rgba(155,233,223,0.4)'; ctx.strokeStyle = 'rgba(224,255,250,0.95)';
         ctx.beginPath(); ctx.arc(at.x + wob, at.y - i * 3, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(at.x + wob - r * 0.35, at.y - i * 3 - r * 0.35, Math.max(1, r * 0.22), 0, Math.PI * 2); ctx.fill();
       }
@@ -1111,7 +1142,7 @@ export function createScene() {
         const slot = low ? CAPTION_LOW : CAPTION;
         let cx = caption.at ? caption.at.x : slot.x, cy = caption.at ? caption.at.y : slot.y + (caption.card ? -10 : 0), tilt = 0;
         // A card with its coins on it lands from a little too big.
-        if (caption.coins && !reduced) scale = 1 + 0.15 * (1 - easeOut(age / 0.15));
+        if (caption.coins && !reduced) scale = 1 + 0.25 * (1 - easeOut(age / 0.25));
         // Spat out: from the mouth to the slot on a short arc, growing and straightening as it goes.
         if (caption.from && !reduced && age < SPIT) {
           const k = easeOut(age / SPIT);
@@ -1122,31 +1153,44 @@ export function createScene() {
         ctx.save();
         ctx.translate(cx, cy); ctx.rotate(tilt); ctx.scale(scale, scale);
         let textX = 0;
+        let textColor = caption.color;
         if (caption.card) {
           ctx.globalAlpha = alpha;
           ctx.font = `700 ${caption.size}px ${DISPLAY}`;
           const text = ctx.measureText(caption.text).width;
-          const icons = caption.coins ? caption.coins.n * caption.size * 1.0 + 14 : 0;
-          const w = text + 44 + icons;
+          const coins = caption.coins;
+          const step = caption.size * 0.95;
+          const icons = coins ? coins.n * step + 12 : 0;
+          // A block's card carries its running total at the right end.
+          const totalSize = Math.round(caption.size * 0.85);
+          ctx.font = `800 ${totalSize}px ${MONO}`;
+          const totalW = coins ? ctx.measureText('+0000').width + 18 : 0;
+          const w = text + 44 + icons + totalW;
           // Anchored cards keep clear of the mouth: pull left until the right edge fits.
           if (caption.at) {
             const over = Math.min(cx + (w / 2) * scale - caption.at.right, cx - (w / 2) * scale - 12);
             if (over > 0) { ctx.translate(-over / scale, 0); }
           }
-          ctx.fillStyle = '#060e0cf0'; ctx.strokeStyle = caption.color; ctx.lineWidth = 3;
+          // A block's card lands solid in its coin's colour, then settles to a plate.
+          const solid = !!coins && !reduced && age < 0.25;
+          ctx.fillStyle = solid ? caption.color : '#060e0cf0'; ctx.strokeStyle = caption.color; ctx.lineWidth = 3;
           ctx.beginPath(); ctx.roundRect(-w / 2, -caption.size * 0.72, w, caption.size * 1.44, 10); ctx.fill(); ctx.stroke();
-          textX = -icons / 2;
-          if (caption.coins) {
-            // What came out of it: one mini coin per coin, in a row on the card.
-            const step = caption.size * 1.0;
+          if (solid) textColor = '#0a1210';
+          textX = -w / 2 + 22 + text / 2;
+          if (coins) {
+            // One mini coin per coin inside, lit as each one is swallowed.
             const x0 = textX + text / 2 + 14 + step / 2;
-            for (let i = 0; i < caption.coins.n; i++) {
+            for (let i = 0; i < coins.n; i++) {
               const pop = reduced ? 1 : easeOut((age - i * 0.05) / 0.1);
-              if (pop > 0.15) coin(ctx, caption.coins.ingredient, x0 + i * step, 0, caption.size * 0.95 * pop, 0, 0.8, 0.6);
+              if (pop <= 0.15) continue;
+              ctx.save(); ctx.globalAlpha = alpha * (i < cardEaten ? 1 : 0.3);
+              coin(ctx, coins.ingredient, x0 + i * step, 0, caption.size * (i < cardEaten ? 1.0 : 0.85) * pop, 0, 0.8, i < cardEaten ? 1 : 0);
+              ctx.restore();
             }
+            if (cardTotal > 0) drawText(ctx, `+${cardTotal}`, x0 + coins.n * step - step / 2 + 12, 0, totalSize, solid ? '#0a1210' : '#ffe28a', alpha, MONO, 'left', solid ? 0 : 4);
           }
         }
-        drawText(ctx, caption.text, textX, 0, caption.size, caption.color, alpha, DISPLAY, 'center', caption.card ? 0 : 8);
+        drawText(ctx, caption.text, textX, 0, caption.size, textColor, alpha, DISPLAY, 'center', caption.card ? 0 : 8);
         ctx.restore();
       }
     }
@@ -1199,7 +1243,7 @@ export function createScene() {
       // The kitchen without the creature, then the creature on it. The rail is
       // fixed to the ceiling behind it: a big creature's head hides its right end.
       ctx.drawImage(rig ? rig.backdrop : kitchen, 0, 0, 1200, 700);
-      if (playing && state) drawRail(ctx);
+      if (playing && state) drawRail(ctx, state, tick);
       // The vent flap it bit off hangs in the creature's room too: behind it,
       // so a big creature's head is never covered by a black slab.
       const hazard = playing && state ? getHazard(state.vent, tick) : null;
@@ -1235,7 +1279,7 @@ export function createScene() {
     if (playing) drawProps(ctx, t, reduced, dt);
     // The chain under the ceiling, and whatever block is riding it.
     if (playing && state) {
-      for (const c of state.crates ?? []) drawCrate(ctx, c, tick, t, reduced);
+      for (const c of state.crates ?? []) drawCrate(ctx, c, tick, t, reduced, selected);
     }
 
     if (playing && state && guideSteps > 0 && !(DEV_HOOKS && devRender.hideAim)) {
@@ -1356,11 +1400,11 @@ export function createScene() {
       const solid = 100 + clampAlpha((power - ARENA.minPower) / (ARENA.maxPower - ARENA.minPower)) * 140;
       const lanceTint = COLORS[selected];
       ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-      ctx.globalAlpha = loaded ? .6 : .3; ctx.strokeStyle = '#040a09'; ctx.lineWidth = 10;
+      ctx.globalAlpha = loaded ? .65 : .3; ctx.strokeStyle = '#040a09'; ctx.lineWidth = 11;
       strokeAlong(ctx, lance, 4, solid);
-      ctx.globalAlpha = loaded ? 1 : .4; ctx.strokeStyle = loaded ? lanceTint : '#7f8f6e'; ctx.lineWidth = 5;
+      ctx.globalAlpha = loaded ? 1 : .4; ctx.strokeStyle = loaded ? lanceTint : '#7f8f6e'; ctx.lineWidth = 6;
       strokeAlong(ctx, lance, 4, solid);
-      ctx.globalAlpha = loaded ? .7 : .2; ctx.lineWidth = 3.5; ctx.setLineDash([7, 9]);
+      ctx.globalAlpha = loaded ? .85 : .2; ctx.lineWidth = 4; ctx.setLineDash([8, 8]);
       strokeAlong(ctx, lance, solid, solid + 100); ctx.setLineDash([]);
       const bar = pointAlong(lance, solid);
       ctx.globalAlpha = loaded ? 1 : .45; ctx.lineWidth = 4;
@@ -1446,16 +1490,17 @@ export function createScene() {
           ctx.strokeStyle = p.color; ctx.lineWidth = Math.max(1, p.size * 0.6 * (1 - f)); ctx.lineCap = 'round';
           ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - p.vx * 0.05, y - (p.vy + p.gravity * age) * 0.05); ctx.stroke();
         } else if (p.kind === 'shard') {
-          // A plate of the broken block: its riveted iron, tumbling and falling,
-          // lamplight on one edge and its coin's colour on the other.
+          // A plate of the broken block: its dark riveted iron, tumbling and
+          // falling, lamplight on its top edge and a hot edge in its coin's colour.
+          if (x > 640) continue;
           const s = p.size;
           ctx.save(); ctx.translate(x, y); ctx.rotate((p.vx > 0 ? 1 : -1) * age * 8 + p.size);
           ctx.globalAlpha = f < 0.7 ? 1 : (1 - f) / 0.3;
-          ctx.fillStyle = '#4a3c31'; ctx.beginPath(); ctx.roundRect(-s / 2, -s / 2.6, s, s / 1.3, 2); ctx.fill();
-          ctx.fillStyle = '#c49a6c'; ctx.fillRect(-s / 2, -s / 2.6, s, 2.5);
-          ctx.fillStyle = '#1a1512'; ctx.fillRect(-s / 2, s / 2.6 - 3, s, 3);
-          ctx.fillStyle = '#e0bb8a'; ctx.beginPath(); ctx.arc(-s / 2 + 4, -s / 2.6 + 6, 1.8, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = p.color; ctx.globalAlpha *= 0.9; ctx.lineWidth = 2.5;
+          ctx.fillStyle = '#241b15'; ctx.beginPath(); ctx.roundRect(-s / 2, -s / 2.6, s, s / 1.3, 2); ctx.fill();
+          ctx.fillStyle = '#8a6a4c'; ctx.fillRect(-s / 2, -s / 2.6, s, 3);
+          ctx.fillStyle = '#c9a072'; ctx.beginPath(); ctx.arc(-s / 2 + 5, -s / 2.6 + 7, 2.6, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowColor = p.color; ctx.shadowBlur = 8;
+          ctx.strokeStyle = p.color; ctx.lineWidth = 3;
           ctx.beginPath(); ctx.moveTo(s / 2, -s / 2.6); ctx.lineTo(s / 2, s / 2.6); ctx.lineTo(-s / 2, s / 2.6); ctx.stroke();
           ctx.restore();
         } else {
@@ -1472,11 +1517,23 @@ export function createScene() {
       if (age >= 0 && age < 0.26) {
         const fade = age < 0.06 ? 1 : 1 - (age - 0.06) / 0.2;
         const k = reduced ? 0.6 : 1;
-        const r = 120 + (reduced ? 0 : 50 * easeOut(age / 0.26));
+        const r = 150 + (reduced ? 0 : 60 * easeOut(age / 0.26));
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
         // Three or four frames of the whole room lit in its coin's colour —
         // added light, so nothing is veiled, and the HUD is drawn after it.
-        if (age < 0.07 && !reduced) { ctx.fillStyle = withAlpha(flashColor, 0.16 * (1 - age / 0.07)); ctx.fillRect(-200, -200, 1600, 1100); }
+        if (age < 0.08 && !reduced) { ctx.fillStyle = withAlpha(flashColor, 0.2 * (1 - age / 0.08)); ctx.fillRect(-200, -200, 1600, 1100); }
+        // Short thick rays thrown out of the white core.
+        if (!reduced) {
+          ctx.lineCap = 'round';
+          for (let i = 0; i < 10; i++) {
+            const a = (i / 10) * Math.PI * 2 + hashed(flashSeed + i) * 0.4;
+            const r0 = 30 + 40 * easeOut(age / 0.26); const r1 = r0 + 70 + 70 * hashed(flashSeed * 3 + i);
+            for (const [w, col] of [[11, withAlpha(flashColor, 0.8 * fade)], [4, `rgba(255,255,245,${0.95 * fade})`]] as const) {
+              ctx.strokeStyle = col; ctx.lineWidth = w * (0.4 + 0.6 * fade);
+              ctx.beginPath(); ctx.moveTo(flashX + Math.cos(a) * r0, flashY + Math.sin(a) * r0); ctx.lineTo(flashX + Math.cos(a) * r1, flashY + Math.sin(a) * r1); ctx.stroke();
+            }
+          }
+        }
         const g = ctx.createRadialGradient(flashX, flashY, 0, flashX, flashY, r);
         g.addColorStop(0, `rgba(255,255,248,${0.95 * fade * k})`);
         g.addColorStop(0.3, `rgba(255,244,214,${0.7 * fade * k})`);
@@ -1493,7 +1550,7 @@ export function createScene() {
       const f = easeOut(age / life);
       ctx.save(); ctx.globalAlpha = 1 - f;
       ctx.strokeStyle = r.color; ctx.lineWidth = (r.big ? 6 : 4) * (1 - f) + 1;
-      if (r.huge) ctx.lineWidth = 10 * (1 - f) + 1.5;
+      if (r.huge) ctx.lineWidth = 14 * (1 - f) + 2;
       ctx.beginPath(); ctx.arc(r.x, r.y, (reduced ? 24 : r.huge ? 24 + f * 290 : 10 + f * (r.big ? 48 : 30)), 0, Math.PI * 2); ctx.stroke();
       if (r.big) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2 * (1 - f); ctx.beginPath(); ctx.arc(r.x, r.y, reduced ? 14 : 4 + f * 26, 0, Math.PI * 2); ctx.stroke(); }
       ctx.restore();
