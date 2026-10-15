@@ -8,7 +8,7 @@ import { drawCreature, REST_MOUTH } from './creature/draw';
 import { EYE, ANTENNA_BULB } from './creature/anatomy';
 import { DEV_HOOKS, devRender, frameCells } from '../dev/hook';
 import { TOKENS, createTokenSprites } from './tokens';
-import { CAPTIONS, CRAVING_LINES, tokenCopy } from './lore';
+import { CAPTIONS, CRAVING_LINES, forkCaption, missCaption, tokenCopy } from './lore';
 import { FLICKER_DARKEST, flickerAt, type Season } from './season';
 
 /**
@@ -180,6 +180,8 @@ export function createScene() {
     return best;
   }
   let jamWallet = false;
+  /** Whether this shift has breathed yet: the first breath is the weapon, the rest are turbo breath. */
+  let breathed = false;
 
   function burst(x: number, y: number, n: number, color: string, speed: number, time: number, kind: Particle['kind'] = 'dot', seed = 0, life = 0.7, gravity = 260) {
     for (let i = 0; i < n; i++) {
@@ -205,7 +207,7 @@ export function createScene() {
     if (state.seed !== seenRun || state.tick < seenTick) {
       // A new run, or one we have never seen: start from here rather than
       // replaying its whole history into the screen.
-      seenRun = state.seed; particles.length = 0; pops.length = 0; rings.length = 0; caption = null; shake = 0; wobble.clear();
+      seenRun = state.seed; particles.length = 0; pops.length = 0; rings.length = 0; caption = null; shake = 0; wobble.clear(); breathed = false;
       camera.zoom = camera.from = camera.target = 1; camera.since = -10; camera.said = false;
       seenEvent = Math.max(0, (state.events[state.events.length - 1]?.id ?? 0) - 1);
       if (state.tick < 2) seenEvent = 0;
@@ -250,7 +252,7 @@ export function createScene() {
           break;
         case 'miss':
           burst(e.x, ARENA.floor - 6, reduced ? 3 : 8, '#a8a08a', 60, time, 'dust', e.id, 0.6, 40);
-          say(CAPTIONS.dropped, '#d9c9a8', 1, time, 36, 0.8);
+          say(missCaption(e.ingredient), '#d9c9a8', 1, time, 36, 0.8);
           break;
         case 'frenzy':
           if (e.name === 'start') {
@@ -264,7 +266,7 @@ export function createScene() {
             // A hardware wallet in the teeth is cold storage; a fork is a hard fork.
             const what = vanishedJunk(state, e.x, e.y);
             const points = e.value ?? TUNING.utensilScore;
-            say(what && !what.wallet ? CAPTIONS.fork(points) : CAPTIONS.wallet(points), '#dff2ff', 4, time, 50, 1.2);
+            say(what && !what.wallet ? forkCaption(e.id, points) : CAPTIONS.wallet(points), '#dff2ff', 4, time, 50, 1.2);
             pops.push({ x: e.x, y: e.y - 30, text: `+${e.value ?? TUNING.utensilScore}`, color: '#dff2ff', born: time, size: 40 });
             burst(e.x, e.y, reduced ? 6 : 16, '#e8f4ff', 240, time, 'spark', e.id, 0.5);
             if (!reduced) { freezeUntil = time + 0.05; frozenAt = time; }
@@ -279,7 +281,7 @@ export function createScene() {
           break;
         case 'flame':
           if (e.name === 'tell') say(CAPTIONS.inhale, '#ffb88a', 3, time, 40, 0.8);
-          else { say(CAPTIONS.breath, '#ff9a4a', 4, time, 54, 1.0); if (!reduced) shake = Math.max(shake, 0.4); }
+          else { say(breathed ? CAPTIONS.breath : CAPTIONS.weapon, '#ff9a4a', 4, time, breathed ? 54 : 50, breathed ? 1.0 : 1.4); breathed = true; if (!reduced) shake = Math.max(shake, 0.4); }
           break;
         case 'jam': {
           const what = e.name === 'utensil' ? vanishedJunk(state, ARENA.launcher.x, ARENA.launcher.y) : null;

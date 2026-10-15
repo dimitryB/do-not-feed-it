@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { ENDINGS, createArcade, endingFor, launchFood, slamHatch, stepArcade } from "../lib/game/arcade.ts";
 import {
-  CAPTIONS, CAUSES, CRAVING_LINES, ENDING_JOKES, HALLOWEEN, HEADLINES, PRESS_E, TOKEN_TRAITS, WALLET_TIERS, pressELine, tokenCopy,
+  CAPTIONS, CAUSES, CRAVING_LINES, ENDING_JOKES, HALLOWEEN, HEADLINES, PRESS_E, TOKEN_TRAITS, WALLET_TIERS, forkCaption, missCaption, pressELine, tokenCopy,
 } from "../lib/render/lore.ts";
 import { FLICKER_DARKEST, flickerAt, seasonFor } from "../lib/render/season.ts";
 
@@ -146,4 +146,25 @@ test("the Halloween flicker only darkens, and never more than three dips in any 
     assert.ok(inSecond <= 3, `${inSecond} dips in the second from ${starts[i].toFixed(2)} s`);
   }
   assert.ok(starts.length >= 600 / 8 - 1, "a burst every eight seconds or so");
+});
+
+test("the Hemi callbacks land on what is on screen, and never name anyone", () => {
+  assert.equal(missCaption("metal"), "BITCOIN BEING BITCOIN.");
+  assert.equal(missCaption("balloon"), "TX DROPPED.");
+  assert.equal(missCaption("pepper"), "TX DROPPED.");
+  assert.equal(missCaption(null), "TX DROPPED.");
+  const forks = Array.from({ length: 30 }, (_, i) => forkCaption(i, 500));
+  assert.equal(forks.filter((c) => c === "GLAMSTERDAM +500").length, 10, "one fork in three is Glamsterdam");
+  assert.ok(forks.every((c) => c === "GLAMSTERDAM +500" || c === "HARD FORK +500"));
+  assert.equal(forkCaption(7, 500), forkCaption(7, 500), "a replay says the same thing");
+  assert.equal(CAPTIONS.weapon, "veHEMI IS A WEAPON.");
+  assert.equal(CAPTIONS.lunge, "IT IS STILL COMING.");
+  const page = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+  for (const line of ["Ding, ding, ding.", "pocket full of quarters", "The ZK talk will continue", "hand-eye coordination of a sloth", "Maximum commitment.", "Press E"]) {
+    assert.ok(page.includes(line), line);
+  }
+  // Quote the hosts, never name them; and it is never "season two".
+  const everything = [page, ...Object.values(CAPTIONS).map((c) => (typeof c === "function" ? c(500) : c))].join(" ");
+  assert.doesNotMatch(everything, /\b(Rick|Max|Jeremy|Joshua|JCV|John|Marco|Alpha|Alex)\b/);
+  assert.doesNotMatch(everything, /season (two|2)/i);
 });

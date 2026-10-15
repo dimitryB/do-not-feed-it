@@ -41,7 +41,10 @@ const FRAME_PAGE = `
 const TARGETS = [
   { key: "based", match: (e) => e.type === "feed" && /^CRAVING/.test(e.label) },
   { key: "reverted", match: (e) => e.type === "clank" },
-  { key: "tx-dropped", match: (e) => e.type === "miss" },
+  { key: "tx-dropped", match: (e) => e.type === "miss" && e.ingredient !== "metal" },
+  { key: "btc-miss", match: (e) => e.type === "miss" && e.ingredient === "metal" },
+  { key: "still-coming", match: (e) => e.type === "beat" && e.name === "lunge" },
+  { key: "vehemi-weapon", match: (e) => e.type === "flame" && e.name === "breath", lag: 12 },
   { key: "gas-spike", match: (e) => e.type === "bounce" && e.name === "belly" },
   { key: "multi-hop", match: (e) => e.type === "bank" && /^(DOUBLE|TRIPLE) BANK/.test(e.label) },
   { key: "scaling", match: (e) => e.type === "grow" },
@@ -125,7 +128,7 @@ async function main() {
 
     // ---- the caption widths, in the canvas's own display face.
     const lines = [
-      ...Object.entries(CAPTIONS).map(([k, c]) => ({ key: k, text: typeof c === "function" ? c(500) : c, size: k === "scaling" ? 70 : k === "noRoom" ? 60 : k === "frenzy" ? 92 : 50, card: k === "scaling" || k === "noRoom" })),
+      ...Object.entries(CAPTIONS).map(([k, c]) => ({ key: k, text: typeof c === "function" ? c(500) : c, size: k === "scaling" ? 70 : k === "noRoom" ? 60 : k === "frenzy" ? 92 : k === "dropped" || k === "btcMiss" ? 36 : k === "lunge" ? 44 : 50, card: k === "scaling" || k === "noRoom" })),
       ...Object.values(TOKEN_TRAITS).map((t) => ({ key: "mutation", text: `${t.toUpperCase()} ×3`, size: 58, card: true })),
       ...Object.values(CRAVING_LINES).map((t) => ({ key: "craving", text: t, size: 42, card: false })),
       ...["MULTI-HOP ×3", "TRIPLE HOP ×4", "OFF THE GAS BELLY ×2", "OFF THE CHAIN ×2"].map((t) => ({ key: "bank", text: t, size: 54, card: false })),

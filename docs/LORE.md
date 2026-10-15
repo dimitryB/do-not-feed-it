@@ -131,6 +131,55 @@ the transcripts in the user's "hemi-game-contest" project).
 - **Judging is Oct 29, 4 PM EDT, just before Halloween**, with the hosts in
   costume. Best Horror is a category. Nothing in the lore depends on it.
 
+## Hemi's own lines (the lore bible, Oct 13–14)
+
+The judges are the hosts, so the best lore is their own words, played back
+affectionately. `hemi-lore-bible.md` (in the Claude project and in the
+ignored `research/source-material/`) collects five weeks of Midweek with Max
+and office hours, with timestamps. What made it into the game, and why each
+one passes the rules (a direct callback, names nobody, true of what is on
+screen):
+
+| Line on screen | Where | From |
+| --- | --- | --- |
+| veHEMI IS A WEAPON. | the first turbo breath of a shift | Max, Oct 7: "something … in game where veHEMI is a weapon … That'd be funny." The breath is the weapon; the help already says it is veHEMI |
+| IT IS STILL COMING. | the lunge telegraph (was IT IS COMING OUT.) | the community's answer to every "when?" (VBK, the OG role). The creature is, literally, coming |
+| BITCOIN BEING BITCOIN. | a Bitcoin on the floor (other coins still say TX DROPPED.) | Max, Oct 7, on waiting for blocks: "just because Bitcoin being Bitcoin" |
+| GLAMSTERDAM +500 | one fork in three caught in its mouth (the rest HARD FORK +500) | the next Ethereum hard fork; Rick: "sounds like a Dutch rave", Max loves saying it. It is a hard fork; it is a fork |
+| Paused. The ZK talk will continue until you come back. | the pause screen | Max: "The ZK talk will continue until questions come in." Judges pause to talk |
+| ✦ Ding, ding, ding. New personal best. | the epoch report, on a new best | Rick, Oct 13, on what makes an arcade game: "Flashing lights and loud noises. Ding, ding, ding." |
+| Free play. Keep your pocket full of quarters. | under Ape back in | John, Oct 13: "we get a pocket full of quarters … make us want to keep giving those games quarters" |
+| One mouth. Zero restraint. Maximum commitment. | the title strip (was Three tokens. Unusual side effects.) | an homage to Blind Life Simulator's "one transaction, zero vision, maximum commitment", the Contest 1 game the hosts replayed on Oct 7 |
+| Tuned for the hand-eye coordination of a sloth. | the whitepaper, step 1 | Max, about himself, twice: "I have the hand-eye coordination of a sloth." It is also true: pillar 1 tunes for him |
+| Press E | the end of the title's note line, so the joke gets found | "Press E", the running gag since Contest 1 |
+
+**Considered and left out**, with the reason:
+
+- *The creature is the Tunnel* (hBitVM, "send Bitcoin to an address, magic
+  happens"). A monster that eats what goes into the bridge reads as an
+  exploit, and hBitVM may slip to early Q1 — a joke about an unshipped
+  product lands badly. FastTrack / MinerFi / FastBridge renames: same.
+- *The finality counter* (combo from −9 to 0, frenzy as SUPERFINALITY, nine
+  blocks). A negative combo is unreadable on a compressed stream and the
+  frenzy starts at five catches, not nine; FOMO and ×N stay. SUPERFINALITY
+  is already the twelve-minute ending. "Bitcoin being Bitcoin" is the part
+  that survived.
+- *Mutation renames* (FASTTRACK, AUTO-RELOCK, TURBO EDITION). The names have
+  to say what the viewer sees and which coin did it; HODL jaws / Gas belly /
+  Turbo breath do, product names do not.
+- *TUMMY STAKE, the epoch clock, phase-named levels.* A label on the belly bar
+  and an epoch counter put text back on the HUD (pillar 6), and "tummy stake"
+  is the auto-captions mishearing hemiStake, not something anyone said.
+- *Anything that names or draws a person* ("when Joshua gets back", "Jeremy
+  abruptly ended the stream", lawn care, the soundboard, hard water, "it has a
+  neck"). Quote them, never name them; no jokes about falls or weight; the
+  Rick-eats-everything bit is another entrant's.
+- *New props and art* (the flamingo, the banana, the getHeaderN appliance,
+  Detritus's bin, the cup as a bouncer, fangs and eye lasers, the hat). Each
+  needs new art or a rules change two weeks before the deadline; the
+  bouncers are rules geometry. Sacred Waste and Mentora stay friendly by
+  staying out.
+
 ## Extras
 
 **Press E.** Contest 1's judges could not get a game's E key to work on
@@ -163,6 +212,8 @@ never under reduced motion. Gameplay and the report are unchanged.
    really lost those, and next to REKT they read as an exploit. The creature
    is the joke; the coins are what it eats.
 3. **No real people.** No founders, hosts or influencers by name or likeness.
+   Quote them, never name them (`tests/lore.test.mjs` checks the page and the
+   captions for the hosts' names). It is "Turbo Edition", never "season two".
    No claim, airdrop or drain jokes either (see above); "Unaudited" on the
    specimen card and the whitepaper is the one audit word, and it stays.
 4. **No endorsement.** The game is a fan-made contest entry. The DAO, the
@@ -192,18 +243,18 @@ and are in the table.
 | masthead | DEPARTMENT OF QUESTIONABLE APPETITES | QUESTIONABLE APPETITES DAO |
 | title tag | YOUR SHIFT STARTS HERE | PROPOSAL #004 · PASSED |
 | title lede | It's hungry. You're on duty. | It passed. Nobody enforces it. |
-| title note | Endless · No wallet needed · Mildly inadvisable | Endless · No wallet needed · Not financial advice |
+| title note | Endless · No wallet needed · Mildly inadvisable | Endless · No wallet needed · Not financial advice · Press E |
 | specimen card | Friendly disposition. Unverified. | Friendly disposition. Unaudited. |
 | HUD timer, idle / play / end | NIGHT SHIFT · 004 / TIME ON SHIFT / SHIFT LASTED | BEST UPTIME / UPTIME / FINAL UPTIME |
 | title strip | AIM. FEED. ADAPT. | AIM. HODL. FEED. |
 | help eyebrow, title | EMPLOYEE HANDBOOK · SECTOR 04 / A very questionable job. | WHITEPAPER · UNAUDITED BUT FRIENDLY / A very questionable protocol. |
 | help, HEMI | HEMI gives it turbo breath that cooks coins for double. | … It locks up every HEMI it eats, so technically that breath is veHEMI. |
 | footer | Field guide ↗ | Whitepaper ↗ |
-| pause | Your shift is paused. The creature can wait. | Paused. Blocks keep coming. The creature can wait. |
+| pause | Your shift is paused. The creature can wait. | Paused. The ZK talk will continue until you come back. |
 | ambience | Low ventilation and the kitchen's electrical hum. | Low ventilation and the hum of the Bitcoin node inside it. |
 | catch, craved | THAT ONE. YES. | ORDER FILLED. |
 | clank | CLANK. | REVERTED. |
-| miss | ON THE FLOOR. | TX DROPPED. |
+| miss | ON THE FLOOR. | TX DROPPED. (a Bitcoin: BITCOIN BEING BITCOIN.) |
 | two / three banks | DOUBLE BANK ×N / TRIPLE BANK ×N | MULTI-HOP ×N / TRIPLE HOP ×N |
 | fork caught | UTENSIL +500 | HARD FORK +500 |
 | fork in launcher | FORK IN THE WORKS | FORKED. |
@@ -224,9 +275,14 @@ and are in the table.
 | report line | the rules' ending ("…It has eaten the employee handbook.") | the wallet tier ("Wallet tier: shark. The whales have noticed.") |
 | ending jokes | PETTY CASH / YOUR BAGS / THE TREASURY / THE FOUNDATION (stage 4) | IT ATE THE GAS MONEY. / A WHOLE BLOCK. / THE MEMPOOL. / THE CHAIN. |
 | report stats | ON SHIFT · FRENZIES | UPTIME · FOMO |
-| restart | Another shift ↗ | Ape back in ↗ |
+| restart | Another shift ↗ | Ape back in ↗, with "Free play. Keep your pocket full of quarters." under it |
+| new best | ✦ New personal best | ✦ Ding, ding, ding. New personal best. |
+| title coin strip | Three tokens. Unusual side effects. | One mouth. Zero restraint. Maximum commitment. |
+| lunge telegraph | IT IS COMING OUT. | IT IS STILL COMING. |
+| first breath of a shift | FIRE BREATH | veHEMI IS A WEAPON. (later breaths: TURBO BREATH) |
+| fork caught, one in three | UTENSIL +500 | GLAMSTERDAM +500 (the rest: HARD FORK +500) |
 
-Kept on purpose: NOM., STUFFED., SNEEZE., IT IS COMING OUT., IT INHALES,
+Kept on purpose: NOM., STUFFED., SNEEZE., IT INHALES,
 SINGED, COMBO, HATCH SHUT, IT TOOK THE TRAY., the prop names (OFF THE PAN, OFF THE
 CHAIN…), "Start your shift", "Clock in", and every control label. They are
 already right, already crypto, or the player has to act on them.

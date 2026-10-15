@@ -73,10 +73,29 @@ export const CAPTIONS = {
   tantrum: 'MAXI TANTRUM.',
   sneeze: 'SNEEZE.',
   slippage: 'SLIPPAGE.',
-  lunge: 'IT IS COMING OUT.',
+  // The community's running answer to every "when?" — and the creature is, literally, coming out.
+  lunge: 'IT IS STILL COMING.',
+  // Max, Oct 7: "I wonder if there's something somebody could do in game where veHEMI is a weapon." The first breath of a shift.
+  weapon: 'veHEMI IS A WEAPON.',
+  // Max, Oct 7, on waiting for blocks: "just because Bitcoin being Bitcoin." Only ever said of a Bitcoin on the floor.
+  btcMiss: 'BITCOIN BEING BITCOIN.',
   frenzy: 'FOMO',
   combo: 'COMBO',
 } as const;
+
+/** The caption for a coin on the floor: Bitcoin being Bitcoin, everything else a dropped transaction. */
+export function missCaption(ingredient?: Ingredient | null): string {
+  return ingredient === 'metal' ? CAPTIONS.btcMiss : CAPTIONS.dropped;
+}
+
+/**
+ * The caption for a fork caught in its mouth. One in three is GLAMSTERDAM, the
+ * next Ethereum hard fork, which the hosts cannot stop saying; the rest are
+ * HARD FORK. `seed` is the event's id, so a replay says the same thing.
+ */
+export function forkCaption(seed: number, points: number): string {
+  return Math.abs(Math.floor(seed)) % 3 === 0 ? `GLAMSTERDAM +${points}` : CAPTIONS.fork(points);
+}
 
 // ---- the night's end.
 

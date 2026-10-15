@@ -45,6 +45,12 @@
     },
     {
       "name": "lunge",
+      "tick": 1850,
+      "type": "beat",
+      "label": "IT IS COMING OUT"
+    },
+    {
+      "name": "lunge",
       "tick": 1904,
       "type": "jam",
       "label": "BITTEN"
@@ -74,6 +80,12 @@
       "label": "MAGNET MOUTH ×1"
     },
     {
+      "name": "breath",
+      "tick": 3112,
+      "type": "flame",
+      "label": "FIRE BREATH"
+    },
+    {
       "name": "caught",
       "tick": 3289,
       "type": "utensil",
@@ -90,6 +102,12 @@
       "tick": 5094,
       "type": "jam",
       "label": "FORK IN THE WORKS"
+    },
+    {
+      "name": null,
+      "tick": 5519,
+      "type": "miss",
+      "label": "ON THE FLOOR"
     },
     {
       "name": "start",
@@ -303,11 +321,27 @@
     },
     {
       "key": "lunge",
-      "text": "IT IS COMING OUT.",
+      "text": "IT IS STILL COMING.",
       "size": 50,
       "card": false,
-      "width": 482,
+      "width": 521,
       "fits": true
+    },
+    {
+      "key": "weapon",
+      "text": "veHEMI IS A WEAPON.",
+      "size": 50,
+      "card": false,
+      "width": 578,
+      "fits": true
+    },
+    {
+      "key": "btcMiss",
+      "text": "BITCOIN BEING BITCOIN.",
+      "size": 50,
+      "card": false,
+      "width": 635,
+      "fits": false
     },
     {
       "key": "frenzy",

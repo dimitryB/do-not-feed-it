@@ -37,6 +37,12 @@ the trace); **Halloween** dresses the title from October 15 to November 2
 (`?season=halloween` to preview) — tag, lede, pumpkin accent, Munch's costume
 line and a gentle lamp flicker. `scripts/lore-shots.mjs` films both.
 
+Hemi's own lines (D134), from `hemi-lore-bible.md` (Claude project; ignored
+copy in `research/source-material/`): ten callbacks to the hosts' streams —
+veHEMI IS A WEAPON., IT IS STILL COMING., BITCOIN BEING BITCOIN., GLAMSTERDAM,
+the ZK-talk pause, "Ding, ding, ding.", the pocket full of quarters, the Blind
+Life homage, the sloth and "Press E". Quote, never name.
+
 Known: the lunge's FRONT-RUN jam caption is almost always covered by the bite
 caption fired on the same tick (priority 5 over 4); IT TOOK THE TRAY. was
 kept as kitchen-literal. The harness measures captions in the container's
