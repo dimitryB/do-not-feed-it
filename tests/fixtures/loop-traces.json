@@ -626,7 +626,7 @@
     {
       "bot": "moderate",
       "seed": 104730,
-      "endTick": 6319,
+      "endTick": 6793,
       "commands": [
         {
           "tick": 0,
@@ -939,9 +939,9 @@
         {
           "tick": 2225,
           "kind": "launch",
-          "ingredient": "metal",
-          "angle": -53,
-          "power": 16
+          "ingredient": "pepper",
+          "angle": -36,
+          "power": 9
         },
         {
           "tick": 2240,
@@ -1030,9 +1030,9 @@
         {
           "tick": 2420,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -31,
-          "power": 9
+          "ingredient": "metal",
+          "angle": -49,
+          "power": 16
         },
         {
           "tick": 2435,
@@ -1058,742 +1058,1134 @@
         {
           "tick": 2496,
           "kind": "launch",
-          "ingredient": "metal",
-          "angle": -58,
+          "ingredient": "pepper",
+          "angle": -38,
+          "power": 9
+        },
+        {
+          "tick": 2531,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -42,
+          "power": 9
+        },
+        {
+          "tick": 2699,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -51,
           "power": 16
         },
         {
-          "tick": 2534,
+          "tick": 2729,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -41,
+          "angle": -32,
           "power": 9
         },
         {
-          "tick": 2686,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -41,
-          "power": 13
-        },
-        {
-          "tick": 2720,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -58,
-          "power": 12
-        },
-        {
-          "tick": 2750,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -42,
-          "power": 15
-        },
-        {
-          "tick": 2872,
+          "tick": 2878,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -37,
-          "power": 9
+          "angle": -61,
+          "power": 10
         },
         {
           "tick": 2908,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -32,
-          "power": 9
-        },
-        {
-          "tick": 3009,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -39,
-          "power": 9
-        },
-        {
-          "tick": 3045,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -34,
-          "power": 9
-        },
-        {
-          "tick": 3077,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -51,
-          "power": 14
-        },
-        {
-          "tick": 3107,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -55,
-          "power": 16
-        },
-        {
-          "tick": 3137,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -59,
-          "power": 14
-        },
-        {
-          "tick": 3167,
-          "kind": "launch",
-          "ingredient": "pepper",
           "angle": -58,
           "power": 16
         },
         {
-          "tick": 3200,
+          "tick": 2938,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -43,
+          "power": 14
+        },
+        {
+          "tick": 2959,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 2974,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -56,
+          "power": 16
+        },
+        {
+          "tick": 2989,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 3004,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -44,
+          "power": 14
+        },
+        {
+          "tick": 3019,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 14
+        },
+        {
+          "tick": 3034,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -42,
+          "power": 14
+        },
+        {
+          "tick": 3049,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -37,
+          "power": 14
+        },
+        {
+          "tick": 3064,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -37,
+          "power": 14
+        },
+        {
+          "tick": 3079,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -41,
+          "power": 13
+        },
+        {
+          "tick": 3094,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -45,
+          "power": 13
+        },
+        {
+          "tick": 3109,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -46,
+          "power": 13
+        },
+        {
+          "tick": 3124,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -50,
+          "power": 12
+        },
+        {
+          "tick": 3139,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -57,
+          "power": 16
+        },
+        {
+          "tick": 3154,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
+        },
+        {
+          "tick": 3169,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -56,
+          "power": 16
+        },
+        {
+          "tick": 3184,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 3199,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -36,
+          "power": 9
+        },
+        {
+          "tick": 3214,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -35,
+          "power": 9
+        },
+        {
+          "tick": 3229,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -37,
           "power": 9
         },
         {
-          "tick": 3266,
+          "tick": 3244,
           "kind": "launch",
-          "ingredient": "balloon",
+          "ingredient": "pepper",
           "angle": -40,
-          "power": 14
-        },
-        {
-          "tick": 3281,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -43,
-          "power": 14
-        },
-        {
-          "tick": 3296,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -42,
-          "power": 14
-        },
-        {
-          "tick": 3311,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -46,
-          "power": 13
-        },
-        {
-          "tick": 3326,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -45,
-          "power": 13
-        },
-        {
-          "tick": 3341,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -28,
-          "power": 10
-        },
-        {
-          "tick": 3356,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -34,
           "power": 9
         },
         {
-          "tick": 3371,
+          "tick": 3259,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -33,
-          "power": 10
+          "angle": -39,
+          "power": 9
         },
         {
-          "tick": 3386,
+          "tick": 3274,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 3295,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -55,
+          "power": 16
+        },
+        {
+          "tick": 3325,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 13
+        },
+        {
+          "tick": 3455,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 3486,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -56,
+          "power": 14
+        },
+        {
+          "tick": 3516,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 3623,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -40,
+          "power": 13
+        },
+        {
+          "tick": 3680,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -39,
+          "power": 9
+        },
+        {
+          "tick": 3710,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -58,
+          "power": 16
+        },
+        {
+          "tick": 3740,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -32,
           "power": 10
         },
         {
-          "tick": 3401,
+          "tick": 3773,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -34,
-          "power": 10
+          "ingredient": "balloon",
+          "angle": -42,
+          "power": 14
         },
         {
-          "tick": 3416,
+          "tick": 3795,
           "kind": "launch",
-          "ingredient": "metal",
+          "ingredient": "balloon",
+          "angle": -43,
+          "power": 13
+        },
+        {
+          "tick": 3810,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -43,
+          "power": 13
+        },
+        {
+          "tick": 3825,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -40,
+          "power": 13
+        },
+        {
+          "tick": 3840,
+          "kind": "launch",
+          "ingredient": "balloon",
           "angle": -55,
-          "power": 16
-        },
-        {
-          "tick": 3431,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -51,
-          "power": 16
-        },
-        {
-          "tick": 3446,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -49,
-          "power": 16
-        },
-        {
-          "tick": 3461,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -55,
-          "power": 16
-        },
-        {
-          "tick": 3476,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
-          "tick": 3491,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -33,
-          "power": 9
-        },
-        {
-          "tick": 3506,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -38,
-          "power": 9
-        },
-        {
-          "tick": 3521,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -36,
-          "power": 14
-        },
-        {
-          "tick": 3536,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -39,
-          "power": 14
-        },
-        {
-          "tick": 3551,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -36,
-          "power": 14
-        },
-        {
-          "tick": 3566,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -51,
           "power": 12
         },
         {
-          "tick": 3588,
+          "tick": 3855,
           "kind": "launch",
           "ingredient": "metal",
-          "angle": -54,
+          "angle": -57,
           "power": 16
         },
         {
-          "tick": 3750,
+          "tick": 3870,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -35,
-          "power": 9
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
         },
         {
-          "tick": 3787,
+          "tick": 3885,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -41,
-          "power": 9
+          "ingredient": "metal",
+          "angle": -55,
+          "power": 16
         },
         {
           "tick": 3900,
           "kind": "launch",
           "ingredient": "metal",
-          "angle": -56,
-          "power": 14
-        },
-        {
-          "tick": 3930,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -47,
-          "power": 14
-        },
-        {
-          "tick": 3960,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -59,
+          "angle": -55,
           "power": 16
         },
         {
-          "tick": 3990,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -57,
-          "power": 12
-        },
-        {
-          "tick": 4054,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -51,
-          "power": 12
-        },
-        {
-          "tick": 4084,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -43,
-          "power": 15
-        },
-        {
-          "tick": 4114,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -40,
-          "power": 13
-        },
-        {
-          "tick": 4145,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -56,
-          "power": 14
-        },
-        {
-          "tick": 4177,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 14
-        },
-        {
-          "tick": 4215,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 14
-        },
-        {
-          "tick": 4325,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 16
-        },
-        {
-          "tick": 4355,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -56,
-          "power": 14
-        },
-        {
-          "tick": 4385,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -54,
-          "power": 15
-        },
-        {
-          "tick": 4415,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -35,
-          "power": 16
-        },
-        {
-          "tick": 4445,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -46,
-          "power": 13
-        },
-        {
-          "tick": 4481,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -45,
-          "power": 13
-        },
-        {
-          "tick": 4514,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -46,
-          "power": 12
-        },
-        {
-          "tick": 4544,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -33,
-          "power": 16
-        },
-        {
-          "tick": 4574,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -42,
-          "power": 13
-        },
-        {
-          "tick": 4604,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -27,
-          "power": 11
-        },
-        {
-          "tick": 4649,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -30,
-          "power": 13
-        },
-        {
-          "tick": 4679,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
-          "tick": 4712,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 16
-        },
-        {
-          "tick": 4747,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -56,
-          "power": 16
-        },
-        {
-          "tick": 4777,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -60,
-          "power": 16
-        },
-        {
-          "tick": 4807,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -57,
-          "power": 16
-        },
-        {
-          "tick": 4837,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -30,
-          "power": 11
-        },
-        {
-          "tick": 4872,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -28,
-          "power": 11
-        },
-        {
-          "tick": 4902,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -29,
-          "power": 11
-        },
-        {
-          "tick": 4969,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -60,
-          "power": 16
-        },
-        {
-          "tick": 5003,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -41,
-          "power": 14
-        },
-        {
-          "tick": 5066,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -57,
-          "power": 16
-        },
-        {
-          "tick": 5101,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -44,
-          "power": 15
-        },
-        {
-          "tick": 5131,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -43,
-          "power": 13
-        },
-        {
-          "tick": 5162,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -50,
-          "power": 13
-        },
-        {
-          "tick": 5192,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -40,
-          "power": 9
-        },
-        {
-          "tick": 5234,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -36,
-          "power": 9
-        },
-        {
-          "tick": 5273,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -60,
-          "power": 16
-        },
-        {
-          "tick": 5311,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -56,
-          "power": 16
-        },
-        {
-          "tick": 5349,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -59,
-          "power": 16
-        },
-        {
-          "tick": 5388,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 16
-        },
-        {
-          "tick": 5419,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -38,
-          "power": 9
-        },
-        {
-          "tick": 5461,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -41,
-          "power": 9
-        },
-        {
-          "tick": 5522,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
-          "tick": 5552,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -56,
-          "power": 16
-        },
-        {
-          "tick": 5582,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -47,
-          "power": 9
-        },
-        {
-          "tick": 5612,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -51,
-          "power": 13
-        },
-        {
-          "tick": 5645,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -54,
-          "power": 13
-        },
-        {
-          "tick": 5675,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -35,
-          "power": 15
-        },
-        {
-          "tick": 5735,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -49,
-          "power": 16
-        },
-        {
-          "tick": 5766,
+          "tick": 3915,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -55,
           "power": 16
         },
         {
-          "tick": 5796,
+          "tick": 3930,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -49,
+          "power": 16
+        },
+        {
+          "tick": 3945,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -49,
+          "power": 13
+        },
+        {
+          "tick": 3960,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -41,
+          "power": 14
+        },
+        {
+          "tick": 3975,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -44,
+          "power": 14
+        },
+        {
+          "tick": 3990,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -57,
+          "power": 16
+        },
+        {
+          "tick": 4036,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -56,
+          "power": 16
+        },
+        {
+          "tick": 4051,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -32,
+          "power": 10
+        },
+        {
+          "tick": 4066,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 10
+        },
+        {
+          "tick": 4081,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -32,
+          "power": 10
+        },
+        {
+          "tick": 4096,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -27,
+          "power": 16
+        },
+        {
+          "tick": 4111,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -38,
+          "power": 9
+        },
+        {
+          "tick": 4126,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -31,
+          "power": 10
+        },
+        {
+          "tick": 4165,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -60,
+          "power": 16
+        },
+        {
+          "tick": 4195,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -55,
+          "power": 16
+        },
+        {
+          "tick": 4242,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -38,
+          "power": 16
+        },
+        {
+          "tick": 4360,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -31,
+          "power": 10
+        },
+        {
+          "tick": 4395,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 4425,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -58,
+          "power": 16
+        },
+        {
+          "tick": 4455,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -56,
+          "power": 16
+        },
+        {
+          "tick": 4517,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 14
+        },
+        {
+          "tick": 4532,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -23,
           "power": 16
         },
         {
-          "tick": 5826,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -26,
-          "power": 13
-        },
-        {
-          "tick": 5856,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -35,
-          "power": 13
-        },
-        {
-          "tick": 5886,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -37,
-          "power": 10
-        },
-        {
-          "tick": 5916,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -38,
-          "power": 9
-        },
-        {
-          "tick": 5968,
+          "tick": 4547,
           "kind": "launch",
           "ingredient": "metal",
-          "angle": -52,
+          "angle": -50,
           "power": 16
         },
         {
-          "tick": 5998,
+          "tick": 4562,
           "kind": "launch",
           "ingredient": "metal",
-          "angle": -60,
+          "angle": -48,
           "power": 16
         },
         {
-          "tick": 6028,
+          "tick": 4577,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -35,
+          "angle": -39,
           "power": 15
         },
         {
-          "tick": 6058,
+          "tick": 4592,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -44,
+          "angle": -40,
           "power": 14
         },
         {
-          "tick": 6103,
+          "tick": 4607,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -46,
+          "angle": -37,
+          "power": 15
+        },
+        {
+          "tick": 4622,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -40,
           "power": 14
         },
         {
-          "tick": 6133,
+          "tick": 4637,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -50,
-          "power": 13
+          "angle": -42,
+          "power": 14
         },
         {
-          "tick": 6163,
+          "tick": 4652,
           "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -36,
-          "power": 16
+          "ingredient": "pepper",
+          "angle": -33,
+          "power": 15
         },
         {
-          "tick": 6204,
+          "tick": 4667,
           "kind": "launch",
-          "ingredient": "metal",
-          "angle": -58,
-          "power": 16
+          "ingredient": "pepper",
+          "angle": -38,
+          "power": 10
         },
         {
-          "tick": 6241,
+          "tick": 4682,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -57,
           "power": 16
         },
         {
-          "tick": 6271,
+          "tick": 4697,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -51,
+          "power": 16
+        },
+        {
+          "tick": 4712,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 4727,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -56,
+          "power": 16
+        },
+        {
+          "tick": 4742,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -31,
+          "angle": -32,
+          "power": 10
+        },
+        {
+          "tick": 4757,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -33,
+          "power": 12
+        },
+        {
+          "tick": 4772,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 13
+        },
+        {
+          "tick": 4787,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -26,
+          "power": 16
+        },
+        {
+          "tick": 4802,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -26,
           "power": 15
         },
         {
-          "tick": 6301,
+          "tick": 4817,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -50,
+          "power": 16
+        },
+        {
+          "tick": 4832,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -48,
+          "power": 16
+        },
+        {
+          "tick": 4862,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 4940,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -55,
+          "power": 16
+        },
+        {
+          "tick": 4970,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -55,
+          "power": 16
+        },
+        {
+          "tick": 5000,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -63,
+          "power": 16
+        },
+        {
+          "tick": 5031,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -41,
+          "power": 15
+        },
+        {
+          "tick": 5061,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 14
+        },
+        {
+          "tick": 5091,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -45,
+          "power": 13
+        },
+        {
+          "tick": 5143,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -58,
+          "angle": -33,
+          "power": 12
+        },
+        {
+          "tick": 5162,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -32,
+          "power": 11
+        },
+        {
+          "tick": 5177,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -50,
           "power": 16
+        },
+        {
+          "tick": 5192,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -56,
+          "power": 16
+        },
+        {
+          "tick": 5207,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 5222,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -55,
+          "power": 16
+        },
+        {
+          "tick": 5237,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 11
+        },
+        {
+          "tick": 5252,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -32,
+          "power": 11
+        },
+        {
+          "tick": 5267,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -33,
+          "power": 10
+        },
+        {
+          "tick": 5282,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -32,
+          "power": 10
+        },
+        {
+          "tick": 5297,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -32,
+          "power": 11
+        },
+        {
+          "tick": 5312,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 14
+        },
+        {
+          "tick": 5327,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -32,
+          "power": 13
+        },
+        {
+          "tick": 5342,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -27,
+          "power": 14
+        },
+        {
+          "tick": 5357,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -27,
+          "power": 14
+        },
+        {
+          "tick": 5372,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 5387,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
+        },
+        {
+          "tick": 5402,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -50,
+          "power": 16
+        },
+        {
+          "tick": 5417,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 5432,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
+        },
+        {
+          "tick": 5473,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -40,
+          "power": 16
+        },
+        {
+          "tick": 5488,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -46,
+          "power": 13
+        },
+        {
+          "tick": 5609,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -50,
+          "power": 16
+        },
+        {
+          "tick": 5642,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -57,
+          "power": 16
+        },
+        {
+          "tick": 5675,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -44,
+          "power": 9
+        },
+        {
+          "tick": 5739,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -27,
+          "power": 12
+        },
+        {
+          "tick": 5769,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -47,
+          "power": 13
+        },
+        {
+          "tick": 5803,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -47,
+          "power": 13
+        },
+        {
+          "tick": 5839,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -51,
+          "power": 13
+        },
+        {
+          "tick": 5857,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 5872,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -51,
+          "power": 16
+        },
+        {
+          "tick": 5887,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -55,
+          "power": 16
+        },
+        {
+          "tick": 5902,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
+        },
+        {
+          "tick": 5917,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -51,
+          "power": 16
+        },
+        {
+          "tick": 5932,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 16
+        },
+        {
+          "tick": 5947,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -35,
+          "power": 16
+        },
+        {
+          "tick": 5962,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -36,
+          "power": 16
+        },
+        {
+          "tick": 5977,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -40,
+          "power": 16
+        },
+        {
+          "tick": 5992,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -27,
+          "power": 16
+        },
+        {
+          "tick": 6007,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -31,
+          "power": 16
+        },
+        {
+          "tick": 6034,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -37,
+          "power": 15
+        },
+        {
+          "tick": 6049,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -41,
+          "power": 16
+        },
+        {
+          "tick": 6064,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -41,
+          "power": 16
+        },
+        {
+          "tick": 6079,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -41,
+          "power": 16
+        },
+        {
+          "tick": 6094,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -38,
+          "power": 16
+        },
+        {
+          "tick": 6109,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -38,
+          "power": 16
+        },
+        {
+          "tick": 6124,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 16
+        },
+        {
+          "tick": 6139,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -32,
+          "power": 11
+        },
+        {
+          "tick": 6154,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -34,
+          "power": 10
+        },
+        {
+          "tick": 6169,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -31,
+          "power": 13
+        },
+        {
+          "tick": 6186,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -56,
+          "power": 16
+        },
+        {
+          "tick": 6241,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 6338,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -42,
+          "power": 15
+        },
+        {
+          "tick": 6368,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -37,
+          "power": 12
+        },
+        {
+          "tick": 6400,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -42,
+          "power": 9
+        },
+        {
+          "tick": 6438,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -38,
+          "power": 9
+        },
+        {
+          "tick": 6475,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 14
+        },
+        {
+          "tick": 6527,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -60,
+          "power": 16
+        },
+        {
+          "tick": 6558,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -45,
+          "power": 9
+        },
+        {
+          "tick": 6588,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -26,
+          "power": 13
+        },
+        {
+          "tick": 6664,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -51,
+          "power": 16
+        },
+        {
+          "tick": 6694,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -60,
+          "power": 16
+        },
+        {
+          "tick": 6724,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 11
+        },
+        {
+          "tick": 6754,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -33,
+          "power": 16
+        },
+        {
+          "tick": 6784,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -36,
+          "power": 11
         }
       ],
       "expect": {
-        "score": 83961,
-        "totalFeeds": 135,
+        "score": 183299,
+        "totalFeeds": 211,
         "phase": "lost",
         "failureReason": "empty-belly"
       }
@@ -1801,7 +2193,7 @@
     {
       "bot": "good",
       "seed": 209459,
-      "endTick": 10038,
+      "endTick": 11136,
       "commands": [
         {
           "tick": 0,
@@ -1825,35 +2217,35 @@
           "power": 16
         },
         {
-          "tick": 554,
+          "tick": 558,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -34,
           "power": 9
         },
         {
-          "tick": 569,
+          "tick": 573,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -32,
           "power": 9
         },
         {
-          "tick": 584,
+          "tick": 588,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -32,
           "power": 9
         },
         {
-          "tick": 599,
+          "tick": 603,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -32,
           "power": 9
         },
         {
-          "tick": 614,
+          "tick": 618,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -38,
@@ -1961,18 +2353,18 @@
           "tick": 856,
           "kind": "launch",
           "ingredient": "metal",
-          "angle": -53,
+          "angle": -54,
           "power": 16
         },
         {
-          "tick": 875,
+          "tick": 877,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -58,
           "power": 16
         },
         {
-          "tick": 901,
+          "tick": 903,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -48,
@@ -2175,1759 +2567,2081 @@
           "power": 14
         },
         {
-          "tick": 2213,
+          "tick": 2217,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -54,
           "power": 16
         },
         {
-          "tick": 2228,
+          "tick": 2232,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -53,
           "power": 16
         },
         {
-          "tick": 2243,
+          "tick": 2247,
           "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 16
+          "ingredient": "pepper",
+          "angle": -33,
+          "power": 10
         },
         {
-          "tick": 2258,
+          "tick": 2262,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -31,
           "power": 10
         },
         {
-          "tick": 2273,
+          "tick": 2277,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -32,
-          "power": 10
+          "angle": -36,
+          "power": 9
         },
         {
-          "tick": 2288,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -32,
-          "power": 10
-        },
-        {
-          "tick": 2303,
+          "tick": 2292,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -40,
           "power": 14
         },
         {
-          "tick": 2318,
+          "tick": 2307,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -40,
+          "power": 14
+        },
+        {
+          "tick": 2322,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -44,
           "power": 13
         },
         {
-          "tick": 2333,
+          "tick": 2337,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -43,
-          "power": 13
+          "angle": -40,
+          "power": 14
         },
         {
-          "tick": 2348,
+          "tick": 2352,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -39,
           "power": 14
         },
         {
-          "tick": 2363,
+          "tick": 2367,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -39,
           "power": 14
         },
         {
-          "tick": 2378,
+          "tick": 2382,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 2397,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 2412,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 2427,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -26,
+          "power": 15
+        },
+        {
+          "tick": 2442,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -26,
+          "power": 15
+        },
+        {
+          "tick": 2457,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -25,
+          "power": 15
+        },
+        {
+          "tick": 2472,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -27,
+          "power": 16
+        },
+        {
+          "tick": 2487,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -23,
+          "power": 16
+        },
+        {
+          "tick": 2502,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
+        },
+        {
+          "tick": 2517,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 2541,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -59,
+          "power": 16
+        },
+        {
+          "tick": 2558,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -51,
+          "power": 12
+        },
+        {
+          "tick": 2772,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -27,
+          "power": 16
+        },
+        {
+          "tick": 2802,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -26,
+          "power": 14
+        },
+        {
+          "tick": 2982,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -32,
+          "power": 15
+        },
+        {
+          "tick": 3012,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -58,
+          "power": 16
+        },
+        {
+          "tick": 3042,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -33,
+          "power": 16
+        },
+        {
+          "tick": 3063,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -35,
+          "power": 14
+        },
+        {
+          "tick": 3078,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 3093,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 3108,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 3123,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -42,
+          "power": 14
+        },
+        {
+          "tick": 3138,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 15
+        },
+        {
+          "tick": 3153,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -37,
           "power": 15
         },
         {
-          "tick": 2393,
+          "tick": 3168,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -25,
-          "power": 14
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 15
         },
         {
-          "tick": 2408,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -26,
-          "power": 14
-        },
-        {
-          "tick": 2423,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -26,
-          "power": 14
-        },
-        {
-          "tick": 2438,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -51,
-          "power": 16
-        },
-        {
-          "tick": 2453,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -51,
-          "power": 16
-        },
-        {
-          "tick": 2468,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 16
-        },
-        {
-          "tick": 2483,
+          "tick": 3183,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -52,
           "power": 16
         },
         {
-          "tick": 2498,
+          "tick": 3198,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -53,
           "power": 16
         },
         {
-          "tick": 2513,
+          "tick": 3213,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
+        },
+        {
+          "tick": 3228,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 3243,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -30,
-          "power": 10
+          "power": 11
         },
         {
-          "tick": 2550,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -44,
-          "power": 13
-        },
-        {
-          "tick": 2720,
+          "tick": 3258,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -56,
-          "power": 16
+          "angle": -23,
+          "power": 14
         },
         {
-          "tick": 2751,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -27,
-          "power": 15
-        },
-        {
-          "tick": 2781,
+          "tick": 3273,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -25,
           "power": 14
         },
         {
-          "tick": 2797,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -42,
-          "power": 13
-        },
-        {
-          "tick": 2812,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -41,
-          "power": 14
-        },
-        {
-          "tick": 2827,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -45,
-          "power": 13
-        },
-        {
-          "tick": 2842,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -45,
-          "power": 13
-        },
-        {
-          "tick": 2857,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 16
-        },
-        {
-          "tick": 2872,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
-          "tick": 2887,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 16
-        },
-        {
-          "tick": 2902,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -42,
-          "power": 14
-        },
-        {
-          "tick": 2917,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -53,
-          "power": 16
-        },
-        {
-          "tick": 2932,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
-          "tick": 2947,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 16
-        },
-        {
-          "tick": 2962,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -31,
-          "power": 10
-        },
-        {
-          "tick": 2977,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -32,
-          "power": 10
-        },
-        {
-          "tick": 2992,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -26,
-          "power": 15
-        },
-        {
-          "tick": 3007,
+          "tick": 3288,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -36,
           "power": 16
         },
         {
-          "tick": 3022,
+          "tick": 3303,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -35,
+          "angle": -36,
           "power": 16
         },
         {
-          "tick": 3037,
+          "tick": 3318,
           "kind": "launch",
-          "ingredient": "metal",
-          "angle": -51,
+          "ingredient": "balloon",
+          "angle": -36,
           "power": 16
         },
         {
-          "tick": 3052,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -51,
-          "power": 16
-        },
-        {
-          "tick": 3067,
+          "tick": 3333,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -53,
           "power": 16
         },
         {
-          "tick": 3082,
+          "tick": 3348,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -53,
           "power": 16
         },
         {
-          "tick": 3097,
+          "tick": 3363,
           "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -37,
+          "ingredient": "pepper",
+          "angle": -27,
           "power": 16
         },
         {
-          "tick": 3121,
+          "tick": 3378,
           "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -42,
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 15
+        },
+        {
+          "tick": 3393,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 16
+        },
+        {
+          "tick": 3580,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
           "power": 14
         },
         {
-          "tick": 3142,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -33,
-          "power": 11
-        },
-        {
-          "tick": 3287,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -59,
-          "power": 16
-        },
-        {
-          "tick": 3317,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -30,
-          "power": 16
-        },
-        {
-          "tick": 3451,
+          "tick": 3610,
           "kind": "launch",
           "ingredient": "metal",
-          "angle": -65,
-          "power": 16
-        },
-        {
-          "tick": 3481,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -40,
-          "power": 14
-        },
-        {
-          "tick": 3511,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -46,
-          "power": 14
-        },
-        {
-          "tick": 3526,
-          "kind": "launch",
-          "ingredient": "balloon",
           "angle": -45,
-          "power": 13
+          "power": 15
         },
         {
-          "tick": 3541,
+          "tick": 3760,
           "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -41,
-          "power": 14
-        },
-        {
-          "tick": 3556,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -35,
+          "ingredient": "pepper",
+          "angle": -58,
           "power": 16
         },
         {
-          "tick": 3571,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -37,
-          "power": 16
-        },
-        {
-          "tick": 3586,
+          "tick": 3830,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -38,
           "power": 16
         },
         {
-          "tick": 3601,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -37,
-          "power": 16
-        },
-        {
-          "tick": 3616,
+          "tick": 3845,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -36,
           "power": 16
         },
         {
-          "tick": 3631,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -27,
-          "power": 15
-        },
-        {
-          "tick": 3646,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -28,
-          "power": 16
-        },
-        {
-          "tick": 3661,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -27,
-          "power": 16
-        },
-        {
-          "tick": 3676,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -29,
-          "power": 14
-        },
-        {
-          "tick": 3691,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -28,
-          "power": 16
-        },
-        {
-          "tick": 3706,
+          "tick": 3860,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -37,
           "power": 16
         },
         {
-          "tick": 3721,
+          "tick": 3875,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -39,
-          "power": 14
-        },
-        {
-          "tick": 3736,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -45,
-          "power": 13
-        },
-        {
-          "tick": 3751,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
+          "angle": -38,
           "power": 16
         },
         {
-          "tick": 3766,
+          "tick": 3890,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -37,
+          "power": 16
+        },
+        {
+          "tick": 3905,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -52,
           "power": 16
         },
         {
-          "tick": 3781,
+          "tick": 3945,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -51,
+          "power": 16
+        },
+        {
+          "tick": 3960,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -53,
           "power": 16
         },
         {
-          "tick": 3796,
+          "tick": 3975,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
+        },
+        {
+          "tick": 3990,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -54,
           "power": 16
         },
         {
-          "tick": 3811,
+          "tick": 4005,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -54,
           "power": 16
         },
         {
-          "tick": 3826,
+          "tick": 4020,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -32,
-          "power": 11
-        },
-        {
-          "tick": 3841,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -29,
-          "power": 15
-        },
-        {
-          "tick": 3856,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -37,
-          "power": 10
-        },
-        {
-          "tick": 3976,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -60,
+          "angle": -28,
           "power": 16
         },
         {
-          "tick": 4006,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -37,
-          "power": 15
-        },
-        {
-          "tick": 4037,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -31,
-          "power": 15
-        },
-        {
-          "tick": 4208,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -58,
-          "power": 16
-        },
-        {
-          "tick": 4238,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -61,
-          "power": 16
-        },
-        {
-          "tick": 4268,
+          "tick": 4035,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -29,
-          "power": 15
+          "angle": -27,
+          "power": 16
         },
         {
-          "tick": 4477,
+          "tick": 4050,
           "kind": "launch",
-          "ingredient": "metal",
-          "angle": -48,
+          "ingredient": "pepper",
+          "angle": -30,
           "power": 14
         },
         {
-          "tick": 4507,
+          "tick": 4065,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -45,
+          "power": 14
+        },
+        {
+          "tick": 4080,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -38,
+          "power": 16
+        },
+        {
+          "tick": 4095,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -41,
+          "power": 15
+        },
+        {
+          "tick": 4110,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -40,
+          "power": 16
+        },
+        {
+          "tick": 4125,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -40,
+          "power": 16
+        },
+        {
+          "tick": 4140,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -51,
+          "power": 16
+        },
+        {
+          "tick": 4166,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -57,
+          "power": 16
+        },
+        {
+          "tick": 4330,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -33,
+          "power": 16
+        },
+        {
+          "tick": 4360,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 14
+        },
+        {
+          "tick": 4512,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -43,
+          "power": 16
+        },
+        {
+          "tick": 4542,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -49,
+          "power": 14
+        },
+        {
+          "tick": 4628,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 14
+        },
+        {
+          "tick": 4643,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 14
+        },
+        {
+          "tick": 4658,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -31,
+          "power": 11
+        },
+        {
+          "tick": 4673,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 4688,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
+        },
+        {
+          "tick": 4703,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 4718,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -31,
+          "power": 11
+        },
+        {
+          "tick": 4733,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 13
+        },
+        {
+          "tick": 4748,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 16
+        },
+        {
+          "tick": 4763,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 15
+        },
+        {
+          "tick": 4778,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 14
+        },
+        {
+          "tick": 4793,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -38,
+          "power": 16
+        },
+        {
+          "tick": 4808,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -40,
+          "power": 16
+        },
+        {
+          "tick": 4823,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -38,
+          "power": 16
+        },
+        {
+          "tick": 4838,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 16
+        },
+        {
+          "tick": 4853,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 16
+        },
+        {
+          "tick": 4868,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
+        },
+        {
+          "tick": 4883,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 4898,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
+        },
+        {
+          "tick": 4913,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 4928,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 4943,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -34,
+          "power": 16
+        },
+        {
+          "tick": 4958,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -44,
+          "power": 13
+        },
+        {
+          "tick": 4976,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 15
+        },
+        {
+          "tick": 5109,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -44,
+          "power": 14
+        },
+        {
+          "tick": 5149,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -50,
           "power": 14
         },
         {
-          "tick": 4539,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -53,
-          "power": 16
-        },
-        {
-          "tick": 4583,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -44,
-          "power": 15
-        },
-        {
-          "tick": 4615,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -45,
-          "power": 16
-        },
-        {
-          "tick": 4645,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -29,
-          "power": 14
-        },
-        {
-          "tick": 4680,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -29,
-          "power": 14
-        },
-        {
-          "tick": 4719,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -27,
-          "power": 13
-        },
-        {
-          "tick": 4749,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -33,
-          "power": 10
-        },
-        {
-          "tick": 4781,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -40,
-          "power": 9
-        },
-        {
-          "tick": 4830,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -27,
-          "power": 14
-        },
-        {
-          "tick": 4878,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -44,
-          "power": 14
-        },
-        {
-          "tick": 4910,
+          "tick": 5179,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -63,
           "power": 14
         },
         {
-          "tick": 4953,
+          "tick": 5316,
           "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -52,
-          "power": 15
-        },
-        {
-          "tick": 4994,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -51,
-          "power": 15
-        },
-        {
-          "tick": 5037,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -50,
+          "ingredient": "pepper",
+          "angle": -32,
           "power": 13
         },
         {
-          "tick": 5097,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -43,
-          "power": 14
-        },
-        {
-          "tick": 5131,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -47,
-          "power": 14
-        },
-        {
-          "tick": 5165,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
-          "tick": 5207,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -55,
-          "power": 16
-        },
-        {
-          "tick": 5237,
+          "tick": 5352,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -31,
+          "angle": -30,
+          "power": 12
+        },
+        {
+          "tick": 5367,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
           "power": 16
         },
         {
-          "tick": 5267,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -31,
-          "power": 14
-        },
-        {
-          "tick": 5297,
+          "tick": 5382,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -53,
-          "power": 15
-        },
-        {
-          "tick": 5327,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -35,
+          "angle": -36,
           "power": 16
         },
         {
           "tick": 5397,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -36,
-          "power": 14
+          "angle": -38,
+          "power": 16
+        },
+        {
+          "tick": 5412,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -37,
+          "power": 16
         },
         {
           "tick": 5427,
           "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -30,
+          "ingredient": "pepper",
+          "angle": -27,
+          "power": 14
+        },
+        {
+          "tick": 5442,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
           "power": 15
         },
         {
           "tick": 5457,
           "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -38,
-          "power": 15
-        },
-        {
-          "tick": 5510,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -35,
+          "ingredient": "pepper",
+          "angle": -28,
           "power": 16
         },
         {
-          "tick": 5540,
+          "tick": 5472,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -32,
+          "power": 11
+        },
+        {
+          "tick": 5500,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -40,
           "power": 16
         },
         {
-          "tick": 5576,
+          "tick": 5515,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -49,
+          "angle": -40,
+          "power": 16
+        },
+        {
+          "tick": 5530,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 16
+        },
+        {
+          "tick": 5545,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 16
+        },
+        {
+          "tick": 5560,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -31,
+          "power": 14
+        },
+        {
+          "tick": 5575,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 14
+        },
+        {
+          "tick": 5590,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 14
+        },
+        {
+          "tick": 5605,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -31,
           "power": 13
         },
         {
           "tick": 5665,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -28,
-          "power": 12
-        },
-        {
-          "tick": 5695,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -34,
-          "power": 10
-        },
-        {
-          "tick": 5743,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -28,
-          "power": 13
-        },
-        {
-          "tick": 5773,
-          "kind": "launch",
           "ingredient": "metal",
-          "angle": -53,
+          "angle": -54,
           "power": 16
         },
         {
-          "tick": 5817,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -57,
-          "power": 16
-        },
-        {
-          "tick": 5854,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -56,
-          "power": 16
-        },
-        {
-          "tick": 5884,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -40,
-          "power": 14
-        },
-        {
-          "tick": 5914,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -45,
-          "power": 13
-        },
-        {
-          "tick": 5947,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -50,
-          "power": 13
-        },
-        {
-          "tick": 6007,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -40,
-          "power": 9
-        },
-        {
-          "tick": 6033,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -28,
-          "power": 16
-        },
-        {
-          "tick": 6048,
+          "tick": 5680,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -30,
-          "power": 16
+          "power": 14
         },
         {
-          "tick": 6063,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 16
-        },
-        {
-          "tick": 6113,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 16
-        },
-        {
-          "tick": 6128,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
-          "tick": 6143,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -53,
-          "power": 16
-        },
-        {
-          "tick": 6158,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
-          "tick": 6173,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -38,
-          "power": 15
-        },
-        {
-          "tick": 6188,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -38,
-          "power": 16
-        },
-        {
-          "tick": 6203,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -38,
-          "power": 16
-        },
-        {
-          "tick": 6218,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -38,
-          "power": 16
-        },
-        {
-          "tick": 6233,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -41,
-          "power": 16
-        },
-        {
-          "tick": 6248,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -41,
-          "power": 16
-        },
-        {
-          "tick": 6263,
+          "tick": 5699,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -31,
-          "power": 16
-        },
-        {
-          "tick": 6278,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -29,
-          "power": 16
-        },
-        {
-          "tick": 6315,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -28,
-          "power": 16
-        },
-        {
-          "tick": 6330,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -27,
-          "power": 16
-        },
-        {
-          "tick": 6345,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -26,
-          "power": 15
-        },
-        {
-          "tick": 6363,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -28,
-          "power": 11
-        },
-        {
-          "tick": 6514,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -50,
-          "power": 14
-        },
-        {
-          "tick": 6560,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -45,
-          "power": 14
-        },
-        {
-          "tick": 6643,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -43,
-          "power": 15
-        },
-        {
-          "tick": 6673,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -61,
-          "power": 14
-        },
-        {
-          "tick": 6704,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -56,
-          "power": 16
-        },
-        {
-          "tick": 6734,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -42,
-          "power": 15
-        },
-        {
-          "tick": 6785,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -39,
-          "power": 16
-        },
-        {
-          "tick": 6815,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -41,
-          "power": 14
-        },
-        {
-          "tick": 6845,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -28,
-          "power": 14
-        },
-        {
-          "tick": 6875,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -31,
-          "power": 11
-        },
-        {
-          "tick": 6905,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -36,
           "power": 10
         },
         {
-          "tick": 6939,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -40,
-          "power": 9
-        },
-        {
-          "tick": 6991,
+          "tick": 5859,
           "kind": "launch",
           "ingredient": "metal",
-          "angle": -55,
-          "power": 16
+          "angle": -44,
+          "power": 14
         },
         {
-          "tick": 7024,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -56,
-          "power": 16
-        },
-        {
-          "tick": 7063,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -57,
-          "power": 16
-        },
-        {
-          "tick": 7101,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -57,
-          "power": 16
-        },
-        {
-          "tick": 7131,
+          "tick": 5889,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -40,
+          "angle": -49,
+          "power": 16
+        },
+        {
+          "tick": 5920,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -35,
           "power": 15
         },
         {
-          "tick": 7161,
+          "tick": 5996,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -49,
           "power": 13
         },
         {
-          "tick": 7191,
+          "tick": 6063,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -36,
-          "power": 11
-        },
-        {
-          "tick": 7221,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -40,
-          "power": 9
-        },
-        {
-          "tick": 7251,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -45,
+          "ingredient": "metal",
+          "angle": -43,
           "power": 14
         },
         {
-          "tick": 7281,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -48,
-          "power": 13
-        },
-        {
-          "tick": 7358,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 16
-        },
-        {
-          "tick": 7419,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -34,
-          "power": 11
-        },
-        {
-          "tick": 7449,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -36,
-          "power": 10
-        },
-        {
-          "tick": 7467,
+          "tick": 6113,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -55,
           "power": 16
         },
         {
-          "tick": 7482,
+          "tick": 6151,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -57,
+          "power": 16
+        },
+        {
+          "tick": 6181,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -54,
-          "power": 16
-        },
-        {
-          "tick": 7497,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
-          "tick": 7512,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -53,
-          "power": 16
-        },
-        {
-          "tick": 7527,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -37,
-          "power": 16
-        },
-        {
-          "tick": 7542,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -37,
-          "power": 16
-        },
-        {
-          "tick": 7557,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -37,
-          "power": 16
-        },
-        {
-          "tick": 7572,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -37,
-          "power": 16
-        },
-        {
-          "tick": 7587,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -29,
           "power": 14
         },
         {
-          "tick": 7602,
+          "tick": 6211,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -27,
-          "power": 16
+          "angle": -33,
+          "power": 13
         },
         {
-          "tick": 7617,
+          "tick": 6241,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -32,
+          "power": 11
+        },
+        {
+          "tick": 6256,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -30,
           "power": 14
         },
         {
-          "tick": 7632,
+          "tick": 6285,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -28,
           "power": 16
         },
         {
-          "tick": 7647,
+          "tick": 6300,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -39,
+          "angle": -38,
           "power": 16
         },
         {
-          "tick": 7662,
+          "tick": 6315,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -41,
+          "angle": -37,
           "power": 16
         },
         {
-          "tick": 7677,
+          "tick": 6330,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -40,
+          "angle": -38,
           "power": 16
         },
         {
-          "tick": 7692,
+          "tick": 6345,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -42,
+          "angle": -37,
           "power": 16
         },
         {
-          "tick": 7707,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -39,
-          "power": 16
-        },
-        {
-          "tick": 7733,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 16
-        },
-        {
-          "tick": 7748,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
-          "tick": 7763,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
-          "tick": 7778,
+          "tick": 6360,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -51,
           "power": 16
         },
         {
-          "tick": 7793,
+          "tick": 6375,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 6390,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
+        },
+        {
+          "tick": 6405,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 16
+        },
+        {
+          "tick": 6420,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 14
+        },
+        {
+          "tick": 6435,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 16
+        },
+        {
+          "tick": 6450,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -30,
+          "power": 15
+        },
+        {
+          "tick": 6465,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -56,
+          "power": 16
+        },
+        {
+          "tick": 6480,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -30,
           "power": 16
         },
         {
-          "tick": 7896,
+          "tick": 6523,
           "kind": "launch",
           "ingredient": "metal",
-          "angle": -46,
+          "angle": -55,
+          "power": 16
+        },
+        {
+          "tick": 6538,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
+        },
+        {
+          "tick": 6553,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 6568,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -44,
+          "power": 14
+        },
+        {
+          "tick": 6694,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -45,
+          "power": 16
+        },
+        {
+          "tick": 6745,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -48,
+          "power": 14
+        },
+        {
+          "tick": 6805,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -57,
+          "power": 16
+        },
+        {
+          "tick": 6835,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -36,
           "power": 15
         },
         {
-          "tick": 7993,
+          "tick": 6865,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -30,
+          "power": 15
+        },
+        {
+          "tick": 6911,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -49,
+          "power": 13
+        },
+        {
+          "tick": 6945,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -51,
+          "power": 13
+        },
+        {
+          "tick": 6980,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -52,
+          "power": 13
+        },
+        {
+          "tick": 7015,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -36,
+          "power": 10
+        },
+        {
+          "tick": 7055,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -34,
+          "power": 10
+        },
+        {
+          "tick": 7085,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -38,
+          "power": 9
+        },
+        {
+          "tick": 7127,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -57,
+          "power": 16
+        },
+        {
+          "tick": 7164,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -55,
+          "power": 16
+        },
+        {
+          "tick": 7194,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -31,
+          "power": 16
+        },
+        {
+          "tick": 7233,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -41,
+          "power": 9
+        },
+        {
+          "tick": 7271,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -40,
+          "power": 9
+        },
+        {
+          "tick": 7301,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -27,
+          "power": 16
+        },
+        {
+          "tick": 7358,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -40,
+          "power": 15
+        },
+        {
+          "tick": 7388,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -44,
+          "power": 14
+        },
+        {
+          "tick": 7491,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 7506,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 7521,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 7536,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 16
+        },
+        {
+          "tick": 7551,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 16
+        },
+        {
+          "tick": 7566,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 16
+        },
+        {
+          "tick": 7581,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 7596,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 7611,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 7626,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 7641,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -38,
+          "power": 16
+        },
+        {
+          "tick": 7656,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 16
+        },
+        {
+          "tick": 7671,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -41,
+          "power": 16
+        },
+        {
+          "tick": 7686,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -40,
+          "power": 16
+        },
+        {
+          "tick": 7701,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -42,
+          "power": 16
+        },
+        {
+          "tick": 7716,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 16
+        },
+        {
+          "tick": 7731,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -31,
+          "power": 16
+        },
+        {
+          "tick": 7746,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 16
+        },
+        {
+          "tick": 7761,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -37,
+          "power": 10
+        },
+        {
+          "tick": 7875,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -48,
+          "power": 15
+        },
+        {
+          "tick": 7915,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -63,
+          "power": 14
+        },
+        {
+          "tick": 7968,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -30,
           "power": 14
         },
         {
           "tick": 8027,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -29,
-          "power": 13
+          "angle": -27,
+          "power": 15
         },
         {
-          "tick": 8066,
+          "tick": 8058,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -31,
-          "power": 11
+          "ingredient": "balloon",
+          "angle": -36,
+          "power": 15
         },
         {
-          "tick": 8111,
+          "tick": 8088,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -44,
+          "power": 14
+        },
+        {
+          "tick": 8134,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -48,
           "power": 13
         },
         {
-          "tick": 8146,
+          "tick": 8151,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -51,
-          "power": 13
+          "angle": -42,
+          "power": 16
         },
         {
-          "tick": 8178,
+          "tick": 8166,
           "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -53,
-          "power": 13
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 16
         },
         {
-          "tick": 8217,
+          "tick": 8181,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 16
+        },
+        {
+          "tick": 8214,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -30,
+          "power": 16
+        },
+        {
+          "tick": 8229,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 16
+        },
+        {
+          "tick": 8244,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 16
+        },
+        {
+          "tick": 8259,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 16
+        },
+        {
+          "tick": 8274,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -55,
           "power": 16
         },
         {
-          "tick": 8232,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
-          "tick": 8247,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
           "tick": 8322,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -29,
-          "power": 15
+          "ingredient": "balloon",
+          "angle": -37,
+          "power": 16
         },
         {
           "tick": 8337,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -31,
-          "power": 14
+          "ingredient": "balloon",
+          "angle": -40,
+          "power": 16
         },
         {
           "tick": 8352,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -30,
-          "power": 13
+          "ingredient": "balloon",
+          "angle": -44,
+          "power": 14
         },
         {
           "tick": 8367,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -31,
+          "ingredient": "balloon",
+          "angle": -45,
           "power": 14
         },
         {
           "tick": 8441,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -27,
-          "power": 16
+          "angle": -37,
+          "power": 10
         },
         {
           "tick": 8456,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -37,
-          "power": 10
+          "angle": -29,
+          "power": 16
         },
         {
           "tick": 8471,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -27,
+          "angle": -26,
           "power": 16
         },
         {
           "tick": 8486,
           "kind": "launch",
-          "ingredient": "metal",
-          "angle": -53,
+          "ingredient": "pepper",
+          "angle": -30,
           "power": 16
         },
         {
-          "tick": 8501,
+          "tick": 8606,
           "kind": "launch",
           "ingredient": "metal",
-          "angle": -52,
+          "angle": -44,
           "power": 16
         },
         {
-          "tick": 8528,
+          "tick": 8649,
           "kind": "launch",
           "ingredient": "metal",
-          "angle": -58,
-          "power": 16
+          "angle": -49,
+          "power": 14
         },
         {
-          "tick": 8626,
+          "tick": 8702,
           "kind": "launch",
           "ingredient": "metal",
-          "angle": -45,
-          "power": 16
+          "angle": -42,
+          "power": 14
         },
         {
-          "tick": 8674,
+          "tick": 8740,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -43,
+          "power": 14
+        },
+        {
+          "tick": 8771,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -46,
           "power": 14
         },
         {
-          "tick": 8721,
+          "tick": 8794,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -30,
-          "power": 16
-        },
-        {
-          "tick": 8751,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -35,
-          "power": 14
-        },
-        {
-          "tick": 8781,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -38,
+          "angle": -39,
           "power": 15
         },
         {
-          "tick": 8816,
+          "tick": 8809,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 16
+        },
+        {
+          "tick": 8824,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -39,
+          "power": 16
+        },
+        {
+          "tick": 8839,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -41,
-          "power": 14
-        },
-        {
-          "tick": 8846,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -50,
-          "power": 13
-        },
-        {
-          "tick": 8878,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -51,
-          "power": 13
-        },
-        {
-          "tick": 8951,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -57,
           "power": 16
         },
         {
-          "tick": 8989,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -56,
-          "power": 16
-        },
-        {
-          "tick": 9029,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -52,
-          "power": 16
-        },
-        {
-          "tick": 9059,
+          "tick": 8854,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -47,
-          "power": 13
-        },
-        {
-          "tick": 9093,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -50,
-          "power": 13
-        },
-        {
-          "tick": 9123,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -52,
-          "power": 13
-        },
-        {
-          "tick": 9163,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -34,
-          "power": 10
-        },
-        {
-          "tick": 9178,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -30,
+          "angle": -39,
           "power": 16
         },
         {
-          "tick": 9193,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -30,
-          "power": 14
-        },
-        {
-          "tick": 9208,
-          "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -30,
-          "power": 16
-        },
-        {
-          "tick": 9223,
+          "tick": 8948,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -53,
           "power": 16
         },
         {
-          "tick": 9238,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -53,
-          "power": 16
-        },
-        {
-          "tick": 9253,
+          "tick": 8963,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -54,
           "power": 16
         },
         {
-          "tick": 9268,
+          "tick": 8978,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -29,
-          "power": 14
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
         },
         {
-          "tick": 9283,
+          "tick": 8993,
           "kind": "launch",
           "ingredient": "pepper",
-          "angle": -29,
-          "power": 15
+          "angle": -28,
+          "power": 16
         },
         {
-          "tick": 9298,
+          "tick": 9008,
           "kind": "launch",
           "ingredient": "pepper",
           "angle": -29,
           "power": 16
         },
         {
-          "tick": 9313,
+          "tick": 9023,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 16
+        },
+        {
+          "tick": 9038,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 16
+        },
+        {
+          "tick": 9053,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 9068,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 9089,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -45,
+          "angle": -44,
           "power": 14
         },
         {
-          "tick": 9328,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -45,
-          "power": 14
-        },
-        {
-          "tick": 9370,
+          "tick": 9126,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -43,
           "power": 15
         },
         {
-          "tick": 9426,
+          "tick": 9143,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -54,
+          "power": 12
+        },
+        {
+          "tick": 9278,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 16
+        },
+        {
+          "tick": 9323,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -40,
+          "power": 9
+        },
+        {
+          "tick": 9361,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -48,
+          "power": 14
+        },
+        {
+          "tick": 9401,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -45,
+          "power": 14
+        },
+        {
+          "tick": 9432,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -53,
           "power": 16
         },
         {
-          "tick": 9441,
+          "tick": 9447,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -38,
+          "power": 16
+        },
+        {
+          "tick": 9462,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -53,
           "power": 16
         },
         {
-          "tick": 9456,
+          "tick": 9477,
           "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
-          "power": 16
-        },
-        {
-          "tick": 9471,
-          "kind": "launch",
-          "ingredient": "metal",
-          "angle": -54,
+          "ingredient": "balloon",
+          "angle": -39,
           "power": 16
         },
         {
           "tick": 9492,
           "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -39,
+          "ingredient": "pepper",
+          "angle": -28,
           "power": 15
         },
         {
-          "tick": 9512,
+          "tick": 9507,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -30,
+          "power": 13
+        },
+        {
+          "tick": 9522,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -30,
+          "power": 13
+        },
+        {
+          "tick": 9537,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -33,
+          "power": 12
+        },
+        {
+          "tick": 9552,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -35,
+          "angle": -41,
+          "power": 15
+        },
+        {
+          "tick": 9567,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -51,
+          "power": 13
+        },
+        {
+          "tick": 9582,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -46,
+          "power": 14
+        },
+        {
+          "tick": 9597,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -31,
           "power": 16
         },
         {
-          "tick": 9527,
+          "tick": 9612,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -28,
+          "power": 16
+        },
+        {
+          "tick": 9627,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 16
+        },
+        {
+          "tick": 9676,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -55,
+          "power": 16
+        },
+        {
+          "tick": 9691,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 9723,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 9751,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -56,
+          "power": 16
+        },
+        {
+          "tick": 9839,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -43,
+          "power": 16
+        },
+        {
+          "tick": 9870,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -45,
+          "power": 14
+        },
+        {
+          "tick": 9928,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -26,
+          "power": 14
+        },
+        {
+          "tick": 9958,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -36,
+          "power": 10
+        },
+        {
+          "tick": 9988,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -35,
+          "power": 14
+        },
+        {
+          "tick": 10023,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -42,
+          "power": 14
+        },
+        {
+          "tick": 10053,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -45,
+          "power": 14
+        },
+        {
+          "tick": 10162,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 10177,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 10192,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 10207,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -54,
+          "power": 16
+        },
+        {
+          "tick": 10222,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -42,
+          "power": 14
+        },
+        {
+          "tick": 10237,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -49,
           "power": 13
         },
         {
-          "tick": 9618,
+          "tick": 10252,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -44,
-          "power": 9
+          "ingredient": "balloon",
+          "angle": -43,
+          "power": 14
         },
         {
-          "tick": 9672,
+          "tick": 10267,
           "kind": "launch",
-          "ingredient": "pepper",
-          "angle": -33,
-          "power": 11
+          "ingredient": "balloon",
+          "angle": -49,
+          "power": 13
         },
         {
-          "tick": 9702,
+          "tick": 10282,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -47,
+          "power": 14
+        },
+        {
+          "tick": 10297,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -46,
+          "power": 14
+        },
+        {
+          "tick": 10312,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 16
+        },
+        {
+          "tick": 10327,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -30,
+          "power": 16
+        },
+        {
+          "tick": 10342,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -31,
+          "power": 16
+        },
+        {
+          "tick": 10407,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -55,
+          "power": 16
+        },
+        {
+          "tick": 10422,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -53,
+          "power": 16
+        },
+        {
+          "tick": 10437,
+          "kind": "launch",
+          "ingredient": "metal",
+          "angle": -52,
+          "power": 16
+        },
+        {
+          "tick": 10457,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -31,
+          "power": 16
+        },
+        {
+          "tick": 10473,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -38,
+          "power": 10
+        },
+        {
+          "tick": 10569,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -29,
+          "power": 14
+        },
+        {
+          "tick": 10599,
           "kind": "launch",
           "ingredient": "balloon",
           "angle": -34,
           "power": 16
         },
         {
-          "tick": 9732,
+          "tick": 10629,
           "kind": "launch",
           "ingredient": "balloon",
-          "angle": -37,
-          "power": 14
-        },
-        {
-          "tick": 9762,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -56,
-          "power": 14
-        },
-        {
-          "tick": 9792,
-          "kind": "launch",
-          "ingredient": "balloon",
-          "angle": -39,
+          "angle": -50,
           "power": 16
         },
         {
-          "tick": 9996,
+          "tick": 10659,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -31,
+          "power": 13
+        },
+        {
+          "tick": 10758,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -44,
+          "power": 9
+        },
+        {
+          "tick": 10795,
+          "kind": "launch",
+          "ingredient": "pepper",
+          "angle": -44,
+          "power": 9
+        },
+        {
+          "tick": 10902,
           "kind": "launch",
           "ingredient": "metal",
-          "angle": -54,
+          "angle": -53,
           "power": 16
         },
         {
-          "tick": 10029,
+          "tick": 10935,
           "kind": "launch",
           "ingredient": "metal",
           "angle": -56,
           "power": 16
+        },
+        {
+          "tick": 10965,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -38,
+          "power": 16
+        },
+        {
+          "tick": 10995,
+          "kind": "launch",
+          "ingredient": "balloon",
+          "angle": -45,
+          "power": 14
         }
       ],
       "expect": {
-        "score": 287717,
-        "totalFeeds": 277,
+        "score": 382058,
+        "totalFeeds": 330,
         "phase": "lost",
         "failureReason": "empty-belly"
       }

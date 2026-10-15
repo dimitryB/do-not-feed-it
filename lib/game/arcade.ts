@@ -290,7 +290,7 @@ export const TUNING = Object.freeze({
   /** A coin out of a crate lands in the mouth this many ticks after it comes out. */
   pourArrive: 34,
   /** Ticks between one coin coming out of a crate and the next. */
-  pourStagger: 8,
+  pourStagger: 10,
   /** A coin first pops straight up out of the crate, under this fall, for this many ticks... */
   pourPop: 10,
   pourPopGravity: 0.45,
@@ -1379,8 +1379,9 @@ function breakCrate(state: ArcadeState, food: Projectile, into: Projectile[]): v
   state.crateAt = state.tick + crate.gap;
   for (let i = 0; i < TUNING.crateCoins; i++) {
     // Straight up out of the top of the crate one after another, fanned a
-    // little and leaning toward the mouth, then each on its own lob into it.
-    const a = -Math.PI / 2 + 0.12 + (i - (TUNING.crateCoins - 1) / 2) * 0.16;
+    // little and leaning back over the open air (away from the lamp and the
+    // creature's eyes), then each on its own lob into the mouth.
+    const a = -Math.PI / 2 - 0.18 + (i - (TUNING.crateCoins - 1) / 2) * 0.2;
     const speed = TUNING.pourSpeed;
     into.push({
       id: state.nextProjectileId++, ingredient: crate.ingredient, kind: "pour",

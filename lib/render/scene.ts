@@ -61,7 +61,7 @@ const CAPTION_LOW = { x: 280, y: 345 };
 /** The BLOCK REWARD. card never reaches past here: left of the creature's mouth at any size a block comes at. */
 const CARD_RIGHT = 570;
 /** The FOMO banner's centre: left of the blocks' stretch of rail. */
-const FOMO_X = 240;
+const FOMO_X = 200;
 /** Where the combo lives, in screen space: under the score, out of the lance's way. */
 const COMBO = { x: 24, y: 118 };
 /** The belly bar, on the counter's front face directly under the creature. */
@@ -219,7 +219,7 @@ export function createScene() {
   let flashColor = '#ffffff';
   let flashX = 0; let flashY = 0; let flashSeed = 0;
   /** The coins of the last broken block swallowed so far, and their running total, for its card. */
-  let cardEaten = 0; let cardTotal = 0;
+  let cardEaten = 0; let cardTotal = 0; let cardPulseAt = -10;
   let lastMouth = { x: 600, y: 300 };
 
   function burst(x: number, y: number, n: number, color: string, speed: number, time: number, kind: Particle['kind'] = 'dot', seed = 0, life = 0.7, gravity = 260) {
@@ -279,8 +279,12 @@ export function createScene() {
             // pop over the upper teeth, and a pip lit on the block's card,
             // which carries the running total.
             rings.push({ x: e.x, y: e.y, born: time, color: tint, big: true });
-            pops.push({ x: e.x + 80, y: e.y - 46, text: `+${value}`, color: '#ffe28a', born: time, size: 24 });
-            cardEaten += 1; cardTotal += value;
+            cardEaten += 1; cardTotal += value; cardPulseAt = time;
+            const last = cardEaten >= TUNING.crateCoins;
+            // Chomp, chomp, CHOMP: a nudge of the camera for each, harder for the last,
+            // and then one total beside the mouth instead of three on the face.
+            if (!reduced) shake = Math.max(shake, last ? 0.6 : 0.28);
+            if (last) pops.push({ x: Math.min(e.x - 190, 600), y: e.y - 100, text: `+${cardTotal}`, color: tint, born: time, size: 54 });
           } else {
             pops.push({ x: e.x, y: e.y - 30, text: `+${value}`, color: e.craved ? '#ffe28a' : '#e7ffb0', born: time, size: clamp(22 + value / 40, 22, 64) });
           }
@@ -409,9 +413,9 @@ export function createScene() {
               // Plates of its iron, thrown up and back toward the launcher and
               // falling hard: none of them reach the creature.
               for (let i = 0; i < 7; i++) {
-                const a = -Math.PI * (0.48 + 0.07 * i) + (hashed(e.id + i) - 0.5) * 0.25;
-                const sp = 240 + hashed(e.id * 3 + i) * 200;
-                particles.push({ x: e.x + (hashed(e.id + i * 9) - 0.5) * 30, y: e.y + (hashed(e.id + i * 13) - 0.5) * 30, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, born: time, life: 0.95, size: 26 + hashed(e.id + i * 5) * 14, color: tint, gravity: 1700, kind: 'shard' });
+                const a = -Math.PI * (0.55 + 0.05 * i) + (hashed(e.id + i) - 0.5) * 0.2;
+                const sp = 300 + hashed(e.id * 3 + i) * 220;
+                particles.push({ x: e.x + (hashed(e.id + i * 9) - 0.5) * 30, y: e.y + (hashed(e.id + i * 13) - 0.5) * 30, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, born: time, life: 0.65, size: 26 + hashed(e.id + i * 5) * 14, color: tint, gravity: 1500, kind: 'shard' });
               }
             }
             burst(e.x, e.y, reduced ? 6 : 16, '#fff2c0', 420, time, 'spark', e.id + 5, 0.55);
@@ -874,20 +878,23 @@ export function createScene() {
     ctx.fillStyle = '#2f2620'; ctx.beginPath(); ctx.roundRect(trolley - 14, railY + 2, 28, 12, 3); ctx.fill();
     ctx.strokeStyle = `${RIM}0.6)`; ctx.lineWidth = 1; ctx.stroke();
     ctx.fillStyle = '#b09474';
-    for (const wx of [-8, 8]) { ctx.beginPath(); ctx.arc(trolley + wx, railY - 5, 4, 0, Math.PI * 2); ctx.fill(); }
+    for (const wx of [-8, 8]) {
+      ctx.fillStyle = '#b09474'; ctx.beginPath(); ctx.arc(trolley + wx, railY - 5, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = `${RIM}0.9)`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(trolley + wx, railY - 5, 4, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+    }
     // The chain down to the top of the block.
     const topX = at.x - Math.sin(swing) * (s + d * 0.6); const topY = at.y - Math.cos(swing) * (s + d * 0.6);
     links(ctx, trolley, railY + 14, topX, topY, '#9aa49b');
     // A soft dark backplate, so the block parts from the painted kitchen
     // behind it (the pan, the shelf, the lamp) instead of joining them.
-    const back = ctx.createRadialGradient(at.x, at.y, 20, at.x, at.y, 78);
-    back.addColorStop(0, 'rgba(2,5,5,0.75)'); back.addColorStop(1, 'rgba(2,5,5,0)');
-    ctx.fillStyle = back; ctx.beginPath(); ctx.arc(at.x, at.y, 78, 0, Math.PI * 2); ctx.fill();
+    const back = ctx.createRadialGradient(at.x, at.y, 20, at.x, at.y, 96);
+    back.addColorStop(0, 'rgba(2,5,5,0.72)'); back.addColorStop(0.55, 'rgba(2,5,5,0.5)'); back.addColorStop(1, 'rgba(2,5,5,0)');
+    ctx.fillStyle = back; ctx.beginPath(); ctx.arc(at.x, at.y, 96, 0, Math.PI * 2); ctx.fill();
     // Its coin's light on the wall behind it, so it reads at stream size.
     const pulse = reduced ? 0.6 : 0.5 + 0.5 * Math.sin(time * 3.6 + c.id);
     const glow = ctx.createRadialGradient(at.x, at.y, 10, at.x, at.y, 92);
     glow.addColorStop(0, `${tint}55`); glow.addColorStop(1, `${tint}00`);
-    ctx.globalAlpha = wanted ? 0.7 + 0.3 * pulse : 0.35; ctx.fillStyle = glow;
+    ctx.globalAlpha = wanted ? 0.7 + 0.3 * pulse : 0.5; ctx.fillStyle = glow;
     ctx.beginPath(); ctx.arc(at.x, at.y, 92, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
     // Wanted: a ring pulsing out of it twice a second.
     if (wanted && !reduced) {
@@ -918,20 +925,20 @@ export function createScene() {
     for (const [rx, ry] of [[-s + 6, -s + 6], [s - 6, -s + 6], [-s + 6, s - 6], [s - 6, s - 6]]) { ctx.beginPath(); ctx.arc(rx, ry, 3, 0, Math.PI * 2); ctx.fill(); }
     // Its coin's colour on the edges: thin, with a soft glow, not a neon frame.
     ctx.save();
-    ctx.shadowColor = tint; ctx.shadowBlur = wanted ? (reduced ? 8 : 12 + 8 * pulse) : 4;
-    ctx.strokeStyle = tint; ctx.lineWidth = wanted ? 4.5 : 1.6; ctx.lineJoin = 'round';
-    if (!wanted) ctx.globalAlpha = 0.6;
+    ctx.shadowColor = tint; ctx.shadowBlur = wanted ? (reduced ? 8 : 12 + 8 * pulse) : 6;
+    ctx.strokeStyle = tint; ctx.lineWidth = wanted ? 5 : 3.5; ctx.lineJoin = 'round';
+    if (!wanted) ctx.globalAlpha = 0.8;
     ctx.beginPath(); ctx.roundRect(-s, -s, 2 * s, 2 * s, 3); ctx.stroke();
     ctx.globalAlpha = 0.7;
     ctx.beginPath(); ctx.moveTo(-s, -s); ctx.lineTo(-s + d, -s - d); ctx.lineTo(s + d, -s - d); ctx.lineTo(s + d, s - d); ctx.lineTo(s, s); ctx.moveTo(s + d, -s - d); ctx.lineTo(s, -s); ctx.stroke();
     ctx.restore();
     // The plate the coin is set into: a dark recess with a bevelled rim.
     ctx.fillStyle = '#0b0908'; ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.fill();
+    // The recess lit in its coin's colour, so even an Ether block is never grey on grey.
+    ctx.fillStyle = withAlpha(tint, 0.3); ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#8a6d52'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 26, Math.PI * 0.9, Math.PI * 1.9); ctx.stroke();
     ctx.restore();
-    ctx.save(); if (!wanted) ctx.globalAlpha = 0.6;
-    coin(ctx, c.ingredient, at.x, at.y, 48, swing, reduced ? 0.8 : time * 1.4 + c.id, wanted ? 1 : 0.4);
-    ctx.restore();
+    coin(ctx, c.ingredient, at.x, at.y, 48, swing, reduced ? 0.8 : time * 1.4 + c.id, wanted ? 1 : 0.6);
     // A wrong coin: a red cross over its mark for a moment.
     if (kick && kickAge < 0.35) {
       ctx.save(); ctx.translate(at.x, at.y); ctx.rotate(swing);
@@ -951,18 +958,33 @@ export function createScene() {
     const tint = p.cooked ? '#ffb060' : COLORS[p.ingredient];
     ctx.save();
     // Its own light, so three coins in a row read at stream size.
-    const glow = ctx.createRadialGradient(p.x, p.y, 4, p.x, p.y, 58);
+    const glow = ctx.createRadialGradient(p.x, p.y, 4, p.x, p.y, 68);
     glow.addColorStop(0, withAlpha(tint, 0.55)); glow.addColorStop(0.5, withAlpha(tint, 0.18)); glow.addColorStop(1, withAlpha(tint, 0));
-    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(p.x, p.y, 58, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(p.x, p.y, 68, 0, Math.PI * 2); ctx.fill();
+    // Its own coin's trail: Bitcoin's gold discs, Ether's bubbles, HEMI's hot streak.
+    for (let k = 3; k >= 1; k--) {
+      const bx = p.x - p.vx * k * 2.2; const by = p.y - p.vy * k * 2.2;
+      ctx.globalAlpha = 0.75 - k * 0.18;
+      if (p.ingredient === 'metal') { ctx.fillStyle = k % 2 ? '#b07a26' : '#d9a23a'; ctx.beginPath(); ctx.arc(bx, by, 17 - k * 3, 0, Math.PI * 2); ctx.fill(); }
+      else if (p.ingredient === 'balloon') { ctx.fillStyle = 'rgba(155,233,223,0.4)'; ctx.strokeStyle = 'rgba(224,255,250,0.95)'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.arc(bx, by - k * 4, 11 - k * 1.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    }
+    ctx.globalAlpha = 1;
+    if (p.ingredient === 'pepper') {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+      for (const [w, col] of [[16, 'rgba(255,70,20,0.7)'], [6, 'rgba(255,240,210,0.95)']] as const) {
+        ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(p.x - p.vx * 7, p.y - p.vy * 7); ctx.lineTo(p.x, p.y); ctx.stroke();
+      }
+      ctx.restore();
+    }
     ctx.lineCap = 'round';
     ctx.strokeStyle = 'rgba(4,12,10,0.45)'; ctx.lineWidth = 13;
     ctx.beginPath(); ctx.moveTo(p.x - p.vx * 3.4, p.y - p.vy * 3.4); ctx.lineTo(p.x, p.y); ctx.stroke();
     ctx.strokeStyle = tint; ctx.globalAlpha = 0.8; ctx.lineWidth = 7;
     ctx.beginPath(); ctx.moveTo(p.x - p.vx * 3.2, p.y - p.vy * 3.2); ctx.lineTo(p.x, p.y); ctx.stroke();
     ctx.globalAlpha = 0.9; ctx.lineWidth = 3; ctx.strokeStyle = '#fff6d8';
-    ctx.beginPath(); ctx.arc(p.x, p.y, 36, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(p.x, p.y, 42, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
-    coin(ctx, p.ingredient, p.x, p.y, 66, Math.atan2(p.vy, p.vx), reduced ? 0.8 : p.age * 0.3 + p.id, 1);
+    coin(ctx, p.ingredient, p.x, p.y, 78, Math.atan2(p.vy, p.vx), reduced ? 0.8 : p.age * 0.3 + p.id, 1);
   }
 
   /**
@@ -1125,6 +1147,34 @@ export function createScene() {
   }
 
   /**
+   * Plates of a broken block: its dark riveted iron, tumbling and falling,
+   * lamplight on the top edge and a thin edge of its coin's colour. Drawn
+   * before the caption, so they never cover the BLOCK REWARD. card, and
+   * never over the creature.
+   */
+  function drawShards(ctx: CanvasRenderingContext2D, t: number) {
+    for (const p of particles) {
+      if (p.kind !== 'shard') continue;
+      const age = t - p.born;
+      if (age < 0 || age > p.life) continue;
+      const f = age / p.life;
+      const x = p.x + p.vx * age; const y = p.y + p.vy * age + p.gravity * age * age * 0.5;
+      if (x > 640) continue;
+      const s = p.size;
+      ctx.save(); ctx.translate(x, y); ctx.rotate((p.vx > 0 ? 1 : -1) * age * 8 + p.size);
+      ctx.globalAlpha = f < 0.6 ? 1 : (1 - f) / 0.4;
+      const plate = ctx.createLinearGradient(0, -s / 2.6, 0, s / 2.6);
+      plate.addColorStop(0, '#6a513d'); plate.addColorStop(0.5, '#3a2c22'); plate.addColorStop(1, '#1d1610');
+      ctx.fillStyle = plate; ctx.beginPath(); ctx.roundRect(-s / 2, -s / 2.6, s, s / 1.3, 2); ctx.fill();
+      ctx.fillStyle = `${RIM}0.85)`; ctx.fillRect(-s / 2 + 1, -s / 2.6, s - 2, 2.5);
+      ctx.fillStyle = '#c9a072'; ctx.beginPath(); ctx.arc(-s / 2 + 5, -s / 2.6 + 7, 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = p.color; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.roundRect(-s / 2, -s / 2.6, s, s / 1.3, 2); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /**
    * The one caption, in screen space. Drawn before the coins and the launcher
    * (under an undone camera), so a line never hides a coin in flight or the
    * lance; the HUD still goes on top of it.
@@ -1142,7 +1192,11 @@ export function createScene() {
         const slot = low ? CAPTION_LOW : CAPTION;
         let cx = caption.at ? caption.at.x : slot.x, cy = caption.at ? caption.at.y : slot.y + (caption.card ? -10 : 0), tilt = 0;
         // A card with its coins on it lands from a little too big.
-        if (caption.coins && !reduced) scale = 1 + 0.25 * (1 - easeOut(age / 0.25));
+        if (caption.coins && !reduced) {
+          // Lands from a little too big, and thumps as each coin is swallowed (the last hardest).
+          const thump = t - cardPulseAt;
+          scale = 1 + 0.25 * (1 - easeOut(age / 0.25)) + (thump >= 0 && thump < 0.3 ? (cardEaten >= caption.coins.n ? 0.16 : 0.08) * Math.exp(-thump * 12) : 0);
+        }
         // Spat out: from the mouth to the slot on a short arc, growing and straightening as it goes.
         if (caption.from && !reduced && age < SPIT) {
           const k = easeOut(age / SPIT);
@@ -1338,6 +1392,8 @@ export function createScene() {
       ctx.restore();
     }
 
+    // A broken block's plates, then the caption over them and under the coins.
+    drawShards(ctx, t);
     // The caption, under the coins: screen space, so the camera is undone.
     {
       const sign = playing && state && !(DEV_HOOKS && devRender.hideLabels) ? pressEPhase(state.tick) : null;
@@ -1490,19 +1546,7 @@ export function createScene() {
           ctx.strokeStyle = p.color; ctx.lineWidth = Math.max(1, p.size * 0.6 * (1 - f)); ctx.lineCap = 'round';
           ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - p.vx * 0.05, y - (p.vy + p.gravity * age) * 0.05); ctx.stroke();
         } else if (p.kind === 'shard') {
-          // A plate of the broken block: its dark riveted iron, tumbling and
-          // falling, lamplight on its top edge and a hot edge in its coin's colour.
-          if (x > 640) continue;
-          const s = p.size;
-          ctx.save(); ctx.translate(x, y); ctx.rotate((p.vx > 0 ? 1 : -1) * age * 8 + p.size);
-          ctx.globalAlpha = f < 0.7 ? 1 : (1 - f) / 0.3;
-          ctx.fillStyle = '#241b15'; ctx.beginPath(); ctx.roundRect(-s / 2, -s / 2.6, s, s / 1.3, 2); ctx.fill();
-          ctx.fillStyle = '#8a6a4c'; ctx.fillRect(-s / 2, -s / 2.6, s, 3);
-          ctx.fillStyle = '#c9a072'; ctx.beginPath(); ctx.arc(-s / 2 + 5, -s / 2.6 + 7, 2.6, 0, Math.PI * 2); ctx.fill();
-          ctx.shadowColor = p.color; ctx.shadowBlur = 8;
-          ctx.strokeStyle = p.color; ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.moveTo(s / 2, -s / 2.6); ctx.lineTo(s / 2, s / 2.6); ctx.lineTo(-s / 2, s / 2.6); ctx.stroke();
-          ctx.restore();
+          // Drawn in their own pass, under the caption (drawShards).
         } else {
           const r = p.kind === 'dust' ? p.size * (1 + f * 3) : p.kind === 'ember' ? p.size * (1 - f * 0.5) : p.size * (1 - f * 0.6);
           ctx.beginPath(); ctx.arc(x, y, Math.max(0.5, r), 0, Math.PI * 2); ctx.fill();
@@ -1551,7 +1595,7 @@ export function createScene() {
       ctx.save(); ctx.globalAlpha = 1 - f;
       ctx.strokeStyle = r.color; ctx.lineWidth = (r.big ? 6 : 4) * (1 - f) + 1;
       if (r.huge) ctx.lineWidth = 14 * (1 - f) + 2;
-      ctx.beginPath(); ctx.arc(r.x, r.y, (reduced ? 24 : r.huge ? 24 + f * 290 : 10 + f * (r.big ? 48 : 30)), 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(r.x, r.y, (reduced ? 24 : r.huge ? 24 + f * 220 : 10 + f * (r.big ? 48 : 30)), 0, Math.PI * 2); ctx.stroke();
       if (r.big) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2 * (1 - f); ctx.beginPath(); ctx.arc(r.x, r.y, reduced ? 14 : 4 + f * 26, 0, Math.PI * 2); ctx.stroke(); }
       ctx.restore();
     }

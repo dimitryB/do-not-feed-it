@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-15T22:30:33.589Z",
+  "generatedAt": "2026-10-15T23:13:55.940Z",
   "gameVersion": 6,
   "shifts": 200,
   "seedBase": 1,
@@ -8,90 +8,90 @@
       "bot": "moderate",
       "shifts": 200,
       "survival": {
-        "p10": 96.6,
-        "median": 138.5,
-        "p90": 218.3,
-        "max": 287.8
+        "p10": 98.3,
+        "median": 140.7,
+        "p90": 220.6,
+        "max": 327.5
       },
       "feeds": {
-        "median": 219,
-        "mean": 226.5
+        "median": 223,
+        "mean": 230.2
       },
-      "accuracy": 89,
+      "accuracy": 88.9,
       "frenzies": {
-        "mean": 7.43,
+        "mean": 7.58,
         "withAtLeastOne": 100
       },
       "banks": {
         "mean": 39.53
       },
       "clanks": {
-        "mean": 20.8
+        "mean": 21.2
       },
       "cooked": {
-        "mean": 33.2
+        "mean": 34.1
       },
       "utensils": {
-        "mean": 4.83
+        "mean": 4.97
       },
       "aim": {
-        "reaimsPerMin": 56.9,
-        "meanMove": 7.7,
+        "reaimsPerMin": 57,
+        "meanMove": 7.6,
         "oneAngle": 36,
         "laneChangesPerMin": 36.5
       },
       "crates": {
-        "brokenPerRun": 4,
-        "shotsPerRun": 6.1,
-        "hitRate": 41.4
+        "brokenPerRun": 3.89,
+        "shotsPerRun": 5.94,
+        "hitRate": 40.2
       },
       "bestCombo": {
-        "median": 27
+        "median": 28
       },
       "score": {
-        "median": 196559
+        "median": 200514
       },
       "size": {
-        "median": 2.04
+        "median": 2.02
       },
       "firstFrenzy": {
-        "median": 10
+        "median": 10.1
       },
       "pacing": {
         "firstLevel": {
           "reached": 100,
-          "p10": 22.9,
+          "p10": 21.8,
           "median": 27.6,
-          "p90": 37.1,
+          "p90": 37.2,
           "medianOfReached": 27.6
         },
         "size15": {
           "reached": 100,
-          "p10": 52.3,
-          "median": 67.2,
-          "p90": 86.2,
-          "medianOfReached": 67.2
+          "p10": 51.7,
+          "median": 67.7,
+          "p90": 88.7,
+          "medianOfReached": 67.7
         },
         "size20": {
-          "reached": 55.5,
-          "p10": 120.1,
-          "median": 160.9,
+          "reached": 52,
+          "p10": 117.1,
+          "median": 173.2,
           "p90": null,
           "medianOfReached": 133.9
         },
         "firstMax": {
-          "reached": 10.5,
-          "p10": 243.4,
+          "reached": 9.5,
+          "p10": null,
           "median": null,
           "p90": null,
-          "medianOfReached": 221.9
+          "medianOfReached": 226.9
         },
         "allMax": {
           "reached": 7.5,
           "p10": null,
           "median": null,
           "p90": null,
-          "medianOfReached": 219.2
+          "medianOfReached": 229.1
         }
       },
       "causes": {
@@ -100,33 +100,33 @@
       "deathSpread": [
         {
           "bucket": "60-90s",
-          "count": 10,
-          "share": 5
+          "count": 7,
+          "share": 3.5
         },
         {
           "bucket": "90-120s",
-          "count": 57,
-          "share": 28.5
+          "count": 59,
+          "share": 29.5
         },
         {
           "bucket": "120-150s",
-          "count": 51,
-          "share": 25.5
+          "count": 42,
+          "share": 21
         },
         {
           "bucket": "150-180s",
-          "count": 35,
-          "share": 17.5
+          "count": 39,
+          "share": 19.5
         },
         {
           "bucket": "180-210s",
-          "count": 23,
-          "share": 11.5
+          "count": 30,
+          "share": 15
         },
         {
           "bucket": "210-240s",
-          "count": 14,
-          "share": 7
+          "count": 11,
+          "share": 5.5
         },
         {
           "bucket": "240-270s",
@@ -135,47 +135,52 @@
         },
         {
           "bucket": "270-300s",
-          "count": 3,
-          "share": 1.5
+          "count": 4,
+          "share": 2
+        },
+        {
+          "bucket": "300-330s",
+          "count": 1,
+          "share": 0.5
         }
       ],
-      "worstBucketShare": 28.5
+      "worstBucketShare": 29.5
     }
   ],
   "sampleRun": {
     "seed": 1,
     "markers": {
-      "firstMutation": 1764,
-      "firstStack": 1839,
-      "firstFrenzy": 528,
-      "end": 6360,
-      "firstLevel": 1764,
-      "size15": 4197,
+      "firstMutation": 1765,
+      "firstStack": 1840,
+      "firstFrenzy": 530,
+      "end": 6881,
+      "firstLevel": 1765,
+      "size15": 3559,
       "size20": null,
       "firstMax": null,
       "allMax": null,
       "firstBlock": 488
     },
-    "ticks": 6360,
-    "seconds": 106,
-    "score": 101295,
-    "feeds": 155,
-    "shots": 183,
-    "clanks": 23,
+    "ticks": 6881,
+    "seconds": 114.68333333333334,
+    "score": 158569,
+    "feeds": 194,
+    "shots": 215,
+    "clanks": 17,
     "misses": 8,
-    "frenzies": 4,
+    "frenzies": 6,
     "banks": 12,
-    "cooked": 19,
+    "cooked": 33,
     "utensils": 2,
     "cratesBroken": 3,
-    "cratesLost": 6,
+    "cratesLost": 5,
     "crateShots": 5,
-    "reaimsPerMin": 64.52830188679245,
-    "meanMove": 8.038461538461538,
-    "oneAngle": 0.366120218579235,
-    "laneChangesPerMin": 35.660377358490564,
+    "reaimsPerMin": 61.735212905101,
+    "meanMove": 7.434579439252336,
+    "oneAngle": 0.3767441860465116,
+    "laneChangesPerMin": 32.960325534079345,
     "bestCombo": 29,
-    "size": 1.7265,
+    "size": 1.884,
     "mutations": {
       "metal": 2,
       "balloon": 2,
@@ -183,15 +188,15 @@
     },
     "phase": "lost",
     "cause": "empty-belly",
-    "commands": 183,
+    "commands": 215,
     "timeline": null,
     "density": null
   },
   "decisionDensity": {
     "shifts": 8,
-    "median": 103.45,
-    "min": 89.07,
-    "max": 114.66
+    "median": 107.86,
+    "min": 88.37,
+    "max": 123.96
   },
   "gates": {
     "moderateMedian100to180": true,
@@ -207,5 +212,5 @@
     "decisionDensityAtLeast6": true
   },
   "gatesPass": true,
-  "elapsedSeconds": 1080.3
+  "elapsedSeconds": 1050.1
 }

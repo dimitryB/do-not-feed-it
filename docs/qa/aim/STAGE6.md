@@ -68,7 +68,7 @@ coin buttons, the legend and the whitepaper say Heavy / Floats / Straight.
   more blocks come (D147). The pan moved from (500, 150) to (370, 185) to
   make room.
 - **Only its own coin opens it.** That coin is spent; the three coins inside
-  pop straight up out of the top one after another, 8 ticks apart, and
+  pop straight up out of the top one after another, 10 ticks apart, and
   each drops into the mouth on its own lob 34 ticks after it came out
   (D148) — swallowed whole, no chew, each a full serving at ×2, combo
   included. Any other coin glances off it.
@@ -108,10 +108,10 @@ from 1. Stage 5 numbers are `feat/feast` with the same harness.
 | Bot | Stage 5 survival | Stage 6 survival | Stage 5 feeds | Stage 6 feeds | Stage 6 accuracy | Stage 6 blocks broken |
 | --- | --- | --- | --- | --- | --- | --- |
 | naive (never aims, cycles the coins) | 74.2 s | 48.8 s | 71 | 29 | 31 % | 0.09 (2 %) |
-| moderate | 142.7 s | 138.5 s | 194 | 219 | 89 % | 4 (41 %) |
-| good | 163.9 s | 151.4 s | 217 | 258 | 92.9 % | 6.51 (68 %) |
+| moderate | 142.7 s | 140.7 s | 194 | 223 | 88.9 % | 3.89 (40 %) |
+| good | 163.9 s | 159.9 s | 217 | 271 | 92.9 % | 6.31 (68 %) |
 
-Every FEAST gate passes: naive 48.8 s (40–80) with 29 feeds (≥ 6); moderate 138.5 s (100–180), 89 % accuracy (≥ 55), 7.43 frenzies a run (≥ 1), worst 30-s bucket 28.5 % (≤ 40), first level 27.6 s (25–45), ×1.5 at 67.2 s (60–90), ×2.0 at 160.9 s (120–180), first ×3 and all three ×3 never before 150 / 240 s, first frenzy 10 s (≤ 40); decision density 103.45 / min (≥ 6); good 151.4 s ≥ 1.8 × naive. Reports: `docs/qa/aim/stage6-bots-moderate.json`, `stage6-bots-others.json`.
+Every FEAST gate passes: naive 48.8 s (40–80) with 29 feeds (≥ 6); moderate 140.7 s (100–180), 88.9 % accuracy (≥ 55), 7.58 frenzies a run (≥ 1), worst 30-s bucket 29.5 % (≤ 40), first level 27.6 s (25–45), ×1.5 at 67.7 s (60–90), ×2.0 at 173.2 s (120–180), first ×3 and all three ×3 never before 150 / 240 s, first frenzy 10.1 s (≤ 40); decision density 107.86 / min (≥ 6); good 159.9 s ≥ 1.8 × naive. Reports: `docs/qa/aim/stage6-bots-moderate.json`, `stage6-bots-others.json`.
 
 ## Is one setting still enough? The `fixed` bot
 
@@ -125,22 +125,22 @@ same but only counts shots that go straight in.
 | 200 shifts each | Stage 5 `fixed` | Stage 5 moderate | Stage 6 `fixed` | Stage 6 `fixedDirect` | Stage 6 moderate |
 | --- | --- | --- | --- | --- | --- |
 | setting it chose | −58° at charge 11, all three coins straight in | — | −61° at 15: Bitcoin straight in, Ether and HEMI off the pan, in the fresh state only | −39° at 16: Bitcoin and Ether straight in, HEMI never | — |
-| survival, median | 117.5 s | 142.7 s | 92.3 s | 105.5 s | 138.5 s |
-| feeds | 103 | 194 | 52 | 42 | 219 |
-| score, median | 47,377 | 163,572 | 18,179 | 14,046 | 196,559 |
-| FOMO (frenzies) a run | 1.8 | 5.8 | 0.88 | 0.19 | 7.43 |
-| blocks broken a run (share of those that came) | — | — | 4.96 (43 %) | 0.5 (5 %) | 4 (41 %) |
+| survival, median | 117.5 s | 142.7 s | 95.6 s | 105.5 s | 140.7 s |
+| feeds | 103 | 194 | 58 | 42 | 223 |
+| score, median | 47,377 | 163,572 | 21,358 | 14,046 | 200,514 |
+| FOMO (frenzies) a run | 1.8 | 5.8 | 1.04 | 0.18 | 7.58 |
+| blocks broken a run (share of those that came) | — | — | 5.32 (45 %) | 0.52 (5 %) | 3.89 (40 %) |
 
 As a share of what the moderate bot gets, one barrel setting used to be worth
-53 % of the feeds and 29 % of the score; it is now worth 24 % and
-9 % (19 % and 7 % if the setting has to go
+53 % of the feeds and 29 % of the score; it is now worth 26 % and
+11 % (19 % and 7 % if the setting has to go
 straight in). Survival moves less than feeds because a creature that is fed
 less also grows and empties more slowly — the stage 3 "do not feed it"
 economy — so feeds and score are the honest measure here.
 
 **The blocks do not separate the two bots, and that is reported as it is.**
-The `fixed` bot breaks 4.96 (43 %) — about what the moderate bot breaks
-(4 (41 %)), which goes for 60 % of blocks on purpose. Its barrel is
+The `fixed` bot breaks 5.32 (45 %) — about what the moderate bot breaks
+(3.89 (40 %)), which goes for 60 % of blocks on purpose. Its barrel is
 left at −61°: its Ether shots bank off the pan and its HEMI misses fly up,
 and both cross the rail's stretch of room, so whenever the block's own coin
 comes up for the craving, the block is often in the way. A probe sweep of
@@ -153,7 +153,7 @@ The never-aiming naive bot, whose barrel stays at −30°, breaks
 barrel feeds a quarter as much and scores a tenth.
 
 The moderate and good bots move the barrel 36 and
-38 times a minute by 8° or more between planned shots (`aim:`
+37 times a minute by 8° or more between planned shots (`aim:`
 lines in the reports); that number is not a before/after measure — those
 bots re-solve every shot from scratch on either version — which is why the
 `fixed` bot exists.

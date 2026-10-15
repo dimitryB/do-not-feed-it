@@ -1,0 +1,196 @@
+{
+  "iteration": 305,
+  "capturedAt": "2026-10-15T23:42:13.727Z",
+  "seed": 20260911,
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "bot": {
+    "name": "good",
+    "ticks": 19564,
+    "seconds": 326.06666666666666,
+    "feeds": 425,
+    "score": 423354,
+    "cause": "empty-belly",
+    "markers": {
+      "firstMutation": 2511,
+      "firstStack": 2662,
+      "firstFrenzy": 1686,
+      "end": 19564,
+      "firstLevel": 2511,
+      "size15": 5091,
+      "size20": 9928,
+      "firstMax": 14946,
+      "allMax": 15388,
+      "firstBlock": 684
+    }
+  },
+  "browserFinal": {
+    "tick": 19564,
+    "phase": "lost",
+    "failureReason": "empty-belly",
+    "hunger": 0,
+    "rage": 0,
+    "score": 423354,
+    "combo": 3,
+    "bestCombo": 29,
+    "frenzies": 15,
+    "frenzyUntil": 18573,
+    "banks": 174,
+    "clanks": 41,
+    "cooked": 80,
+    "utensils": 16,
+    "wanted": "metal",
+    "servings": {
+      "metal": 141,
+      "balloon": 143,
+      "pepper": 141
+    },
+    "mutations": {
+      "metal": 3,
+      "balloon": 3,
+      "pepper": 3
+    },
+    "threat": null,
+    "craving": {
+      "ingredient": "metal",
+      "startedAt": 19473,
+      "endsAt": 19871
+    },
+    "flame": {
+      "tellUntil": 19550,
+      "until": 19600,
+      "angle": 2.5939,
+      "length": 755.835
+    },
+    "benchFireUntil": 18997,
+    "creature": {
+      "size": 2.4,
+      "x": 832.44,
+      "y": 193.6536,
+      "rx": 150.4934,
+      "ry": 113.0496,
+      "bx": 833.464,
+      "by": 286.6533,
+      "brx": 264.084,
+      "bry": 167.85,
+      "aperture": 1,
+      "open": 1,
+      "chewUntil": 19471,
+      "untilOpen": -1,
+      "gape": 1,
+      "track": 0.0005,
+      "lift": 36,
+      "bob": -17.8531,
+      "flush": 0,
+      "brow": 0.9968,
+      "pressure": 0,
+      "clog": 0
+    },
+    "size": 2.4,
+    "appetite": 1.02,
+    "misses": 29,
+    "totalFeeds": 425,
+    "hatchClosedUntil": 0,
+    "hatchReadyAt": 0,
+    "reloadUntil": 19595,
+    "vent": {
+      "since": 1915
+    },
+    "ending": 3,
+    "crates": [],
+    "cratesBroken": 7,
+    "cratesLost": 5,
+    "projectiles": 1,
+    "events": [
+      {
+        "tick": 19435,
+        "type": "chew",
+        "label": "CHOMP",
+        "name": null,
+        "ingredient": null
+      },
+      {
+        "tick": 19435,
+        "type": "feed",
+        "label": "NOM +140",
+        "name": null,
+        "ingredient": "balloon"
+      },
+      {
+        "tick": 19473,
+        "type": "craving",
+        "label": "IT WANTS METAL",
+        "name": "start",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 19510,
+        "type": "flame",
+        "label": "IT INHALES",
+        "name": "tell",
+        "ingredient": null
+      },
+      {
+        "tick": 19526,
+        "type": "utensil",
+        "label": "CUTLERY",
+        "name": "loose",
+        "ingredient": "metal"
+      },
+      {
+        "tick": 19550,
+        "type": "flame",
+        "label": "FIRE BREATH",
+        "name": "breath",
+        "ingredient": null
+      },
+      {
+        "tick": 19550,
+        "type": "jam",
+        "label": "SINGED",
+        "name": "singe",
+        "ingredient": null
+      },
+      {
+        "tick": 19564,
+        "type": "end",
+        "label": "Empty belly. It no longer fits through the door. It has been promoted.",
+        "name": null,
+        "ingredient": null
+      }
+    ]
+  },
+  "groups": [
+    "clip-first-block",
+    "clip-first-frenzy",
+    "strip-0020",
+    "hud-0020",
+    "clip-first-mutation",
+    "clip-first-stack",
+    "strip-0040",
+    "hud-0040",
+    "strip-0100",
+    "hud-0100",
+    "strip-0120",
+    "hud-0120",
+    "strip-0140",
+    "hud-0140",
+    "strip-0200",
+    "hud-0200",
+    "clip-ending"
+  ],
+  "renderTiming": {
+    "samples": 42,
+    "average": 6.619047619136317,
+    "median": 4.899999998509884,
+    "p95": 13.900000002235174,
+    "max": 27.899999998509884,
+    "last": 3.899999998509884,
+    "canvas": {
+      "width": 1920,
+      "height": 1080
+    }
+  }
+}
