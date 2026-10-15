@@ -18,6 +18,18 @@
     },
     {
       "name": null,
+      "tick": 49,
+      "type": "feed",
+      "label": "NOM +100"
+    },
+    {
+      "name": null,
+      "tick": 140,
+      "type": "feed",
+      "label": "STUFFED +140"
+    },
+    {
+      "name": null,
       "tick": 175,
       "type": "clank",
       "label": "CLANK"
@@ -191,27 +203,11 @@
   ],
   "captionWidths": [
     {
-      "key": "nom",
-      "text": "NOM.",
-      "size": 50,
-      "card": false,
-      "width": 154,
-      "fits": true
-    },
-    {
       "key": "craved",
       "text": "ORDER FILLED.",
       "size": 50,
       "card": false,
       "width": 397,
-      "fits": true
-    },
-    {
-      "key": "stuffed",
-      "text": "STUFFED.",
-      "size": 50,
-      "card": false,
-      "width": 262,
       "fits": true
     },
     {
@@ -420,6 +416,198 @@
       "size": 42,
       "card": false,
       "width": 359,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "HEY MAN, FIBER.",
+      "size": 44,
+      "card": false,
+      "width": 396,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "WE'RE GAMING.",
+      "size": 44,
+      "card": false,
+      "width": 368,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "THAT'S REALLY SICK.",
+      "size": 44,
+      "card": false,
+      "width": 477,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "COMPETITIVE EATER.",
+      "size": 44,
+      "card": false,
+      "width": 484,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "DING, DING, DING.",
+      "size": 44,
+      "card": false,
+      "width": 428,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "THIS LOOKS GREAT.",
+      "size": 44,
+      "card": false,
+      "width": 450,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "LET'S HAVE SOME FUN.",
+      "size": 44,
+      "card": false,
+      "width": 532,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "I RESPECT IT.",
+      "size": 44,
+      "card": false,
+      "width": 306,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "ENJOY IT. LOVE LIFE.",
+      "size": 44,
+      "card": false,
+      "width": 466,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "FOR THE LOLS.",
+      "size": 44,
+      "card": false,
+      "width": 348,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "PRETTY ON BRAND.",
+      "size": 44,
+      "card": false,
+      "width": 453,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "THAT'S COMMITMENT.",
+      "size": 44,
+      "card": false,
+      "width": 503,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "BUILD THE DEX.",
+      "size": 44,
+      "card": false,
+      "width": 371,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "I DID IT.",
+      "size": 44,
+      "card": false,
+      "width": 189,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "WELL PLAYED.",
+      "size": 44,
+      "card": false,
+      "width": 335,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "OH MY GOODNESS.",
+      "size": 44,
+      "card": false,
+      "width": 441,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "THE SOUND EFFECTS WORK.",
+      "size": 40,
+      "card": false,
+      "width": 593,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "UNLESS IT'S OVERFLOWING.",
+      "size": 40,
+      "card": false,
+      "width": 586,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "GOT YOUR CARBS IN.",
+      "size": 44,
+      "card": false,
+      "width": 486,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "TWO FULL TURKEYS.",
+      "size": 44,
+      "card": false,
+      "width": 477,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "WE'VE DONE WORSE.",
+      "size": 36,
+      "card": false,
+      "width": 403,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "WELL, WHATEVER.",
+      "size": 36,
+      "card": false,
+      "width": 353,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "NOPE. HATE IT.",
+      "size": 56,
+      "card": false,
+      "width": 436,
+      "fits": true
+    },
+    {
+      "key": "talkback",
+      "text": "OH, DOCTOR.",
+      "size": 52,
+      "card": false,
+      "width": 368,
       "fits": true
     },
     {

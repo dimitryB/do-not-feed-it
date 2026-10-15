@@ -55,9 +55,7 @@ export function tokenCopy(label: string): string {
  * holds each to the width of the caption slot.
  */
 export const CAPTIONS = {
-  nom: 'NOM.',
   craved: 'ORDER FILLED.',
-  stuffed: 'STUFFED.',
   gasSpike: 'GAS SPIKE.',
   reverted: 'REVERTED.',
   dropped: 'TX DROPPED.',
@@ -83,9 +81,61 @@ export const CAPTIONS = {
   combo: 'COMBO',
 } as const;
 
-/** The caption for a coin on the floor: Bitcoin being Bitcoin, everything else a dropped transaction. */
-export function missCaption(ingredient?: Ingredient | null): string {
-  return ingredient === 'metal' ? CAPTIONS.btcMiss : CAPTIONS.dropped;
+/**
+ * The caption for a coin on the floor: Bitcoin being Bitcoin; anything else a
+ * dropped transaction, except one miss in three, which gets the hosts' verdict
+ * on running twenty minutes over (by event id, so a replay says the same).
+ */
+export function missCaption(ingredient?: Ingredient | null, seed = 2): string {
+  if (ingredient === 'metal') return CAPTIONS.btcMiss;
+  const k = Math.abs(Math.floor(seed)) % 3;
+  return k === 0 ? TALKBACK.miss : k === 1 ? TALKBACK.shrug : CAPTIONS.dropped;
+}
+
+/** A craving ignored: MAXI TANTRUM., or every other time John's verdict on an idea he did not like. */
+export function tantrumCaption(seed: number): string {
+  return Math.abs(Math.floor(seed)) % 2 === 0 ? CAPTIONS.tantrum : TALKBACK.tantrum;
+}
+
+/**
+ * The creature talks back in the hosts' own words. Where the old captions
+ * said NOM., it spits back a line from Midweek with Max or the Office Hours:
+ * the catch lines in turn (so a judge hears a new one each time), the stuffed
+ * ones when it was not even hungry, Rick's "Oh, doctor" when FOMO starts.
+ * Short enough for the caption slot, true of the moment, never a name; the
+ * sources and timestamps are in docs/LORE.md ("The creature talks back").
+ */
+export const TALKBACK = {
+  catch: [
+    'HEY MAN, FIBER.',
+    "WE'RE GAMING.",
+    "THAT'S REALLY SICK.",
+    'COMPETITIVE EATER.',
+    'DING, DING, DING.',
+    'THIS LOOKS GREAT.',
+    "LET'S HAVE SOME FUN.",
+    'I RESPECT IT.',
+    'ENJOY IT. LOVE LIFE.',
+    'FOR THE LOLS.',
+    'PRETTY ON BRAND.',
+    "THAT'S COMMITMENT.",
+    'BUILD THE DEX.',
+    'I DID IT.',
+    'WELL PLAYED.',
+    'OH MY GOODNESS.',
+    'THE SOUND EFFECTS WORK.',
+  ],
+  stuffed: ["UNLESS IT'S OVERFLOWING.", 'GOT YOUR CARBS IN.', 'TWO FULL TURKEYS.'],
+  frenzy: 'OH, DOCTOR.',
+  miss: "WE'VE DONE WORSE.",
+  shrug: 'WELL, WHATEVER.',
+  tantrum: 'NOPE. HATE IT.',
+} as const;
+
+/** The `n`-th thing it says on a catch (0-based), from the stuffed lines when it was not hungry. */
+export function catchLine(n: number, stuffed: boolean): string {
+  const pool: readonly string[] = stuffed ? TALKBACK.stuffed : TALKBACK.catch;
+  return pool[((Math.floor(n) % pool.length) + pool.length) % pool.length];
 }
 
 /**
@@ -198,8 +248,8 @@ export const VERSES = {
   sloth: verse('I have the hand-eye coordination of a sloth.', 'Max', '29:25', 'Office Hours', 'Oct 7'),
   /** Under the restart button. */
   restart: verse('Your job is to make us want to keep giving those games quarters.', 'John', '29:29', 'Midweek with Max', 'Oct 13'),
-  /** Cited on a new personal best. */
-  newBest: verse('Flashing lights and loud noises. Ding, ding, ding, ding, ding.', 'Rick', '29:46', 'Midweek with Max', 'Oct 13'),
+  /** Cited on a new personal best. The speaker is not certain (Rick answers it), so the book is the show. */
+  newBest: verse('Flashing lights and loud noises. Ding, ding, ding, ding, ding.', 'Midweek with Max', '29:46', 'Midweek with Max', 'Oct 13'),
   /** The sound mix: the music is original, and nothing is sampled. */
   sound: verse('The real horror is copyright strikes.', 'Office Hours', '16:10', 'Office Hours', 'Oct 7'),
 } as const;

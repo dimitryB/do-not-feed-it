@@ -54,6 +54,12 @@ fits at both with room to spare.
 into a shift and every 75 s; E while it is up gives IT WORKED., a coin burst and
 ding ding ding. Never scored, never in the trace.
 
+**The creature talks back (D138):** NOM. and STUFFED. are gone; each catch it
+spits back one of the hosts' lines from MwM and Office Hours (HEY MAN, FIBER.,
+WE'RE GAMING., UNLESS IT'S OVERFLOWING., WELL PLAYED.…), FOMO opens with OH, DOCTOR.,
+a craving ignored is sometimes NOPE. HATE IT. The Oct 13 MwM transcript is in
+the Claude project (and ignored locally in `research/source-material/`).
+
 Known: the lunge's FRONT-RUN jam caption is almost always covered by the bite
 caption fired on the same tick (priority 5 over 4); IT TOOK THE TRAY. was
 kept as kitchen-literal. The harness measures captions in the container's

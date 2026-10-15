@@ -147,7 +147,7 @@ screen):
 | BITCOIN BEING BITCOIN. | a Bitcoin on the floor (other coins still say TX DROPPED.) | Max, Oct 7, on waiting for blocks: "just because Bitcoin being Bitcoin" |
 | GLAMSTERDAM +500 | one fork in three caught in its mouth (the rest HARD FORK +500) | the next Ethereum hard fork; Rick: "sounds like a Dutch rave", Max loves saying it. It is a hard fork; it is a fork |
 | The ZK talk will continue until questions come in. | the pause screen, now as a verse (see Scripture) | Max, Sept 15. Judges pause to talk |
-| ✦ New personal best. Ding, ding, ding. Rick 29:46 | the epoch report, on a new best | Rick, Oct 13, on what makes an arcade game: "Flashing lights and loud noises. Ding, ding, ding." |
+| ✦ New personal best. Ding, ding, ding. Midweek with Max 29:46 | the epoch report, on a new best | MwM, Oct 13, on what makes an arcade game: "Flashing lights and loud noises. Ding, ding, ding." |
 | "Your job is to make us want to keep giving those games quarters." John 29:29 | under Ape back in, as a verse | John, Oct 13 |
 | One mouth. Zero restraint. Maximum commitment. | the title strip (was Three tokens. Unusual side effects.) | an homage to Blind Life Simulator's "one transaction, zero vision, maximum commitment", the Contest 1 game the hosts replayed on Oct 7 |
 | Tuned for the hand-eye coordination of a sloth. | the whitepaper, step 1 | Max, about himself, twice: "I have the hand-eye coordination of a sloth." It is also true: pillar 1 tunes for him |
@@ -180,6 +180,46 @@ screen):
   bouncers are rules geometry. Sacred Waste and Mentora stay friendly by
   staying out.
 
+## The creature talks back
+
+Where the old captions said NOM., the creature now spits back the hosts'
+own lines: each one flies out of its mouth into the caption slot. Catch lines
+come in turn, so a judge hears a new one every time; at most one every 1.8 s,
+so a frenzy does not strobe them. No names, no citations (there is no room in
+a caption — the verses carry the citations), and each line is true of the
+moment it is said.
+
+| Line | When | From |
+| --- | --- | --- |
+| HEY MAN, FIBER. | a catch | Office Hours, Oct 7 32:42 |
+| WE'RE GAMING. | a catch | Office Hours, Oct 7 7:15 ("Here we go. We're gaming.") |
+| THAT'S REALLY SICK. | a catch | Office Hours, Oct 7 30:29 |
+| COMPETITIVE EATER. | a catch | Office Hours, Oct 7 23:33 |
+| DING, DING, DING. | a catch | Midweek with Max, Oct 13 29:46 |
+| THIS LOOKS GREAT. | a catch | Office Hours, Oct 7 24:39 |
+| LET'S HAVE SOME FUN. | a catch | Midweek with Max, Sept 15 11:49 |
+| I RESPECT IT. | a catch | Office Hours, Oct 7 30:29 |
+| ENJOY IT. LOVE LIFE. | a catch | Midweek with Max, Sept 29 7:02 ("Click it, stake it, enjoy it. Love life.") |
+| FOR THE LOLS. | a catch | Midweek with Max, Sept 15 34:11 ("we're there for the lols") |
+| PRETTY ON BRAND. | a catch | Office Hours, Oct 7 16:10 ("That would be pretty on brand.") |
+| THAT'S COMMITMENT. | a catch | Office Hours, Oct 7 30:29 |
+| BUILD THE DEX. | a catch | Office Hours, Sept 9 27:14 ("So, yes, build the DEX.") |
+| I DID IT. | a catch | Office Hours, Sept 9 41:05 ("I pressed E. I did it.") |
+| WELL PLAYED. | a catch | Midweek with Max, Oct 13 10:02 |
+| OH MY GOODNESS. | a catch | Midweek with Max, Oct 13 4:41 |
+| THE SOUND EFFECTS WORK. | a catch | Midweek with Max, Oct 13 30:12 ("Okay. Well, the sound effects work." — the soundboard saga) |
+| UNLESS IT'S OVERFLOWING. | a catch when it was not even hungry (was STUFFED.) | Midweek with Max, Sept 15 43:22 |
+| GOT YOUR CARBS IN. | a catch when it was not even hungry | Office Hours, Oct 7 25:54 ("Definitely got your carbs in.") |
+| TWO FULL TURKEYS. | a catch when it was not even hungry | Office Hours, Oct 7 23:33 |
+| OH, DOCTOR. | FOMO starts | Midweek with Max, Sept 22 34:50 ("Oh, doctor, there's so many.") |
+| WE'VE DONE WORSE. | one ordinary miss in three | the hosts on running twenty minutes over |
+| WELL, WHATEVER. | another miss in three | Midweek with Max, Oct 13 54:39 ("All right, well whatever.", on running a minute over) |
+| NOPE. HATE IT. | every other craving ignored (the rest MAXI TANTRUM.) | Midweek with Max, Oct 13 7:34, on an NFT-utility feature request |
+
+Kept as they were, because they say what happened: ORDER FILLED. (a craving
+met), REVERTED., TX DROPPED. / BITCOIN BEING BITCOIN., HARD FORK, SLIPPAGE.,
+TOKEN BURN., SCALING. and the rest of the table below.
+
 ## Scripture
 
 The hosts' timestamps already read like chapter and verse, so their best
@@ -199,9 +239,14 @@ is `VERSES` in `lib/render/lore.ts`; the component is
 | "Me, derailed? Never. Come on." | Max 28:44 · Midweek with Max, Sept 29 | the pause screen |
 | "Complex systems are complex." | John 52:07 · Midweek with Max, Oct 6 | the pause screen |
 | "Your job is to make us want to keep giving those games quarters." | John 29:29 · Midweek with Max, Oct 13 | under Ape back in |
-| Ding, ding, ding. | Rick 29:46 · Midweek with Max, Oct 13 | cited on a new personal best |
+| Ding, ding, ding. | Midweek with Max 29:46 · Oct 13 (speaker not certain — Rick answers it, so the book is the show) | cited on a new personal best |
 | hand-eye coordination of a sloth | Max 29:25 · Office Hours, Oct 7 | cited in the whitepaper's first step |
 | "The real horror is copyright strikes." | Office Hours 16:10 · Oct 7 (speaker not certain, so the book is the show) | the sound mix — the music is original |
+
+The Oct 13 Midweek with Max transcript (in the Claude project) confirms John
+28:24, John 29:29 and John 7:37 ("despite John's reaction"). It also showed the
+"Ding, ding, ding" line was not Rick's — he answers it, telling whoever made
+the sound effects to stop — so that one is cited to the show.
 
 Rules for a verse: it is from the auto-captions of a Hemi stream, with
 stutters removed and nothing else changed; it is cited at the start of its
@@ -315,13 +360,13 @@ and are in the table.
 | ending jokes | PETTY CASH / YOUR BAGS / THE TREASURY / THE FOUNDATION (stage 4) | IT ATE THE GAS MONEY. / A WHOLE BLOCK. / THE MEMPOOL. / THE CHAIN. |
 | report stats | ON SHIFT · FRENZIES | UPTIME · FOMO |
 | restart | Another shift ↗ | Ape back in ↗, with John 29:29 under it |
-| new best | ✦ New personal best | ✦ New personal best. Ding, ding, ding. RICK 29:46 |
+| new best | ✦ New personal best | ✦ New personal best. Ding, ding, ding. MIDWEEK WITH MAX 29:46 |
 | title coin strip | Three tokens. Unusual side effects. | One mouth. Zero restraint. Maximum commitment. |
 | lunge telegraph | IT IS COMING OUT. | IT IS STILL COMING. |
 | first breath of a shift | FIRE BREATH | veHEMI IS A WEAPON. (later breaths: TURBO BREATH) |
 | fork caught, one in three | UTENSIL +500 | GLAMSTERDAM +500 (the rest: HARD FORK +500) |
 
-Kept on purpose: NOM., STUFFED., SNEEZE., IT INHALES,
+Kept on purpose: SNEEZE., IT INHALES,
 SINGED, COMBO, HATCH SHUT, IT TOOK THE TRAY., the prop names (OFF THE PAN, OFF THE
 CHAIN…), "Start your shift", "Clock in", and every control label. They are
 already right, already crypto, or the player has to act on them.

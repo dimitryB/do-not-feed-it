@@ -24,7 +24,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { playShift } from "./loop-bots.mjs";
 import { ARENA, createArcade, launchFood, slamHatch, stepArcade } from "../lib/game/arcade.ts";
-import { CAPTIONS, CRAVING_LINES, TOKEN_TRAITS } from "../lib/render/lore.ts";
+import { CAPTIONS, CRAVING_LINES, TALKBACK, TOKEN_TRAITS } from "../lib/render/lore.ts";
 import { flickerAt } from "../lib/render/season.ts";
 import { PRESS_E_FIRST, PRESS_E_FLIGHT } from "../lib/render/pressE.ts";
 import { CHROMIUM, WIDTH, makeStreamCopies, settle, startDevServer, stopServer, waitForScene } from "./shot-kit.mjs";
@@ -41,6 +41,8 @@ const FRAME_PAGE = `
 /** The events worth a frame, keyed by what the caption should say. */
 const TARGETS = [
   { key: "based", match: (e) => e.type === "feed" && /^CRAVING/.test(e.label) },
+  { key: "talkback", match: (e) => e.type === "feed" && !/^CRAVING/.test(e.label), lag: 20 },
+  { key: "talkback-stuffed", match: (e) => e.type === "feed" && /^STUFFED/.test(e.label), lag: 20 },
   { key: "reverted", match: (e) => e.type === "clank" },
   { key: "tx-dropped", match: (e) => e.type === "miss" && e.ingredient !== "metal" },
   { key: "btc-miss", match: (e) => e.type === "miss" && e.ingredient === "metal" },
@@ -132,6 +134,10 @@ async function main() {
       ...Object.entries(CAPTIONS).map(([k, c]) => ({ key: k, text: typeof c === "function" ? c(500) : c, size: k === "scaling" ? 70 : k === "noRoom" ? 60 : k === "frenzy" ? 92 : k === "dropped" || k === "btcMiss" ? 36 : k === "lunge" ? 44 : 50, card: k === "scaling" || k === "noRoom" })),
       ...Object.values(TOKEN_TRAITS).map((t) => ({ key: "mutation", text: `${t.toUpperCase()} ×3`, size: 58, card: true })),
       ...Object.values(CRAVING_LINES).map((t) => ({ key: "craving", text: t, size: 42, card: false })),
+      ...[...TALKBACK.catch, ...TALKBACK.stuffed].map((t) => ({ key: "talkback", text: t, size: t.length > 20 ? 40 : 44, card: false })),
+      ...[TALKBACK.miss, TALKBACK.shrug].map((t) => ({ key: "talkback", text: t, size: 36, card: false })),
+      { key: "talkback", text: TALKBACK.tantrum, size: 56, card: false },
+      { key: "talkback", text: TALKBACK.frenzy, size: 52, card: false },
       ...["MULTI-HOP ×3", "TRIPLE HOP ×4", "OFF THE GAS BELLY ×2", "OFF THE CHAIN ×2"].map((t) => ({ key: "bank", text: t, size: 54, card: false })),
       ...["FORKED.", "FRONT-RUN", "TX STUCK.", "MAXI TANTRUM"].map((t) => ({ key: "jam", text: t, size: 44, card: false })),
       ...["EXTRACTOR: EATEN.", "IT TOOK THE TRAY.", "ONE TX PENDING."].map((t) => ({ key: "beat", text: t, size: 44, card: false })),

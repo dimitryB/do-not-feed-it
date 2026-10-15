@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { ENDINGS, createArcade, endingFor, launchFood, slamHatch, stepArcade } from "../lib/game/arcade.ts";
 import {
-  ALL_VERSES, CAPTIONS, CAUSES, CRAVING_LINES, ENDING_JOKES, HALLOWEEN, HEADLINES, PRESS_E, TOKEN_TRAITS, VERSES, WALLET_TIERS, forkCaption, missCaption, pressELine, tokenCopy, verseAt,
+  ALL_VERSES, CAPTIONS, CAUSES, CRAVING_LINES, ENDING_JOKES, HALLOWEEN, HEADLINES, PRESS_E, TALKBACK, TOKEN_TRAITS, VERSES, WALLET_TIERS, catchLine, forkCaption, missCaption, pressELine, tantrumCaption, tokenCopy, verseAt,
 } from "../lib/render/lore.ts";
 import { FLICKER_DARKEST, flickerAt, seasonFor } from "../lib/render/season.ts";
 import { PRESS_E_EVERY, PRESS_E_FIRST, PRESS_E_FLIGHT, PRESS_E_OPEN, pressEPhase } from "../lib/render/pressE.ts";
@@ -171,7 +171,7 @@ test("the Hemi callbacks land on what is on screen, and never name anyone", () =
 });
 
 test("the verses are real citations: a book, chapter:verse, a show and a date, nothing religious, nothing in a caption", () => {
-  const books = new Set(["Max", "John", "Rick", "Jeremy", "Marco", "Office Hours"]);
+  const books = new Set(["Max", "John", "Rick", "Jeremy", "Marco", "Office Hours", "Midweek with Max"]);
   for (const v of ALL_VERSES) {
     assert.ok(books.has(v.who), `${v.who} is a known speaker or the show`);
     assert.match(v.at, /^\d{1,2}:\d{2}$/, `${v.who} ${v.at} reads as chapter:verse`);
@@ -203,4 +203,30 @@ test("the PRESS E sign: first at 20 s, then every 75 s, flying then open, and go
   let up = 0;
   for (let tick = 0; tick < 12 * 3600; tick += 1) if (pressEPhase(tick)) up += 1;
   assert.ok(up / (12 * 3600) < 0.06, "it is up less than 6 % of a shift, so it never crowds out the captions");
+});
+
+test("the creature talks back in the hosts' lines: short, in turn, and never a name", () => {
+  const lines = [...TALKBACK.catch, ...TALKBACK.stuffed, TALKBACK.frenzy, TALKBACK.miss, TALKBACK.shrug, TALKBACK.tantrum];
+  for (const line of lines) {
+    assert.ok(line.length <= 24, `"${line}" fits the caption slot`);
+    assert.equal(line, line.toUpperCase());
+    assert.ok(line.endsWith("."), line);
+    assert.doesNotMatch(line, /\b(RICK|MAX|JEREMY|JOSHUA|JCV|JOHN|MARCO|ALPHA|ALEX|GOD|JESUS)\b/);
+  }
+  assert.equal(new Set(lines).size, lines.length, "no line twice");
+  // In turn: a judge hears every catch line before any repeats.
+  const first = Array.from({ length: TALKBACK.catch.length }, (_, i) => catchLine(i, false));
+  assert.deepEqual(first, [...TALKBACK.catch]);
+  assert.equal(catchLine(TALKBACK.catch.length, false), TALKBACK.catch[0]);
+  assert.equal(catchLine(0, true), "UNLESS IT'S OVERFLOWING.");
+  assert.ok(TALKBACK.stuffed.includes(catchLine(5, true)));
+  assert.equal(TALKBACK.frenzy, "OH, DOCTOR.");
+  // One ordinary miss in three is the hosts' verdict; a Bitcoin is always Bitcoin being Bitcoin.
+  assert.equal(missCaption("balloon", 3), "WE'VE DONE WORSE.");
+  assert.equal(missCaption("balloon", 4), "WELL, WHATEVER.");
+  assert.equal(missCaption("balloon", 5), "TX DROPPED.");
+  assert.equal(tantrumCaption(2), "MAXI TANTRUM.");
+  assert.equal(tantrumCaption(3), "NOPE. HATE IT.");
+  assert.equal(missCaption("metal", 3), "BITCOIN BEING BITCOIN.");
+  assert.ok(!("nom" in CAPTIONS), "NOM. is gone");
 });

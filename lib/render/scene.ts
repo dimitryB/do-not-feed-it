@@ -8,7 +8,7 @@ import { drawCreature, REST_MOUTH } from './creature/draw';
 import { EYE, ANTENNA_BULB } from './creature/anatomy';
 import { DEV_HOOKS, devRender, frameCells } from '../dev/hook';
 import { TOKENS, createTokenSprites } from './tokens';
-import { CAPTIONS, CRAVING_LINES, PRESS_E_HIT, forkCaption, missCaption, tokenCopy } from './lore';
+import { CAPTIONS, CRAVING_LINES, PRESS_E_HIT, TALKBACK, catchLine, forkCaption, missCaption, tantrumCaption, tokenCopy } from './lore';
 import { pressEPhase, type PressEPhase } from './pressE';
 import { FLICKER_DARKEST, flickerAt, type Season } from './season';
 
@@ -69,7 +69,11 @@ interface Particle {
   x: number; y: number; vx: number; vy: number; born: number; life: number;
   size: number; color: string; gravity: number; kind: 'dot' | 'spark' | 'dust' | 'ember';
 }
-interface Caption { text: string; color: string; born: number; life: number; priority: number; size: number; card: boolean }
+interface Caption { text: string; color: string; born: number; life: number; priority: number; size: number; card: boolean; from: { x: number; y: number } | null }
+/** Seconds between two lines the creature spits back, at the least. */
+const TALK_GAP = 1.8;
+/** Seconds a spat-back line takes to fly from the mouth to the caption slot. */
+const SPIT = 0.28;
 interface Pop { x: number; y: number; text: string; color: string; born: number; size: number }
 interface Ring { x: number; y: number; born: number; color: string; big: boolean }
 interface Wobble { v: number; a: number }
@@ -185,6 +189,9 @@ export function createScene() {
   let breathed = false;
   /** The PRESS E sign this shift has already been hit on (one hit per sign), and where the mouth was last frame. */
   let eHitIndex = -1;
+  /** How many lines it has spat back this shift, and when the last one went, so a frenzy does not strobe them. */
+  let talked = 0;
+  let lastTalkAt = -10;
   let lastMouth = { x: 600, y: 300 };
 
   function burst(x: number, y: number, n: number, color: string, speed: number, time: number, kind: Particle['kind'] = 'dot', seed = 0, life = 0.7, gravity = 260) {
@@ -196,9 +203,10 @@ export function createScene() {
     if (particles.length > 260) particles.splice(0, particles.length - 260);
   }
 
-  function say(text: string, color: string, priority: number, time: number, size = 46, life = 1.2, card = false) {
+  /** Puts up the one caption. `from` (screen space) makes it spat out of the mouth: it flies from there to the slot. */
+  function say(text: string, color: string, priority: number, time: number, size = 46, life = 1.2, card = false, from: { x: number; y: number } | null = null) {
     if (caption && time - caption.born < caption.life * 0.55 && caption.priority > priority) return;
-    caption = { text, color, born: time, life, priority, size, card };
+    caption = { text, color, born: time, life, priority, size, card, from };
   }
 
   function nudge(name: string, amount: number) {
@@ -211,7 +219,7 @@ export function createScene() {
     if (state.seed !== seenRun || state.tick < seenTick) {
       // A new run, or one we have never seen: start from here rather than
       // replaying its whole history into the screen.
-      seenRun = state.seed; particles.length = 0; pops.length = 0; rings.length = 0; caption = null; shake = 0; wobble.clear(); breathed = false; eHitIndex = -1;
+      seenRun = state.seed; particles.length = 0; pops.length = 0; rings.length = 0; caption = null; shake = 0; wobble.clear(); breathed = false; eHitIndex = -1; talked = 0; lastTalkAt = -10;
       camera.zoom = camera.from = camera.target = 1; camera.since = -10; camera.said = false;
       seenEvent = Math.max(0, (state.events[state.events.length - 1]?.id ?? 0) - 1);
       if (state.tick < 2) seenEvent = 0;
@@ -231,7 +239,14 @@ export function createScene() {
           const value = e.value ?? 0;
           pops.push({ x: e.x, y: e.y - 30, text: `+${value}`, color: e.craved ? '#ffe28a' : '#e7ffb0', born: time, size: clamp(22 + value / 40, 22, 64) });
           const stuffed = e.label.startsWith('STUFFED');
-          say(e.craved ? CAPTIONS.craved : stuffed ? CAPTIONS.stuffed : CAPTIONS.nom, e.craved ? '#ffe28a' : '#e7ffb0', e.craved ? 3 : 2, time, e.craved ? 48 : 44, 0.9);
+          // A craving met says so. Otherwise it spits back one of the hosts'
+          // lines, out of its mouth — at most one every TALK_GAP seconds.
+          if (e.craved) say(CAPTIONS.craved, '#ffe28a', 3, time, 48, 0.9);
+          else if (time - lastTalkAt >= TALK_GAP) {
+            lastTalkAt = time;
+            const line = catchLine(talked++, stuffed);
+            say(line, '#e7ffb0', 2, time, line.length > 20 ? 40 : 44, 1.6, false, { x: toScreenX(e.x), y: toScreenY(e.y) });
+          }
           if (!reduced) { freezeUntil = time + 0.05; frozenAt = time; }
           break;
         }
@@ -256,10 +271,12 @@ export function createScene() {
           break;
         case 'miss':
           burst(e.x, ARENA.floor - 6, reduced ? 3 : 8, '#a8a08a', 60, time, 'dust', e.id, 0.6, 40);
-          say(missCaption(e.ingredient), '#d9c9a8', 1, time, 36, 0.8);
+          say(missCaption(e.ingredient, e.id), '#d9c9a8', 1, time, 36, 0.8);
           break;
         case 'frenzy':
           if (e.name === 'start') {
+            const m = state.creature;
+            say(TALKBACK.frenzy, '#ffd36a', 5, time, 52, 1.4, false, { x: toScreenX(m.x), y: toScreenY(m.y) });
             if (!reduced) shake = Math.max(shake, 1);
             burst(e.x, e.y, reduced ? 8 : 24, '#ffd36a', 260, time, 'spark', e.id, 0.8);
             burst(e.x, e.y, reduced ? 6 : 14, '#ff9a4a', 180, time, 'ember', e.id + 2, 1.1, 40);
@@ -309,7 +326,7 @@ export function createScene() {
           if (e.name === 'start' && e.ingredient) say(CRAVING_LINES[e.ingredient], tint, 2, time, 42, 1.1);
           break;
         case 'tantrum':
-          say(CAPTIONS.tantrum, '#ff8a6a', 5, time, 56, 1.2);
+          say(tantrumCaption(e.id), '#ff8a6a', 5, time, 56, 1.2);
           if (!reduced) shake = Math.max(shake, 0.8);
           break;
         case 'beat': {
@@ -1122,9 +1139,17 @@ export function createScene() {
         const f = age / caption.life;
         const inA = reduced ? 1 : easeOut(age / 0.12);
         const alpha = f > 0.78 ? (1 - f) / 0.22 : 1;
-        const scale = reduced ? 1 : 0.6 + 0.4 * inA + (caption.card ? 0.08 * Math.exp(-age * 6) : 0);
+        let scale = reduced ? 1 : 0.6 + 0.4 * inA + (caption.card ? 0.08 * Math.exp(-age * 6) : 0);
+        let cx = CAPTION.x, cy = CAPTION.y + (caption.card ? -10 : 0), tilt = 0;
+        // Spat out: from the mouth to the slot on a short arc, growing and straightening as it goes.
+        if (caption.from && !reduced && age < SPIT) {
+          const k = easeOut(age / SPIT);
+          cx = caption.from.x + (CAPTION.x - caption.from.x) * k;
+          cy = caption.from.y + (CAPTION.y - caption.from.y) * k - Math.sin(Math.PI * (age / SPIT)) * 60;
+          scale = 0.35 + 0.65 * k; tilt = (1 - k) * -0.5;
+        }
         ctx.save();
-        ctx.translate(CAPTION.x, CAPTION.y + (caption.card ? -10 : 0)); ctx.scale(scale, scale);
+        ctx.translate(cx, cy); ctx.rotate(tilt); ctx.scale(scale, scale);
         if (caption.card) {
           ctx.globalAlpha = alpha;
           ctx.font = `700 ${caption.size}px ${DISPLAY}`;
