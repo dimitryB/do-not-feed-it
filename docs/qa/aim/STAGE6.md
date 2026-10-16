@@ -86,15 +86,15 @@ that runs a little ahead of it so the chain leans, with a faint wake behind
 it while it shuttles; it says whose it is as it comes down (BITCOIN BLOCK.
 / ETHER BLOCK. / HEMI BLOCK.). While its coin is in the barrel its rim
 brightens and breathes in that colour; otherwise it is a thin seam.
-Broken: a filled bloom with wedges of light where it was, the room lit in
-its colour for a few frames, a shock ring, the cube in two halves and iron
+Broken: a filled bloom with wedges of light where it was while the room
+drops a stop for a few frames, a shock ring, the cube in two halves and iron
 plates with hot edges thrown back toward the launcher, a kick of the
 camera, 90 ms of hit-stop and the creature's eyes snapping to it; then a
 BLOCK REWARD. card under it that lands solid in the coin's colour, lights a
 mini coin as each
 coin is swallowed and carries the running total; on the last coin the
-mouth rings in the coin's colour, the creature swallows harder than for any
-feed, and the total rises from the mouth. MISSED THE BLOCK. when one
+mouth rings in the coin's colour and the creature swallows harder than for
+any feed. MISSED THE BLOCK. when one
 is hoisted away, WRONG TOKEN. and a red outline when another coin glances
 off. Four sounds. The creature watches a block when nothing is in the air.
 It is never called an airdrop (D131, `docs/LORE.md`).

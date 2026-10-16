@@ -286,10 +286,8 @@ export function createScene() {
             // Chomp, chomp, CHOMP: a nudge of the camera for each, harder for the last,
             // and then one total beside the mouth instead of three on the face.
             if (!reduced) shake = Math.max(shake, last ? 0.6 : 0.28);
-            if (last) {
-              pops.push({ x: e.x, y: e.y - 10, text: `+${cardTotal}`, color: tint, born: time, size: 58, tag: 'pour' });
-              mouthPulseAt = time; mouthPulseColor = tint;
-            }
+            // The total lives on the card; the mouth rings once in the coin's colour.
+            if (last) { mouthPulseAt = time; mouthPulseColor = tint; }
           } else {
             // Feeds close together add up into one rising number instead of a pile.
             const near = pops.find(p => p.tag === 'feed' && time - p.born < 0.3 && Math.abs(p.x - e.x) < 140);
@@ -913,6 +911,9 @@ export function createScene() {
     glow.addColorStop(0, `${tint}55`); glow.addColorStop(1, `${tint}00`);
     ctx.globalAlpha = wanted ? 0.55 + 0.45 * pulse : 0.3; ctx.fillStyle = glow;
     ctx.beginPath(); ctx.arc(at.x, at.y, 96, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+    // Fading as it is hoisted, so it never reaches the mutation chips at the top.
+    const hoist = clampAlpha((at.y - 60) / 60);
+    if (hoist < 1) ctx.globalAlpha = hoist;
     // A faint wake of where it just was, so a still shows it moving.
     if (!reduced && Math.abs(speed) > 0.6) {
       for (const [k, a] of [[7, 0.16], [14, 0.08]] as const) {
@@ -966,7 +967,9 @@ export function createScene() {
     ctx.fillStyle = enamel; ctx.beginPath(); ctx.arc(0, 0, 29, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#b39a7c'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 30, Math.PI * 0.95, Math.PI * 1.85); ctx.stroke();
     ctx.restore();
+    ctx.save(); ctx.globalAlpha = hoist;
     coin(ctx, c.ingredient, at.x, at.y, 50, swing, reduced ? 0.8 : time * 1.4 + c.id, wanted ? 1 : 0.6);
+    ctx.restore();
     // A wrong coin: a red cross over its mark for a moment.
     if (kick && kickAge < 0.35) {
       ctx.save(); ctx.translate(at.x, at.y); ctx.rotate(swing);
@@ -1029,7 +1032,7 @@ export function createScene() {
       const g = p.age - back > fl.burn ? fl.gravity : 0;
       return { x: p.x - p.vx * back, y: p.y - p.vy * back + 0.5 * g * back * back };
     };
-    const span = Math.min(p.age, reduced ? 10 : 20);
+    const span = Math.min(p.age, reduced ? 10 : p.ingredient === 'metal' ? 26 : 20);
     ctx.save();
     if (p.ingredient === 'pepper' && p.age <= fl.burn + 4) {
       // The turbo: a long white-hot jet straight back along the shot.
@@ -1058,9 +1061,9 @@ export function createScene() {
       }
     } else if (p.ingredient === 'metal') {
       // Smoke behind a heavy coin, on the arc it is falling along.
-      for (let i = Math.min(5, Math.floor(span / 4)); i >= 1; i--) {
-        const at = past(i * 4);
-        const f = i / 5;
+      for (let i = Math.min(8, Math.floor(span / 3)); i >= 1; i--) {
+        const at = past(i * 3);
+        const f = i / 8;
         const r = 17 - f * 4;
         ctx.globalAlpha = Math.max(0, 0.85 - f * 0.6);
         ctx.fillStyle = i % 2 ? '#b07a26' : '#d9a23a';
@@ -1604,11 +1607,21 @@ export function createScene() {
       if (age >= 0 && age < 0.26) {
         const fade = age < 0.06 ? 1 : 1 - (age - 0.06) / 0.2;
         const k = reduced ? 0.6 : 1;
-        const r = 140 + (reduced ? 0 : 40 * easeOut(age / 0.26));
+        const r = 170 + (reduced ? 0 : 50 * easeOut(age / 0.26));
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
         // Three or four frames of the whole room lit in its coin's colour —
         // added light, so nothing is veiled, and the HUD is drawn after it.
-        if (age < 0.08 && !reduced) { ctx.fillStyle = withAlpha(flashColor, 0.2 * (1 - age / 0.08)); ctx.fillRect(-200, -200, 1600, 1100); }
+        if (age < 0.12 && !reduced) {
+          // The room drops a stop for a few frames so the burst beats the lamps...
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.fillStyle = `rgba(2,5,5,${0.3 * (1 - age / 0.12)})`; ctx.fillRect(-200, -200, 1600, 1100);
+          const halo = ctx.createRadialGradient(flashX, flashY, r * 0.4, flashX, flashY, r * 1.5);
+          halo.addColorStop(0, `rgba(2,5,5,${0.45 * (1 - age / 0.12)})`); halo.addColorStop(1, 'rgba(2,5,5,0)');
+          ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(flashX, flashY, r * 1.5, 0, Math.PI * 2); ctx.fill();
+          // ...and takes on its coin's colour.
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.fillStyle = withAlpha(flashColor, 0.12 * (1 - age / 0.12)); ctx.fillRect(-200, -200, 1600, 1100);
+        }
         // Eight thick wedges of light thrown out of the core, in its coin's
         // colour with a hot centre line, stopping short of the creature.
         if (!reduced) {
@@ -1685,7 +1698,8 @@ export function createScene() {
       const c = state.creature; const cr = state.craving;
       const span = Math.max(1, cr.endsAt - cr.startedAt);
       const left = Math.max(0, Math.min(1, (cr.endsAt - tick) / span));
-      const bx = Math.min(1120, toScreenX(c.x + c.rx * (c.gape ?? 1) * 0.92) + 66); const by = Math.max(118, toScreenY(c.y - c.ry) - 76);
+      // Kept clear of the UPTIME readout in the top-right corner, whatever the camera does.
+      const bx = Math.min(1120, toScreenX(c.x + c.rx * (c.gape ?? 1) * 0.92) + 66); const by = Math.max(bx > 1000 ? 140 : 118, toScreenY(c.y - c.ry) - 76);
       const urgent = left < 0.3;
       ctx.save();
       ctx.globalAlpha = urgent && !reduced ? .82 + .18 * Math.sin(t * 11) : .94;

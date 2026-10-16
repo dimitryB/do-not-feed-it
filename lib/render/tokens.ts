@@ -45,7 +45,7 @@ export const TOKENS: Record<Ingredient, TokenSpec> = {
     plate: { inner: '#f3f6fa', outer: '#aeb9c8', rim: '#5b6878' },
   },
   pepper: {
-    id: 'HEMI', name: 'HEMI', sources: ['/art/tokens/hemi.svg', '/art/tokens/hemi.png'], tint: '#ff8248', markFraction: 0.72,
+    id: 'HEMI', name: 'HEMI', sources: ['/art/tokens/hemi.svg', '/art/tokens/hemi.png'], tint: '#ff6a2e', markFraction: 0.72,
     plate: { inner: '#2b1a10', outer: '#0e0805', rim: '#f26a1f' },
   },
 };
