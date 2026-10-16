@@ -83,9 +83,9 @@ On screen it is a gunmetal cube on a steel chain, riveted and lamp-lit
 like the launcher, with an enamel plate in its coin's colour and its coin's
 mark on it, let down through a hatch whose doors swing open, on a trolley
 that runs a little ahead of it so the chain leans, with a faint wake behind
-it while it shuttles; it says whose it is as it comes down (BITCOIN BLOCK.
-/ ETHER BLOCK. / HEMI BLOCK.). While its coin is in the barrel its rim
-brightens and breathes in that colour; otherwise it is a thin seam.
+it while it shuttles; a small tag under it says whose it is as it comes
+down (BITCOIN BLOCK. / ETHER BLOCK. / HEMI BLOCK.). Its rim, in its coin's
+colour, never goes dark and pulses while its coin is in the barrel.
 Broken: a filled bloom with wedges of light where it was while the room
 drops a stop for a few frames, a shock ring, the cube in two halves and iron
 plates with hot edges thrown back toward the launcher, a kick of the
@@ -95,8 +95,8 @@ mini coin as each
 coin is swallowed and carries the running total; on the last coin the
 mouth rings in the coin's colour and the creature swallows harder than for
 any feed. MISSED THE BLOCK. when one
-is hoisted away, WRONG TOKEN. and a red outline when another coin glances
-off. Four sounds. The creature watches a block when nothing is in the air.
+is hoisted away; WRONG TOKEN. on its tag and a red outline when another
+coin glances off. Four sounds. The creature watches a block when nothing is in the air.
 It is never called an airdrop (D131, `docs/LORE.md`).
 
 **Balance** (D144): miss irritation 5 → 3, belly start 70 → 76 with 300
