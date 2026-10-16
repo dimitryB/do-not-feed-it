@@ -245,7 +245,7 @@ export const TUNING = Object.freeze({
    * put each coin somewhere else, so switching coins is re-aiming.
    */
   flight: {
-    // Steep lobs: below charge 15 it falls short; at full charge −46°…−62°.
+    // Steep lobs: only a full charge reaches the mouth, from −46°…−62° early in a shift.
     metal: { gravity: 0.3, lo: 9, hi: 15, burn: 0 },
     // The middle band: floaty and nearly charge-blind, −31°…−41° early in a shift.
     balloon: { gravity: 0.09, lo: 11, hi: 12.5, burn: 0 },

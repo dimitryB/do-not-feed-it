@@ -291,22 +291,25 @@ set once.
 
 **Every coin flies its own way.** Same launcher, three shots:
 
-- **Bitcoin is heavy.** It falls hardest and needs a near-full charge to
-  reach the mouth at all. Lob it.
-- **Ether floats.** The slow, soft lob, and the charge moves where it lands
-  a long way.
-- **HEMI is straight.** Fast, and dead straight for its first 18 ticks with
-  a jet behind it. Point it at the mouth; the charge barely matters.
+- **Bitcoin is heavy.** It falls hardest and reaches the mouth only at
+  full charge, on a steep lob with the barrel high.
+- **Ether floats.** The middle arc, and the charge hardly moves where it
+  lands.
+- **HEMI is straight.** Fast, and dead straight for its first 300 px with
+  a jet behind it, barrel low. Point it at the mouth; the charge barely
+  matters.
 
-At any one charge the three coins land at different angles, so the coin
-the craving asks for decides where the barrel points. The barrel's lance
+Each coin has its own band of barrel angles at every size, and no angle
+feeds all three at any charge (`tests/aim.test.mjs`), so the coin the
+craving asks for decides where the barrel points. The bands drift steeper
+together as the mouth rises. The barrel's lance
 bends the way the loaded coin will fly over its first stretch (no
 colliders, nowhere near the mouth); the first-shift guide is unchanged.
 The default shot is a HEMI at −30°, and the page loads HEMI first.
 
 **Blocks on the rail.** One at a time, a block (the rules: a crate) is
-lowered through a hatch in the ceiling into the open air between the pan
-and the creature's head, shuttles along a short rail and back, swinging on
+lowered through a hatch in the ceiling on a long chain into the open air
+between the pan and the creature's head, shuttles along a short rail and back, swinging on
 its chain, and is hoisted away after five to seven seconds. The first comes
 six seconds into a shift. It carries one coin's mark, in that coin's
 colour, and says whose it is as it comes down (BITCOIN BLOCK.).
@@ -329,10 +332,9 @@ the creature, not the rail.
 **What a shift asks of the barrel now.** Point HEMI at the mouth, lob
 Bitcoin at full charge, float Ether; switch when it craves; swing up and
 lead a block when one comes down, with the coin it wants. A barrel set once
-and left alone feeds about a quarter of what an aiming player feeds and
-scores about a tenth (`fixed` bot, `docs/qa/aim/STAGE6.md`). It still
-breaks blocks by luck — a steep barrel's HEMI misses fly up through the
-rail's stretch of room — but what it misses everywhere else costs far more.
+and left alone lands one coin: it feeds about 2 % of what an aiming player
+feeds, scores under 1 %, dies sooner than a player who never aims, and
+breaks almost no blocks (0.5 %; `fixed` bot, `docs/qa/aim/STAGE6.md`).
 
 ## The loop that now exists — `feat/creature-loop`, GAME_VERSION 3
 

@@ -8,10 +8,12 @@ almost any charge for the whole shift. The user chose two fixes; both are in
 the rules (`lib/game/arcade.ts`, GAME_VERSION 6, trace format unchanged,
 fixtures regenerated) and on screen.
 
-1. **Every coin flies its own way** (D139, D143). Bitcoin is heavy and needs
-   a near-full charge; Ether floats and its angle moves with the charge;
-   HEMI is fast and dead straight for 18 ticks. `TUNING.flight` /
-   `flightOf()`. The barrel's lance now bends the way the loaded coin will
+1. **Every coin flies its own way** (D139, D143). Bitcoin is heavy and
+   reaches only at full charge, on a steep lob; Ether floats on the middle
+   arc, nearly blind to the charge; HEMI is fast and dead straight for its
+   first 300 px. Each coin has its own band of barrel angles at every size
+   and no angle feeds all three. `TUNING.flight` {gravity, lo, hi, burn} /
+   `flightOf()` / `launchSpeed()` / `straightTicks()`. The barrel's lance now bends the way the loaded coin will
    fly (`lancePath` in `lib/render/scene.ts`); each coin draws its own trail
    (HEMI's jet and speed lines, Ether's bubbles, Bitcoin's heavy wake). The
    chain behind the head no longer catches overcharged shots (D140). The
@@ -23,7 +25,8 @@ fixtures regenerated) and on screen.
    the mouth at mouth height (`movePour`, D148), swallowed whole at ×2. The rail
    (`ARENA.rail`, x 420–545) ends left of the head and the head takes its
    right end as the creature grows (`crateLane`); past about ×1.6 no more
-   blocks come. The pan moved to (370, 185) to make room (D147). Drawn as a
+   blocks come. Blocks hang at y 175–195 on a long chain; the pan moved to
+   (320, 195) to make room (D147). Drawn as a
    cube on a chain with its coin's mark, its trolley running a little ahead
    so the chain leans (`drawRail`, `drawCrate`, `drawPour`); a local
    white-hot burst and iron plates when it breaks (D149); BLOCK REWARD. (a
@@ -42,7 +45,8 @@ undone camera).
 
 Balance moved with it (D144): miss irritation 3, belly start 76 with 300
 ticks of grace, growth 0.0115 a feed bent harder toward the end
-(`growthShape` −0.45), levels at 13 / 36 / 110. Renderer captions moved off
+(`growthShape` −0.45), levels at 13 / 36 / 110, the drain's growth with
+time on shift 0.058 a minute (was 0.07). Renderer captions moved off
 the block's stretch of room (`CAPTION` in `lib/render/scene.ts`). The bots learnt
 the coins and the blocks, and there is a `fixed` bot that sets the barrel
 once and never touches it (D145). Report, gate table, the set-and-forget
@@ -50,18 +54,24 @@ comparison and the critic's scores: `docs/qa/aim/STAGE6.md`. Captures:
 `scripts/aim-shots.mjs --iter N` → `docs/qa/aim/iter-N` (the moments), and
 `scripts/loop-shots.mjs` for a whole shift.
 
-**Where it stands.** Every FEAST gate passes at 200 shifts; a barrel set
-once gets about a quarter of the moderate bot's feeds and a tenth of its
-score (it used to get half the feeds and 29 % of the score). Ten rounds of fresh-context visual
-critics (`docs/qa/aim/STAGE6.md`, "Captures and the critic") took the six
-scores from 5 / 6 / 4 / 4 / 6 / 5 to 7 / 7 / 7 / 7 / 7 / 6; Payoff reached
-8 in three rounds, but no round cleared the exit bar on every criterion at
-once. The next pass, in order: (1) a per-coin flight retune so Bitcoin and
-Ether need visibly different angles late in a shift, where the windows
-now overlap at about −45° (STAGE6.md, Open); (2) the block lower, in clear
-air, on a longer chain (`crateDropMin/Max`) — both move the pacing gates,
-so rerun `loop-bots.mjs --shifts 200` after each; (3) round 10's renderer
-asks, listed at the end of the critic section.
+**Where it stands.** Every FEAST gate passes at 200 shifts (moderate
+151.2 s, 90.3 % accuracy, ×2.0 at 149.3 s). The second pass retuned the
+flights so each coin has its own band of barrel angles at every size — no
+angle feeds all three at any charge (`tests/aim.test.mjs`) — and hung the
+blocks lower (y 175–195); the drain's growth with time eased to 0.058 a
+minute to keep the pacing gates. A barrel set once now feeds 2 % of what
+the moderate bot feeds, scores under 1 %, dies sooner than the never-aiming
+bot and breaks 0.5 % of blocks (it broke 45 % after the first tuning).
+Fifteen rounds of fresh-context visual critics (`docs/qa/aim/STAGE6.md`,
+"Captures and the critic"); round 15 met the exit bar, narrowly, at
+7 / 7 / 8 / 7 / 8 / 7, with Block readability and Clarity on the floor —
+its remaining asks are listed under the table. Still open (STAGE6.md,
+Open): Ether's and HEMI's bands sit next to each other; the charge matters
+mostly for Bitcoin; no blocks after about ×1.6 (by design); a lighter hull
+around a big creature (stage 2's rig); the sounds unreviewed. The camera
+pull-back card is STATE BLOAT. (was BLOCK FULL.). Hardhat's tests could not
+run in this container (it cannot download the compiler); no contract
+changed.
 
 Tests: `tests/aim.test.mjs` (flight per coin, no shared lane, the crate's
 life, breaking one, a wrong coin glancing off, seeded and replayable); four

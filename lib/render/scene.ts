@@ -58,8 +58,6 @@ const CAPTION = { x: 300, y: 250 };
  * the coins pouring out of it.
  */
 const CAPTION_LOW = { x: 280, y: 345 };
-/** The BLOCK REWARD. card never reaches past here: left of the creature's mouth at any size a block comes at. */
-const CARD_RIGHT = 540;
 /** The FOMO banner's centre: left of the blocks' stretch of rail. */
 const FOMO_X = 170;
 /** Where the combo lives, in screen space: under the score, out of the lance's way. */
@@ -91,7 +89,7 @@ interface Caption { text: string; color: string; born: number; life: number; pri
 const TALK_GAP = 1.8;
 /** Seconds a spat-back line takes to fly from the mouth to the caption slot. */
 const SPIT = 0.28;
-interface Pop { x: number; y: number; text: string; color: string; born: number; size: number; tag?: string; total?: number }
+interface Pop { x: number; y: number; text: string; color: string; born: number; size: number; tag?: string; total?: number; life?: number }
 interface Ring { x: number; y: number; born: number; color: string; big: boolean; huge?: boolean }
 interface Wobble { v: number; a: number }
 
@@ -224,6 +222,11 @@ export function createScene() {
   let cardEaten = 0; let cardTotal = 0; let cardPulseAt = -10;
   /** The mouth ringing in a block's colour as its last coin goes down. */
   let mouthPulseAt = -10; let mouthPulseColor = '#ffffff';
+  /** Where a block just broke, held for a few frames as a cracked, white-hot cube under the burst. */
+  let crackX = 0; let crackY = 0;
+  /** The block as it was last drawn, and the one that just broke: it is drawn once more, punched and cracked. */
+  let lastCrateDrawn: { c: Crate; tick: number } | null = null;
+  let brokenCrate: { c: Crate; tick: number } | null = null;
   let lastMouth = { x: 600, y: 300 };
 
   function burst(x: number, y: number, n: number, color: string, speed: number, time: number, kind: Particle['kind'] = 'dot', seed = 0, life = 0.7, gravity = 260) {
@@ -283,21 +286,22 @@ export function createScene() {
             // and a ring), its worth over the top lip in its colour, and a pip
             // lit on the block's card, which carries the running total.
             rings.push({ x: e.x, y: e.y, born: time, color: tint, big: true });
-            burst(e.x, e.y, reduced ? 10 : 40, tint, 520, time, 'dot', e.id + 3, 0.75);
-            burst(e.x, e.y, reduced ? 6 : 20, '#fff6dc', 560, time, 'spark', e.id + 4, 0.55);
+            burst(e.x, e.y, reduced ? 8 : 22, tint, 330, time, 'dot', e.id + 3, 0.6);
+            burst(e.x, e.y, reduced ? 5 : 12, '#fff6dc', 380, time, 'spark', e.id + 4, 0.45);
             rings.push({ x: e.x, y: e.y, born: time + 0.05, color: '#fff6dc', big: true });
             cardEaten += 1; cardTotal += value; cardPulseAt = time;
-            // Each coin's worth, big, in its colour, just over the top lip.
-            const lip = state.creature.y - state.creature.ry * (state.creature.gape ?? 1) - 26;
-            pops.push({ x: e.x - 40 + cardEaten * 30, y: lip, text: `+${value}`, color: tint, born: time, size: 32, tag: 'pour' });
             const last = cardEaten >= TUNING.crateCoins;
             // Chomp, chomp, CHOMP: a nudge of the camera for each, harder for the last.
             if (!reduced) shake = Math.max(shake, last ? 0.6 : 0.28);
-            // The last coin: the mouth rings once, and the block's total rises over the lip, biggest of all.
-            if (last) {
-              mouthPulseAt = time; mouthPulseColor = tint;
-              pops.push({ x: e.x, y: lip - 44, text: `+${cardTotal}`, color: tint, born: time, size: 64, tag: 'pour' });
-            }
+            // One number for the whole block: it counts up as each coin goes
+            // down, a little bigger each time.
+            for (let i = pops.length - 1; i >= 0; i--) if (pops[i].tag === 'pour') pops.splice(i, 1);
+            // Beside the card, in the open air where the block hung (its coins have
+            // all left it by the time the first is swallowed): off the mouth, so
+            // the coins are seen going in, and off the eyes.
+            pops.push({ x: 540, y: 200, text: `+${cardTotal}`, color: e.ingredient === 'pepper' ? '#ffb08a' : tint, born: time, size: last ? 58 : 44 + 4 * cardEaten, tag: 'pour', life: last ? 1.4 : 1.0 });
+            // The last coin rings the mouth once.
+            if (last) { mouthPulseAt = time; mouthPulseColor = tint; }
           } else {
             // Feeds close together add up into one rising number instead of a pile.
             const near = pops.find(p => p.tag === 'feed' && time - p.born < 0.3 && Math.abs(p.x - e.x) < 140);
@@ -330,7 +334,7 @@ export function createScene() {
           if (surface === 'belly') say(CAPTIONS.gasSpike, '#9be9df', 1, time, 40, 0.7);
           if (surface === 'crate') {
             // A coin it does not open for: a knock, a kick on the chain, a red cross over its mark.
-            blockTag = { text: CAPTIONS.wrongToken, color: '#ff9a8a', born: time, life: 1.0 };
+            blockTag = { text: CAPTIONS.wrongToken, color: '#ff9a8a', born: time, life: 0.6 };
             burst(e.x, e.y, reduced ? 4 : 12, '#ffd0c0', 220, time, 'spark', e.id + 7, 0.35);
             const block = state.crates[0];
             if (block) crateKick.set(block.id, { at: time, dir: e.x < crateAt(block, state.tick).x ? 1 : -1 });
@@ -426,7 +430,10 @@ export function createScene() {
             // aim line and under the coins' path into the mouth.
             cardEaten = 0; cardTotal = 0;
             const card = say(CAPTIONS.blockReward, tint, 8, time, 26, 1.6, true, null, { ingredient: e.ingredient ?? 'metal', n });
-            if (card) card.at = { x: toScreenX(clamp(e.x, 330, 560)), y: toScreenY(e.y + 104), right: toScreenX(CARD_RIGHT) };
+            // Under the combo at the top left, out of the coins' corridor and
+            // clear of the block's stretch of room; drawn over the coins.
+            if (card) card.at = { x: 224, y: 196, right: 430 };
+            brokenCrate = lastCrateDrawn;
             if (!reduced) {
               // The cube in two halves, dropping out of the burst...
               for (const side of [-1, 1]) particles.push({ x: e.x + side * 14, y: e.y, vx: side * 90 - 60, vy: -120, born: time, life: 0.8, size: 44 + side * 3, color: tint, gravity: 1400, kind: 'shard' });
@@ -440,8 +447,10 @@ export function createScene() {
             }
             burst(e.x, e.y, reduced ? 6 : 16, '#fff2c0', 420, time, 'spark', e.id + 5, 0.55);
             burst(e.x, e.y, reduced ? 4 : 12, tint, 340, time, 'spark', e.id, 0.65);
-            rings.push({ x: e.x, y: e.y, born: time, color: tint, big: true, huge: true });
+            // The shock ring leaves a frame or two after the cube cracks, so the hit frame is a blast, not a target.
+            rings.push({ x: e.x, y: e.y, born: time + 0.06, color: tint, big: true, huge: true });
             flashAt = time; flashColor = tint; flashX = e.x; flashY = e.y; flashSeed = e.id;
+            crackX = e.x; crackY = e.y;
             if (!reduced) { shake = Math.max(shake, 1.0); freezeUntil = time + 0.09; frozenAt = time; }
           } else if (e.name === 'spawn') {
             // Every block says whose it is, in its coin's colour, at the lowest priority.
@@ -817,8 +826,15 @@ export function createScene() {
   // a chain, which is the joke and also exactly what is on screen.
   const RAIL_LEFT = ARENA.rail.from - 30;
   const RAIL_RIGHT = ARENA.rail.to + 30;
+  /**
+   * Where the rail is drawn: lower than the rules' hook line (y 30), which
+   * sits under the mutation chips once the first mutation lands, so the
+   * trolley and its run stay in sight all shift. The block comes out of the
+   * dark just under it.
+   */
+  const RAIL_Y = Math.max(ARENA.rail.y, 64);
   function drawRail(ctx: CanvasRenderingContext2D, state: ArcadeState, tick: number) {
-    const { y, from, lower } = ARENA.rail;
+    const { from, lower } = ARENA.rail; const y = RAIL_Y;
     // How far open the hatch is: open while a block is let down or hoisted.
     let open = 0;
     for (const c of state.crates ?? []) {
@@ -869,13 +885,17 @@ export function createScene() {
     const dx = x1 - x0; const dy = y1 - y0; const len = Math.hypot(dx, dy);
     const n = Math.max(2, Math.round(len / 9));
     const along = Math.atan2(dy, dx);
-    ctx.lineWidth = 2.6;
     for (let i = 0; i < n; i++) {
       const f = (i + 0.5) / n;
-      ctx.strokeStyle = i % 2 ? '#6c706c' : color;
-      ctx.beginPath();
-      ctx.ellipse(x0 + dx * f, y0 + dy * f, 5.5, i % 2 ? 1.8 : 3.4, along, 0, Math.PI * 2);
-      ctx.stroke();
+      const cx = x0 + dx * f; const cy = y0 + dy * f;
+      // A dark core under each link so the chain holds against the wall, then
+      // the steel, then the lamps' warm rim along its top.
+      ctx.lineWidth = 5; ctx.strokeStyle = '#0b0d0d';
+      ctx.beginPath(); ctx.ellipse(cx, cy, 6, i % 2 ? 2.2 : 4, along, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 3.2; ctx.strokeStyle = i % 2 ? '#7a7e78' : color;
+      ctx.beginPath(); ctx.ellipse(cx, cy, 6, i % 2 ? 2.2 : 4, along, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 1.2; ctx.strokeStyle = `${RIM}0.8)`;
+      ctx.beginPath(); ctx.ellipse(cx, cy, 6, i % 2 ? 2.2 : 4, along, Math.PI * 1.1, Math.PI * 1.7); ctx.stroke();
     }
   }
 
@@ -885,7 +905,7 @@ export function createScene() {
     // back when it is not, so swinging the barrel up at it reads as a choice.
     const wanted = loaded === c.ingredient;
     const at = crateAt(c, tick);
-    const railY = ARENA.rail.y;
+    const railY = RAIL_Y;
     const tint = COLORS[c.ingredient];
     const kick = crateKick.get(c.id);
     const kickAge = kick ? time - kick.at : 9;
@@ -893,14 +913,17 @@ export function createScene() {
     // The trolley runs a little ahead of where the rules hang the block, so
     // the chain leans and the block trails it: it reads as moving in a still.
     const speed = (crateAt(c, tick + 1).hookX - crateAt(c, tick - 1).hookX) / 2;
-    const trolley = at.hookX + (reduced ? 0 : clamp(speed * 14, -26, 26));
+    const trolley = at.hookX + (reduced ? 0 : clamp(speed * 18, -32, 32));
     const swing = Math.atan2(at.x - trolley, Math.max(1, at.y - railY)) + knock;
     // Drawn a little larger than its collision radius: a coin's own edge
     // touches the cube when the rules say it hits.
     const s = 40; const d = 14;
     // Fading as it is hoisted, so it never reaches the mutation chips at the top.
     const hoisting = tick - c.born > c.life - ARENA.rail.lower;
-    const hoist = hoisting ? clampAlpha((at.y - 60) / 60) : 1;
+    // It comes out of the dark under the ceiling (the mutation chips sit over
+    // the hatch), and fades as it is hoisted back up into it.
+    const lowering = tick - c.born < ARENA.rail.lower;
+    const hoist = hoisting ? clampAlpha((at.y - RAIL_Y - 8) / 50) : lowering ? clampAlpha((at.y - RAIL_Y) / 45) : 1;
     ctx.save();
     // The trolley riding the pipe: two wheels on top, a plate, a hook.
     ctx.fillStyle = '#2f2620'; ctx.beginPath(); ctx.roundRect(trolley - 14, railY + 2, 28, 12, 3); ctx.fill();
@@ -930,9 +953,9 @@ export function createScene() {
     if (!reduced && Math.abs(speed) > 0.6) {
       for (const [k, a] of [[7, 0.16], [14, 0.08]] as const) {
         const was = crateAt(c, tick - k);
-        ctx.save(); ctx.globalAlpha = a; ctx.translate(was.x, was.y); ctx.rotate(swing);
-        ctx.fillStyle = '#2f3434'; ctx.strokeStyle = tint; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.roundRect(-s, -s, 2 * s, 2 * s, 3); ctx.fill(); ctx.stroke(); ctx.restore();
+        ctx.save(); ctx.globalAlpha = a * 0.7 * hoist; ctx.translate(was.x, was.y); ctx.rotate(swing);
+        ctx.fillStyle = tint;
+        ctx.beginPath(); ctx.roundRect(-s, -s, 2 * s, 2 * s, 3); ctx.fill(); ctx.restore();
       }
     }
     // The cube, swinging with its chain: painted gunmetal like the launcher,
@@ -940,11 +963,16 @@ export function createScene() {
     ctx.translate(at.x, at.y); ctx.rotate(swing);
     softShadow(ctx, 8, s + 14, s + 8, 6, 0.35);
     const lid = ctx.createLinearGradient(0, -s - d, 0, -s);
-    lid.addColorStop(0, '#8f7c66'); lid.addColorStop(1, '#3d3f3c');
+    lid.addColorStop(0, '#5e5547'); lid.addColorStop(1, '#2b2d2a');
     ctx.fillStyle = lid;
     ctx.beginPath(); ctx.moveTo(-s, -s); ctx.lineTo(-s + d, -s - d); ctx.lineTo(s + d, -s - d); ctx.lineTo(s, -s); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#121414';
+    const side = ctx.createLinearGradient(s, 0, s + d, 0);
+    side.addColorStop(0, '#3a3f3c'); side.addColorStop(1, '#1b1f1e');
+    ctx.fillStyle = side;
     ctx.beginPath(); ctx.moveTo(s, -s); ctx.lineTo(s + d, -s - d); ctx.lineTo(s + d, s - d); ctx.lineTo(s, s); ctx.closePath(); ctx.fill();
+    // A lamp-lit edge where the lid meets the side.
+    ctx.strokeStyle = `${RIM}0.45)`; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(s, -s); ctx.lineTo(s + d, -s - d); ctx.stroke();
     const face = ctx.createLinearGradient(-s, -s, s, s);
     face.addColorStop(0, '#4b4d48'); face.addColorStop(0.45, '#2f3434'); face.addColorStop(1, '#151818');
     ctx.fillStyle = face; ctx.beginPath(); ctx.roundRect(-s, -s, 2 * s, 2 * s, 3); ctx.fill();
@@ -969,13 +997,15 @@ export function createScene() {
     // Its coin's colour on the rim: a thin seam, not a neon frame, that
     // brightens and breathes when its coin is the one loaded.
     ctx.save();
-    ctx.shadowColor = tint; ctx.shadowBlur = wanted ? (reduced ? 8 : 8 + 10 * pulse) : 0;
     ctx.strokeStyle = tint; ctx.lineJoin = 'round';
-    ctx.lineWidth = wanted ? 5 : 4; ctx.globalAlpha = (wanted ? 0.75 + 0.25 * pulse : 0.8) * hoist;
-    ctx.beginPath(); ctx.roundRect(-s, -s, 2 * s, 2 * s, 3); ctx.stroke();
+    ctx.lineWidth = 2; ctx.globalAlpha = (wanted ? 0.75 + 0.25 * pulse : 0.7) * hoist;
+    ctx.beginPath(); ctx.roundRect(-s + 2, -s + 2, 2 * s - 4, 2 * s - 4, 2); ctx.stroke();
     ctx.restore();
     // The enamel plate on its front, in its coin's colour, set in a bevelled ring.
+    ctx.save();
+    ctx.shadowColor = tint; ctx.shadowBlur = wanted ? (reduced ? 14 : 12 + 12 * pulse) : 8;
     ctx.fillStyle = '#0d0f0f'; ctx.beginPath(); ctx.arc(0, 0, 34, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
     const enamel = ctx.createRadialGradient(-8, -10, 4, 0, 0, 32);
     enamel.addColorStop(0, withAlpha(tint, wanted ? 1 : 0.85)); enamel.addColorStop(1, withAlpha(tint, wanted ? 0.55 + 0.3 * pulse : 0.45));
     ctx.fillStyle = enamel; ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI * 2); ctx.fill();
@@ -990,10 +1020,41 @@ export function createScene() {
       ctx.globalAlpha = 1 - kickAge / 0.35; ctx.strokeStyle = '#ff5a4a'; ctx.lineWidth = 5; ctx.lineJoin = 'round';
       ctx.shadowColor = '#ff3a2a'; ctx.shadowBlur = 14;
       ctx.beginPath(); ctx.roundRect(-s - 3, -s - 3, 2 * s + 6, 2 * s + 6, 4); ctx.stroke();
-      ctx.lineWidth = 7; ctx.lineCap = 'round';
+      ctx.globalAlpha *= 0.55; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.shadowBlur = 0;
       ctx.beginPath(); ctx.moveTo(-20, -20); ctx.lineTo(20, 20); ctx.moveTo(20, -20); ctx.lineTo(-20, 20); ctx.stroke();
       ctx.restore();
     }
+  }
+
+  /**
+   * The block in the instant it breaks: its iron face swollen 15 %, then
+   * (second pass, over the burst) white-hot cracks from its mark to its edges.
+   */
+  function drawCrackedCube(ctx: CanvasRenderingContext2D, x: number, y: number, tint: string, age: number, seed: number, cracks: boolean) {
+    const s = 40 * (1.12 + 1.2 * age);
+    ctx.save(); ctx.translate(x, y);
+    if (!cracks) {
+      const face = ctx.createLinearGradient(-s, -s, s, s);
+      face.addColorStop(0, '#6a6b64'); face.addColorStop(0.5, '#3a3d3a'); face.addColorStop(1, '#1b1e1e');
+      ctx.fillStyle = face; ctx.beginPath(); ctx.roundRect(-s, -s, 2 * s, 2 * s, 4); ctx.fill();
+      ctx.strokeStyle = tint; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = withAlpha(tint, 0.9); ctx.beginPath(); ctx.arc(0, 0, s * 0.62, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + hashed(seed * 7 + i) * 0.6;
+        const pts: [number, number][] = [[0, 0]];
+        for (let j = 1; j <= 3; j++) {
+          const rr = s * 1.05 * (j / 3); const jag = (hashed(seed + i * 11 + j) - 0.5) * 0.5;
+          pts.push([Math.cos(a + jag) * rr, Math.sin(a + jag) * rr]);
+        }
+        for (const [w, col] of [[9, withAlpha(tint, 0.9)], [4, '#fffbe8']] as const) {
+          ctx.strokeStyle = col; ctx.lineWidth = w;
+          ctx.beginPath(); pts.forEach(([px, py], k) => (k ? ctx.lineTo(px, py) : ctx.moveTo(px, py))); ctx.stroke();
+        }
+      }
+    }
+    ctx.restore();
   }
 
   /** A coin out of a broken block, on its way into the mouth. */
@@ -1079,17 +1140,15 @@ export function createScene() {
         ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(at.x + wob - r * 0.35, at.y - i * 3 - r * 0.35, Math.max(1, r * 0.22), 0, Math.PI * 2); ctx.fill();
       }
     } else if (p.ingredient === 'metal') {
-      // Smoke behind a heavy coin, on the arc it is falling along.
-      for (let i = Math.min(8, Math.floor(span / 3)); i >= 1; i--) {
-        const at = past(i * 3);
-        const f = i / 8;
-        const r = 17 - f * 4;
-        ctx.globalAlpha = Math.max(0, 0.85 - f * 0.6);
-        ctx.fillStyle = i % 2 ? '#b07a26' : '#d9a23a';
-        ctx.beginPath(); ctx.arc(at.x, at.y, r, 0, Math.PI * 2); ctx.fill();
-        // A warm rim, lit by the coin's own gold.
-        ctx.globalAlpha *= 0.55; ctx.strokeStyle = COLORS.metal; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(at.x, at.y, r, Math.PI * 1.05, Math.PI * 1.85); ctx.stroke();
+      // A heavy gold ribbon behind it, on the arc it is falling along,
+      // tapering away: one stroke, not a string of discs.
+      ctx.lineCap = 'round';
+      const n = Math.floor(span / 2);
+      for (let i = 0; i < n; i++) {
+        const a = past(i * 2 + 2); const b = past(i * 2 + 4); const f = i / Math.max(1, n);
+        ctx.globalAlpha = 0.7 * (1 - f) + 0.05;
+        ctx.strokeStyle = '#e0a83c'; ctx.lineWidth = 8 * (1 - f) + 2.5;
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       }
     }
     ctx.restore();
@@ -1209,21 +1268,34 @@ export function createScene() {
       const t = tick - c.born;
       const hoisting = t > c.life - ARENA.rail.lower;
       const lowering = t < ARENA.rail.lower;
-      let text = BLOCK_NAMES[c.ingredient]; let color = COLORS[c.ingredient]; let a = 0.9; let born = c.born / 60;
-      if (blockTag && blockTag.text === CAPTIONS.wrongToken && time - blockTag.born < blockTag.life) { text = blockTag.text; color = blockTag.color; a = 1; born = -1; }
-      else if (hoisting) { text = CAPTIONS.blockMissed; color = '#cdd8c4'; a = 0.9; }
-      if (lowering) a *= clampAlpha(t / ARENA.rail.lower);
-      if (hoisting) a *= clampAlpha((at.y - 60) / 60);
+      let text = BLOCK_NAMES[c.ingredient]; let color = COLORS[c.ingredient]; let a = 1;
+      if (blockTag && blockTag.text === CAPTIONS.wrongToken && time - blockTag.born < blockTag.life) { text = blockTag.text; color = blockTag.color; }
+      else if (hoisting) { text = CAPTIONS.blockMissed; color = '#cdd8c4'; }
+      // On the chain just above the block, out of the captions' way: it
+      // snaps on at full strength once the block is most of the way down.
+      const showFrom = Math.round(ARENA.rail.lower * 0.7);
+      if (lowering && t < showFrom) continue;
+      if (hoisting) a *= clampAlpha((at.y - 90) / 50);
       if (a <= 0.02) continue;
-      const pop = reduced || born < 0 ? 1 : 1;
-      const y = at.y + 40 + 44;
-      ctx.save(); ctx.translate(at.x, y); ctx.scale(pop, pop);
+      const pop = reduced ? 1 : 0.8 + 0.2 * easeOut(clampAlpha((t - showFrom) / 7));
       ctx.font = `700 22px ${DISPLAY}`;
       const w = ctx.measureText(text).width + 20;
-      ctx.globalAlpha = a; ctx.fillStyle = '#060e0ce8'; ctx.strokeStyle = color; ctx.lineWidth = 2;
+      // When the camera has pushed in far enough to put the tag under the
+      // mutation chips, it hangs beside the block instead, on the open side.
+      // On its chain, its bottom edge just above the block; beside the block
+      // when the camera would put that under the mutation chips; and never
+      // under the FOMO wordmark at the top left.
+      const above = at.y - 54 - 12 - 15;
+      const under = toScreenY(above) < 62;
+      let x = under ? at.x + 40 + 16 + w / 2 : at.x;
+      const y = under ? at.y - 18 : above;
+      const left = toScreenX(x - w / 2);
+      if (left < 322) x += (322 - left) / camera.zoom;
+      ctx.save(); ctx.translate(x, y); ctx.scale(pop, pop);
+      ctx.globalAlpha = a; ctx.fillStyle = '#060e0cf0'; ctx.strokeStyle = color; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.roundRect(-w / 2, -15, w, 30, 7); ctx.fill(); ctx.stroke();
+      drawText(ctx, text, 0, 1, 22, color, a, DISPLAY, 'center', 0);
       ctx.restore();
-      drawText(ctx, text, at.x, y + 1, 22, color, a, DISPLAY, 'center', 0);
     }
   }
 
@@ -1271,8 +1343,9 @@ export function createScene() {
    * (under an undone camera), so a line never hides a coin in flight or the
    * lance; the HUD still goes on top of it.
    */
-  function drawCaption(ctx: CanvasRenderingContext2D, t: number, reduced: boolean, state: ArcadeState | null, signUp: boolean) {
-    if (caption && !signUp && !(DEV_HOOKS && devRender.hideLabels)) {
+  function drawCaption(ctx: CanvasRenderingContext2D, t: number, reduced: boolean, state: ArcadeState | null, signUp: boolean, over = false) {
+    // Two passes: ordinary captions under the coins, a block's card over them.
+    if (caption && !signUp && !(DEV_HOOKS && devRender.hideLabels) && !!caption.coins === over) {
       const age = t - caption.born;
       if (age > caption.life) caption = null;
       else {
@@ -1289,7 +1362,7 @@ export function createScene() {
         if (caption.coins && !reduced) {
           // Lands from a little too big, and thumps as each coin is swallowed (the last hardest).
           const thump = t - cardPulseAt;
-          scale = 1 + 0.12 * (1 - easeOut(age / 0.25)) + (thump >= 0 && thump < 0.3 ? (cardEaten >= caption.coins.n ? 0.16 : 0.08) * Math.exp(-thump * 12) : 0);
+          scale = 0.9 + 0.1 * easeOut(Math.min(1, age / 0.12)) + (thump >= 0 && thump < 0.3 ? (cardEaten >= caption.coins.n ? 0.16 : 0.08) * Math.exp(-thump * 12) : 0);
         }
         // Spat out: from the mouth to the slot on a short arc, growing and straightening as it goes.
         if (caption.from && !reduced && age < SPIT) {
@@ -1298,44 +1371,55 @@ export function createScene() {
           cy = caption.from.y + (slot.y - caption.from.y) * k - Math.sin(Math.PI * (age / SPIT)) * 60;
           scale = 0.35 + 0.65 * k; tilt = (1 - k) * -0.5;
         }
+        if (!caption.card && !caption.at) {
+          // Never off the left edge of the frame, however long the line.
+          ctx.font = `700 ${caption.size}px ${DISPLAY}`;
+          const half = (ctx.measureText(caption.text).width / 2 + 10) * scale;
+          if (cx - half < 16) cx = 16 + half;
+        }
         ctx.save();
         ctx.translate(cx, cy); ctx.rotate(tilt); ctx.scale(scale, scale);
         let textX = 0;
-        let textColor = caption.color;
+        const textColor = caption.color;
         if (caption.card) {
           ctx.globalAlpha = alpha;
           ctx.font = `700 ${caption.size}px ${DISPLAY}`;
           const text = ctx.measureText(caption.text).width;
           const coins = caption.coins;
-          const step = caption.size * 1.2;
+          const step = caption.size * 1.35;
           const icons = coins ? coins.n * step + 12 : 0;
           // A block's card carries its running total at the right end.
-          const totalSize = Math.round(caption.size * 0.85);
-          ctx.font = `800 ${totalSize}px ${MONO}`;
-          const totalW = coins ? ctx.measureText('+0000').width + 18 : 0;
-          const w = text + 44 + icons + totalW;
+          // The block's total is counted in the mouth, not here: the card is its name and a pip per coin.
+          const w = text + 44 + icons;
           // Anchored cards keep clear of the mouth: pull left until the right edge fits.
           if (caption.at) {
             const over = Math.min(cx + (w / 2) * scale - caption.at.right, cx - (w / 2) * scale - 12);
             if (over > 0) { ctx.translate(-over / scale, 0); }
+            const under = 12 - (cx - (w / 2) * scale);
+            if (under > 0) { ctx.translate(under / scale, 0); }
           }
-          // A block's card lands solid in its coin's colour, then settles to a plate.
-          const solid = !!coins && !reduced && age < 0.5;
-          ctx.fillStyle = solid ? caption.color : '#060e0cf0'; ctx.strokeStyle = caption.color; ctx.lineWidth = 3;
+          // A dark plate with a border in its coin's colour, clean from the
+          // first frame; the border flares as it lands and as each coin goes down.
+          const flare = coins && !reduced ? Math.max(Math.exp(-age * 7), Math.exp(-Math.max(0, t - cardPulseAt) * 9) * 0.7) : 0;
+          ctx.fillStyle = '#060e0cf2'; ctx.strokeStyle = caption.color; ctx.lineWidth = 3 + 3 * flare;
+          if (flare > 0.05) { ctx.shadowColor = caption.color; ctx.shadowBlur = 18 * flare; }
           ctx.beginPath(); ctx.roundRect(-w / 2, -caption.size * 0.72, w, caption.size * 1.44, 10); ctx.fill(); ctx.stroke();
-          if (solid) textColor = '#0a1210';
+          ctx.shadowBlur = 0;
           textX = -w / 2 + 22 + text / 2;
           if (coins) {
             // One mini coin per coin inside, lit as each one is swallowed.
             const x0 = textX + text / 2 + 14 + step / 2;
             for (let i = 0; i < coins.n; i++) {
-              const pop = reduced ? 1 : easeOut((age - i * 0.05) / 0.1);
+              const pop = 1;
               if (pop <= 0.15) continue;
-              ctx.save(); ctx.globalAlpha = alpha * (i < cardEaten ? 1 : 0.3);
-              coin(ctx, coins.ingredient, x0 + i * step, 0, caption.size * (i < cardEaten ? 1.2 : 1.0) * pop, 0, 0.8, i < cardEaten ? 1 : 0);
+              const lit = i < cardEaten;
+              ctx.save(); ctx.globalAlpha = alpha * (lit ? 1 : 0.6);
+              const landed = t - cardPulseAt;
+              const thump = !reduced && i === cardEaten - 1 && landed >= 0 && landed < 0.25 ? 0.3 * (1 - landed / 0.25) : 0;
+              coin(ctx, coins.ingredient, x0 + i * step, 0, caption.size * (lit ? 1.3 + thump : 1.1) * pop, 0, 0.8, lit ? 1 : 0);
+              if (!lit) { ctx.strokeStyle = caption.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x0 + i * step, 0, caption.size * 0.55 * pop + 2, 0, Math.PI * 2); ctx.stroke(); }
               ctx.restore();
             }
-            if (cardTotal > 0) drawText(ctx, `+${cardTotal}`, x0 + coins.n * step - step / 2 + 12, 0, totalSize, solid ? '#0a1210' : '#ffe28a', alpha, MONO, 'left', solid ? 0 : 4);
           }
         }
         drawText(ctx, caption.text, textX, 0, caption.size, textColor, alpha, DISPLAY, 'center', caption.card ? 0 : 8);
@@ -1343,6 +1427,22 @@ export function createScene() {
       }
     }
 
+  }
+
+  /** Darkens the painting toward its four edges, so a pulled-back room has no frame line. */
+  function featherEdges(ctx: CanvasRenderingContext2D, strength: number) {
+    const dark = '5,12,11';
+    const band = (x0: number, y0: number, x1: number, y1: number, rx: number, ry: number, rw: number, rh: number) => {
+      const g = ctx.createLinearGradient(x0, y0, x1, y1);
+      g.addColorStop(0, `rgba(${dark},${strength})`); g.addColorStop(1, `rgba(${dark},0)`);
+      ctx.fillStyle = g; ctx.fillRect(rx, ry, rw, rh);
+    };
+    ctx.save();
+    band(0, 0, 90, 0, 0, 0, 90, 700);
+    band(1200, 0, 1110, 0, 1110, 0, 90, 700);
+    band(0, 0, 0, 70, 0, 0, 1200, 70);
+    band(0, 700, 0, 640, 0, 640, 1200, 60);
+    ctx.restore();
   }
 
   function draw(ctx: CanvasRenderingContext2D, width: number, height: number, state: ArcadeState | null, angle: number, selected: Ingredient, playing: boolean, reduced: boolean, time: number, guideSteps = 0, season: Season = null) {
@@ -1380,9 +1480,10 @@ export function createScene() {
     const zoom = camera.zoom;
     if (kitchen.complete && kitchen.naturalWidth && !rig && !rigFailed) { try { rig = buildRig(kitchen); } catch { rigFailed = true; } }
     if (zoom < 0.999) {
-      // The room beyond the frame: the same kitchen, out of the light.
-      if (kitchen.complete && kitchen.naturalWidth) ctx.drawImage(rig ? rig.backdrop : kitchen, 0, 0, 1200, 700);
-      ctx.fillStyle = 'rgba(3,9,8,0.78)'; ctx.fillRect(0, 0, 1200, 700);
+      // The room beyond the frame is dark. It used to be the same kitchen
+      // drawn again at full size under a veil, which put a second, offset copy
+      // of every lantern beside the first and a hard seam where they met.
+      ctx.fillStyle = '#050c0b'; ctx.fillRect(-40, -40, 1280, 780);
     }
     ctx.save();
     // Not clipped to the arena: a creature that has outgrown the kitchen is
@@ -1393,6 +1494,9 @@ export function createScene() {
       // The kitchen without the creature, then the creature on it. The rail is
       // fixed to the ceiling behind it: a big creature's head hides its right end.
       ctx.drawImage(rig ? rig.backdrop : kitchen, 0, 0, 1200, 700);
+      // Pulled back, the painting's edges fall away into the dark instead of
+      // ending on a line.
+      if (zoom < 0.999) featherEdges(ctx, Math.min(1, (1 - zoom) / 0.08));
       if (playing && state) drawRail(ctx, state, tick);
       // The vent flap it bit off hangs in the creature's room too: behind it,
       // so a big creature's head is never covered by a black slab.
@@ -1433,7 +1537,7 @@ export function createScene() {
     if (playing) drawProps(ctx, t, reduced, dt);
     // The chain under the ceiling, and whatever block is riding it.
     if (playing && state) {
-      for (const c of state.crates ?? []) drawCrate(ctx, c, tick, t, reduced, selected);
+      for (const c of state.crates ?? []) { drawCrate(ctx, c, tick, t, reduced, selected); lastCrateDrawn = { c, tick }; }
     }
 
     if (playing && state && guideSteps > 0 && !(DEV_HOOKS && devRender.hideAim)) {
@@ -1563,13 +1667,44 @@ export function createScene() {
       // a HEMI's ruler — and in the loaded coin's colour; the crossbar is the charge.
       const solid = 120 + clampAlpha((power - ARENA.minPower) / (ARENA.maxPower - ARENA.minPower)) * 150;
       const lanceTint = COLORS[selected];
+      // While a shot is in the air and nothing is charging, the lance steps
+      // back, so it never argues with the coin that is flying.
+      const flying = !!state && charge === 0 && state.projectiles.some(q => q.kind === 'food' && !q.spent);
+      const lit = flying ? 0.45 : 1;
       ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-      ctx.globalAlpha = loaded ? .65 : .3; ctx.strokeStyle = '#040a09'; ctx.lineWidth = 11;
+      // Ether's float only shows over a longer run, so its dashed tail is longer.
+      const tail = selected === 'balloon' ? 210 : 110;
+      ctx.globalAlpha = (loaded ? .7 : .3) * lit; ctx.strokeStyle = '#040a09'; ctx.lineWidth = 13;
       strokeAlong(ctx, lance, 4, solid);
-      ctx.globalAlpha = loaded ? 1 : .5; ctx.strokeStyle = lanceTint; ctx.lineWidth = 6;
+      ctx.globalAlpha = (loaded ? 1 : .5) * lit; ctx.strokeStyle = lanceTint; ctx.lineWidth = 7;
       strokeAlong(ctx, lance, 4, solid);
-      ctx.globalAlpha = loaded ? .85 : .2; ctx.lineWidth = 4; ctx.setLineDash([8, 8]);
-      strokeAlong(ctx, lance, solid, solid + 110); ctx.setLineDash([]);
+      // The tail past the charge mark is drawn in the coin's own hand: Ether's
+      // as a string of bubbles, HEMI's as long ruler dashes with ticks on its
+      // shaft, Bitcoin's as heavy short dashes — so the three read apart even
+      // where their lines run close.
+      if (selected === 'balloon') {
+        for (let d = solid + 12; d <= solid + tail; d += 17) {
+          const q = pointAlong(lance, d); const r = 4.2 + 1.4 * ((d - solid) / tail);
+          ctx.globalAlpha = (loaded ? .55 : .15) * lit; ctx.strokeStyle = '#040a09'; ctx.lineWidth = 4.5;
+          ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = (loaded ? .9 : .2) * lit; ctx.strokeStyle = lanceTint; ctx.lineWidth = 2.2;
+          ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, Math.PI * 2); ctx.stroke();
+        }
+      } else {
+        const dash = selected === 'pepper' ? [16, 6] : [7, 7];
+        ctx.globalAlpha = (loaded ? .5 : .15) * lit; ctx.strokeStyle = '#040a09'; ctx.lineWidth = selected === 'metal' ? 10 : 8; ctx.setLineDash(dash);
+        strokeAlong(ctx, lance, solid, solid + tail);
+        ctx.globalAlpha = (loaded ? .85 : .2) * lit; ctx.strokeStyle = lanceTint; ctx.lineWidth = selected === 'metal' ? 6 : 4.5;
+        strokeAlong(ctx, lance, solid, solid + tail); ctx.setLineDash([]);
+      }
+      if (selected === 'pepper') {
+        // Ruler ticks along HEMI's shaft: it goes where it points.
+        ctx.globalAlpha = (loaded ? .9 : .3) * lit; ctx.strokeStyle = '#040a09'; ctx.lineWidth = 2;
+        for (let d = 40; d < solid - 8; d += 26) {
+          const q = pointAlong(lance, d);
+          ctx.beginPath(); ctx.moveTo(q.x - q.ny * 6, q.y + q.nx * 6); ctx.lineTo(q.x + q.ny * 6, q.y - q.nx * 6); ctx.stroke();
+        }
+      }
       const bar = pointAlong(lance, solid);
       ctx.globalAlpha = loaded ? 1 : .45; ctx.lineWidth = 4;
       ctx.strokeStyle = charge > 0.92 ? '#fff0a8' : loaded ? '#dded92' : '#7f8f6e';
@@ -1669,24 +1804,24 @@ export function createScene() {
       if (age >= 0 && age < 0.26) {
         const fade = age < 0.06 ? 1 : 1 - (age - 0.06) / 0.2;
         const k = reduced ? 0.6 : 1;
-        const r = 170 + (reduced ? 0 : 50 * easeOut(age / 0.26));
+        const r = 240 + (reduced ? 0 : 80 * easeOut(age / 0.26));
+        // The cube itself, for the first few frames: swollen, split by
+        // white-hot cracks, inside the burst — so the hit frame is the block
+        // blowing apart, not a light where it used to be.
+        const cracking = age < 0.08;
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
         // Three or four frames of the whole room lit in its coin's colour —
         // added light, so nothing is veiled, and the HUD is drawn after it.
-        if (age < 0.04 && !reduced) {
-          // A frame or two of white light over the room first...
-          ctx.fillStyle = `rgba(255,250,235,${0.12 * (1 - age / 0.04)})`; ctx.fillRect(-200, -200, 1600, 1100);
-        }
         if (age < 0.12 && !reduced) {
-          // ...then the room drops a stop for a few frames so the burst beats the lamps...
+          // The room drops to about two thirds for a few frames, so a white-hot
+          // burst beats the lamps whatever the coin's colour (a gold wash over
+          // a gold kitchen only made the kitchen more gold).
           ctx.globalCompositeOperation = 'source-over';
-          ctx.fillStyle = `rgba(2,5,5,${0.3 * (1 - age / 0.12)})`; ctx.fillRect(-200, -200, 1600, 1100);
+          ctx.fillStyle = `rgba(2,5,5,${0.36 * (1 - age / 0.12)})`; ctx.fillRect(-200, -200, 1600, 1100);
           const halo = ctx.createRadialGradient(flashX, flashY, r * 0.4, flashX, flashY, r * 1.5);
           halo.addColorStop(0, `rgba(2,5,5,${0.45 * (1 - age / 0.12)})`); halo.addColorStop(1, 'rgba(2,5,5,0)');
           ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(flashX, flashY, r * 1.5, 0, Math.PI * 2); ctx.fill();
-          // ...and takes on its coin's colour.
           ctx.globalCompositeOperation = 'lighter';
-          ctx.fillStyle = withAlpha(flashColor, 0.12 * (1 - age / 0.12)); ctx.fillRect(-200, -200, 1600, 1100);
         }
         // Eight thick wedges of light thrown out of the core, in its coin's
         // colour with a hot centre line, stopping short of the creature.
@@ -1701,46 +1836,66 @@ export function createScene() {
             ctx.beginPath(); ctx.moveTo(flashX + Math.cos(a - half) * 14, flashY + Math.sin(a - half) * 14);
             ctx.lineTo(flashX + Math.cos(a) * r1, flashY + Math.sin(a) * r1);
             ctx.lineTo(flashX + Math.cos(a + half) * 14, flashY + Math.sin(a + half) * 14); ctx.closePath(); ctx.fill();
-            ctx.strokeStyle = `rgba(255,252,236,${0.85 * fade})`; ctx.lineWidth = 2.5;
+            ctx.strokeStyle = `rgba(255,252,236,${0.85 * fade})`; ctx.lineWidth = 4;
             ctx.beginPath(); ctx.moveTo(flashX + Math.cos(a) * 16, flashY + Math.sin(a) * 16); ctx.lineTo(flashX + Math.cos(a) * r1 * 0.8, flashY + Math.sin(a) * r1 * 0.8); ctx.stroke();
           }
           ctx.restore();
         }
         const g = ctx.createRadialGradient(flashX, flashY, 0, flashX, flashY, r);
         // A filled bloom: a white core inside a broad body of the coin's colour.
-        g.addColorStop(0, `rgba(255,255,248,${0.95 * fade * k})`);
-        g.addColorStop(0.18, `rgba(255,244,214,${0.8 * fade * k})`);
-        g.addColorStop(0.35, withAlpha(flashColor, 0.75 * fade * k));
-        g.addColorStop(0.7, withAlpha(flashColor, 0.35 * fade * k));
+        // A white-hot core about 160 across, its coin's colour only as the band around it.
+        const hot = age < 0.04 ? 1 : fade;
+        g.addColorStop(0, `rgba(255,255,250,${hot * k})`);
+        g.addColorStop(0.3, `rgba(255,250,232,${0.92 * hot * k})`);
+        g.addColorStop(0.42, withAlpha(flashColor, 0.8 * fade * k));
+        g.addColorStop(0.7, withAlpha(flashColor, 0.5 * fade * k));
         g.addColorStop(1, withAlpha(flashColor, 0));
         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(flashX, flashY, r, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
+        // The cube itself, for the first few frames: opaque, punched up to
+        // 1.3×, split by white-hot cracks in the middle of the burst.
+        if (cracking) {
+          if (brokenCrate) {
+            const punch = 1.12 + 0.1 * (age / 0.08);
+            ctx.save(); ctx.translate(crackX, crackY); ctx.scale(punch, punch); ctx.translate(-crackX, -crackY);
+            drawCrate(ctx, brokenCrate.c, brokenCrate.tick, t, reduced, brokenCrate.c.ingredient);
+            ctx.restore();
+          } else drawCrackedCube(ctx, crackX, crackY, flashColor, age, flashSeed, false);
+          drawCrackedCube(ctx, crackX, crackY, flashColor, age, flashSeed, true);
+        }
       }
     }
     // Bounce rings: a flash at the contact point.
     for (let i = rings.length - 1; i >= 0; i--) {
       const r = rings[i]; const age = t - r.born; const life = r.huge ? 0.5 : r.big ? 0.45 : 0.3;
       if (age > life) { rings.splice(i, 1); continue; }
+      if (age < 0) continue;
       const f = easeOut(age / life);
       ctx.save(); ctx.globalAlpha = 1 - f;
       ctx.strokeStyle = r.color; ctx.lineWidth = (r.big ? 6 : 4) * (1 - f) + 1;
       if (r.huge) ctx.lineWidth = 14 * (1 - f) + 2;
       ctx.beginPath(); ctx.arc(r.x, r.y, (reduced ? 24 : r.huge ? 24 + f * 220 : 10 + f * (r.big ? 48 : 30)), 0, Math.PI * 2); ctx.stroke();
-      if (r.big) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2 * (1 - f); ctx.beginPath(); ctx.arc(r.x, r.y, reduced ? 14 : 4 + f * 26, 0, Math.PI * 2); ctx.stroke(); }
+      if (r.big && !r.huge) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2 * (1 - f); ctx.beginPath(); ctx.arc(r.x, r.y, reduced ? 14 : 4 + f * 26, 0, Math.PI * 2); ctx.stroke(); }
       ctx.restore();
     }
     // Score pops, scaled by value.
     if (!(DEV_HOOKS && devRender.hideLabels)) {
       for (let i = pops.length - 1; i >= 0; i--) {
-        const p = pops[i]; const age = t - p.born; const life = 0.9;
+        const p = pops[i]; const age = t - p.born; const life = p.life ?? 0.9;
         if (age > life) { pops.splice(i, 1); continue; }
-        const f = age / life; const rise = reduced ? 0 : easeOut(f) * 46;
-        const grow = reduced ? 1 : 1 + 0.5 * Math.exp(-age * 9);
-        drawText(ctx, p.text, clamp(p.x, 60, 1140), Math.max(70, p.y) - rise, p.size * grow, p.color, f < 0.7 ? 1 : (1 - f) / 0.3, MONO, 'center', 5);
+        const total = p.tag === 'pour';
+        const f = age / life; const rise = reduced || total ? 0 : easeOut(f) * 46;
+        const grow = reduced ? 1 : total ? 1 + 0.3 * (1 - easeOut(Math.min(1, age / 0.6))) + 0.25 * Math.exp(-age * 14) : 1 + 0.5 * Math.exp(-age * 9);
+        drawText(ctx, p.text, clamp(p.x, 60, 1140), Math.max(70, p.y) - rise, p.size * grow, p.color, (f < 0.7 ? 1 : (1 - f) / 0.3) * (total ? 0.9 : 1), MONO, 'center', 5);
       }
     }
 
     ctx.restore(); // camera: from here on, screen space.
+    // A block's card, over the coins and the burst, so it is never dimmed or crossed.
+    {
+      const sign = playing && state && !(DEV_HOOKS && devRender.hideLabels) ? pressEPhase(state.tick) : null;
+      drawCaption(ctx, t, reduced, state, sign !== null && sign.index !== eHitIndex, true);
+    }
     if (zoom < 0.999) {
       // A soft edge where the frame ends and the dark room begins.
       const x0 = toScreenX(0), y0 = toScreenY(0), x1 = toScreenX(1200), y1 = toScreenY(700);
@@ -1832,7 +1987,7 @@ export function createScene() {
     const sign = playing && state && !(DEV_HOOKS && devRender.hideLabels) ? pressEPhase(state.tick) : null;
     const signUp = sign !== null && sign.index !== eHitIndex;
     if (state) lastMouth = { x: state.creature.x, y: state.creature.y };
-    if (signUp && sign && state) drawPressE(ctx, sign, toScreenX(state.creature.x), toScreenY(state.creature.y), t, reduced);
+    if (signUp && sign && state) drawPressE(ctx, sign, toScreenX(state.creature.x), toScreenY(state.creature.y), t, reduced, (state.crates?.length ?? 0) > 0);
 
     ctx.restore(); // shake
 
@@ -1874,14 +2029,16 @@ export function createScene() {
    * flies out of the mouth on an arc, spinning straight as it lands, then
    * hangs with a bar for how long is left and the key tapping itself.
    */
-  function drawPressE(ctx: CanvasRenderingContext2D, ph: PressEPhase, mouthX: number, mouthY: number, time: number, reduced: boolean) {
-    let x = CAPTION.x, y = CAPTION.y, s = 1, rot = 0, alpha = 1;
+  function drawPressE(ctx: CanvasRenderingContext2D, ph: PressEPhase, mouthX: number, mouthY: number, time: number, reduced: boolean, low = false) {
+    // While a block is out the sign drops to the low slot, under the block's stretch of room.
+    const slot = low ? CAPTION_LOW : CAPTION;
+    let x = slot.x, y = slot.y, s = 1, rot = 0, alpha = 1;
     if (ph.phase === 'flying') {
       if (reduced) alpha = ph.t;
       else {
         const e = easeOut(ph.t);
-        x = mouthX + (CAPTION.x - mouthX) * e;
-        y = mouthY + (CAPTION.y - mouthY) * e - Math.sin(Math.PI * ph.t) * 90;
+        x = mouthX + (slot.x - mouthX) * e;
+        y = mouthY + (slot.y - mouthY) * e - Math.sin(Math.PI * ph.t) * 90;
         s = 0.25 + 0.75 * e + 0.12 * Math.sin(Math.PI * ph.t);
         rot = (1 - e) * -0.9;
       }

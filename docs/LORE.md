@@ -65,7 +65,7 @@ too (see the double-meaning rule below).
 | A coin on the floor | **TX DROPPED.** |
 | Drool on the floor | **SLIPPAGE.** Everything slides now. |
 | The bench on fire | A **TOKEN BURN.** |
-| The creature growing | **SCALING.** When it outgrows the frame the **BLOCK** is **FULL**. |
+| The creature growing | **SCALING.** When it outgrows the frame it is **STATE BLOAT**: it has bloated past the picture. (It was BLOCK FULL. until stage 6 put blocks on the rail.) |
 | Five catches in a row | **FOMO.** Everything is worth triple and it swallows whole. |
 | It wanted one coin and you sent another | A **MAXI TANTRUM.** It only wants the one coin. |
 | A craving met | **ORDER FILLED.** It ordered; you filled it. |
@@ -325,7 +325,7 @@ never under reduced motion. Gameplay and the report are unchanged.
 5. **The marks are untouched.** See `docs/ART_PROVENANCE.md` and D122.
 6. **Captions are short, big, few and funny — never instructions.** Uppercase,
    end on a full stop (score pops and mutation cards excepted), one crypto
-   term per caption. Cards (SCALING., BLOCK FULL.) fit in 18 characters;
+   term per caption. Cards (SCALING., STATE BLOAT.) fit in 18 characters;
    other captions in 24. `tests/lore.test.mjs` counts them and
    `scripts/lore-shots.mjs` measures them in the canvas face.
 7. **Plain words where the player has to act.** Controls, the keyboard guide,
@@ -365,7 +365,7 @@ and are in the table.
 | turbo'd coin (stage 4) | TURBO'D ×2 | TURBO'D. (the ×2 read as "HEMI 2x" on a HEMI coin; the score pop carries the value) |
 | bench fire | THE KITCHEN IS CONGESTED. | TOKEN BURN. |
 | growth card | BIGGER. | SCALING. |
-| camera pull-back card | IT NO LONGER FITS. | BLOCK FULL. |
+| camera pull-back card | IT NO LONGER FITS. | STATE BLOAT. (was BLOCK FULL. until stage 6, when blocks became things you shoot) |
 | frenzy banner | FRENZY | FOMO |
 | tantrum | TANTRUM. | MAXI TANTRUM. |
 | drool | DROOL. | SLIPPAGE. |

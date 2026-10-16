@@ -28,7 +28,8 @@ all shift. Two changes are meant to fix that:
 2. **Blocks.** A riveted cube on a long chain, carrying one coin's mark, is
    let down from a hatch in the ceiling into the open air left of the
    creature, shuttles back and forth along a short rail, and is hoisted away
-   after a few seconds; a small tag under it says whose it is (ETHER BLOCK.).
+   after a few seconds; a small tag on its chain, just above it, says whose
+   it is (ETHER BLOCK.).
    Only its own coin breaks it open (BLOCK REWARD.); its three coins then
    pop out of the top one after another and drop into the mouth. Any other
    coin glances off it (WRONG TOKEN.). Blocks stop coming once the creature has grown into the

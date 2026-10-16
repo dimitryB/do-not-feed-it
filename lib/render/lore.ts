@@ -75,7 +75,7 @@ export const CAPTIONS = {
   inhale: 'IT INHALES',
   breath: 'TURBO BREATH',
   scaling: 'SCALING.',
-  noRoom: 'BLOCK FULL.',
+  noRoom: 'STATE BLOAT.',
   tantrum: 'MAXI TANTRUM.',
   sneeze: 'SNEEZE.',
   slippage: 'SLIPPAGE.',
