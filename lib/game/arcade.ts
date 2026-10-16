@@ -36,7 +36,7 @@ export type Bouncer =
   | { name: string; label: string; kind: "segment"; x1: number; y1: number; x2: number; y2: number; restitution: number; banks: number };
 
 export const BOUNCERS: readonly Bouncer[] = Object.freeze([
-  { name: "pan", label: "OFF THE PAN", kind: "circle", x: 370, y: 185, r: 34, restitution: 0.85, banks: 1 },
+  { name: "pan", label: "OFF THE PAN", kind: "circle", x: 320, y: 195, r: 34, restitution: 0.85, banks: 1 },
   { name: "shelf", label: "OFF THE SHELF", kind: "segment", x1: 300, y1: 110, x2: 440, y2: 110, restitution: 0.8, banks: 1 },
   { name: "lamp", label: "OFF THE LAMP", kind: "circle", x: 760, y: 60, r: 26, restitution: 0.9, banks: 2 },
   { name: "chain", label: "OFF THE CHAIN", kind: "segment", x1: 1040, y1: 0, x2: 1040, y2: 110, restitution: 0.75, banks: 1 },
@@ -105,7 +105,7 @@ export const TUNING = Object.freeze({
   graceTicks: 300,
   drainBase: 0.06,
   drainPerSize: 0.008,
-  drainPerMinute: 0.07,
+  drainPerMinute: 0.058,
   /** One number per seed: a hungrier or a lazier creature. Spreads the deaths. */
   temperSpread: 1,
   /** Appetite never stops growing, even after the body does. */
@@ -238,16 +238,20 @@ export const TUNING = Object.freeze({
 
   /**
    * How each coin flies. Bitcoin is heavy, Ether is gas, HEMI is turbo:
-   * `gravity` is per tick², `speed` multiplies the launch power, and `burn`
-   * is how many ticks it flies dead straight before gravity takes it. The
-   * same barrel and the same charge put each coin somewhere else, so
-   * switching coins is re-aiming.
+   * `gravity` is per tick²; `lo` and `hi` are its launch speed at the least
+   * and the most charge (each coin has its own range, so the charge moves
+   * each one by its own amount); `burn` is how far, in pixels, it flies dead
+   * straight before gravity takes it. The same barrel and the same charge
+   * put each coin somewhere else, so switching coins is re-aiming.
    */
   flight: {
-    metal: { gravity: 0.3, speed: 1, burn: 0 },
-    balloon: { gravity: 0.08, speed: 0.7, burn: 0 },
-    pepper: { gravity: 0.16, speed: 1.25, burn: 18 },
-  } as Readonly<Record<Ingredient, Readonly<{ gravity: number; speed: number; burn: number }>>>,
+    // Steep lobs: below charge 15 it falls short; at full charge −46°…−62°.
+    metal: { gravity: 0.3, lo: 9, hi: 15, burn: 0 },
+    // The middle band: floaty and nearly charge-blind, −31°…−41° early in a shift.
+    balloon: { gravity: 0.09, lo: 11, hi: 12.5, burn: 0 },
+    // Flat: 300 px dead straight at any charge, then normal; −26°…−32° early.
+    pepper: { gravity: 0.16, lo: 14, hi: 18, burn: 300 },
+  } as Readonly<Record<Ingredient, Flight>>,
 
   /**
    * Crates on the rail. A crate of coins shuttles along a rail under the
@@ -265,8 +269,8 @@ export const TUNING = Object.freeze({
   crateLifeMin: 330,
   crateLifeMax: 450,
   /** Where the crate hangs: the y of its centre. */
-  crateDropMin: 135,
-  crateDropMax: 160,
+  crateDropMin: 175,
+  crateDropMax: 195,
   crateSwingMin: 6,
   crateSwingMax: 14,
   crateSwingPeriod: 150,
@@ -305,8 +309,20 @@ export const TUNING = Object.freeze({
   pourGravity: -0.15,
 });
 
-/** How a coin flies: its gravity and the multiplier on launch power. */
-export const flightOf = (ingredient: Ingredient) => TUNING.flight[ingredient];
+/** How a coin flies (`TUNING.flight`). */
+export interface Flight { gravity: number; lo: number; hi: number; burn: number }
+export const flightOf = (ingredient: Ingredient): Flight => TUNING.flight[ingredient];
+/** A coin's launch speed at this charge (power, `minPower`..`maxPower`). */
+export function launchSpeed(ingredient: Ingredient, power: number): number {
+  const f = flightOf(ingredient);
+  const t = (power - ARENA.minPower) / (ARENA.maxPower - ARENA.minPower);
+  return f.lo + (f.hi - f.lo) * Math.max(0, Math.min(1, t));
+}
+/** Ticks a coin launched at this charge flies dead straight: its burn distance at its speed. */
+export function straightTicks(ingredient: Ingredient, power: number): number {
+  const f = flightOf(ingredient);
+  return f.burn > 0 ? Math.round(f.burn / launchSpeed(ingredient, power)) : 0;
+}
 
 /**
  * One player input. The trace is the whole record of a run: a launch carries
@@ -345,6 +361,8 @@ export interface Projectile {
   spent: boolean;
   /** The crate it hit, on the tick it hit it. */
   crateId?: number;
+  /** Ticks it flies dead straight from launch (HEMI's burn). */
+  straight?: number;
   /** A coin out of a crate: the age at which it lands in the mouth (it comes out at age 1). */
   arrive?: number;
 }
@@ -760,7 +778,7 @@ function stepCreature(creature: Creature, seed: number, tick: number, rage: numb
 
 function makeProjectile(id: number, ingredient: Ingredient, angle: number, power: number): Projectile {
   const radians = angle * Math.PI / 180;
-  const speed = power * flightOf(ingredient).speed;
+  const speed = launchSpeed(ingredient, power);
   return {
     id, ingredient, kind: "food",
     x: quantize(ARENA.launcher.x + Math.cos(radians) * ARENA.barrelLength),
@@ -768,6 +786,7 @@ function makeProjectile(id: number, ingredient: Ingredient, angle: number, power
     vx: quantize(Math.cos(radians) * speed), vy: quantize(Math.sin(radians) * speed),
     age: 0, bounces: 0, bank: 0, hitMask: 0, lastSurface: "", lastBank: "", hazardBounces: 0,
     assisted: false, cooked: false, spent: false,
+    straight: straightTicks(ingredient, power),
   };
 }
 
@@ -981,7 +1000,7 @@ function moveFood(food: Projectile, env: Env): Outcome {
   const previousY = food.y;
   let ax = 0;
   const flight = flightOf(food.ingredient);
-  let ay = food.kind === "junk" ? TUNING.utensilGravity : food.age <= flight.burn ? 0 : flight.gravity;
+  let ay = food.kind === "junk" ? TUNING.utensilGravity : food.age <= (food.straight ?? 0) ? 0 : flight.gravity;
   // Magnet mouth: metal, and the kitchen's metal, curve toward it.
   if (env.levels.metal > 0 && food.ingredient === "metal" && !food.spent) {
     const dx = env.mouthX - food.x;

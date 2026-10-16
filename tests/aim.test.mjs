@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  ARENA, FOODS, TUNING, crateAt, createArcade, flightOf, launchFood, previewFlight, probeFlight, replayArcade, stepArcade,
+  ARENA, FOODS, TUNING, crateAt, createArcade, flightOf, launchFood, launchSpeed, previewFlight, probeFlight, replayArcade, stepArcade,
 } from "../lib/game/arcade.ts";
 
 /**
@@ -43,15 +43,20 @@ test("each coin flies its own way: Bitcoin heavy, Ether slow and floaty, HEMI de
   const eth = flightOf("balloon");
   const hemi = flightOf("pepper");
   assert.ok(btc.gravity > hemi.gravity && hemi.gravity > eth.gravity, "Bitcoin falls hardest, Ether least");
-  assert.ok(eth.speed < btc.speed && btc.speed < hemi.speed, "Ether is the slow one, HEMI the fast one");
+  const top = (food) => launchSpeed(food, ARENA.maxPower);
+  assert.ok(top("balloon") < top("metal") && top("metal") < top("pepper"), "Ether is the slow one, HEMI the fast one");
   assert.ok(hemi.burn > 0 && btc.burn === 0 && eth.burn === 0, "only HEMI has a straight burn");
+  // The charge matters most for Bitcoin and least for Ether.
+  const range = (food) => launchSpeed(food, ARENA.maxPower) / launchSpeed(food, ARENA.minPower);
+  assert.ok(range("metal") > range("pepper") && range("pepper") > range("balloon"));
 
   const state = createArcade(1);
   state.beatAt = state.crateAt = state.cravingNextAt = 1e9;
   assert.ok(launchFood(state, "pepper", -30, 13));
   const coin = state.projectiles[0];
   const vy = coin.vy;
-  for (let i = 0; i < hemi.burn; i += 1) stepArcade(state);
+  assert.ok(coin.straight > 0 && Math.abs(coin.straight * Math.hypot(coin.vx, coin.vy) - hemi.burn) < Math.hypot(coin.vx, coin.vy), "straight for its burn distance");
+  for (let i = 0; i < coin.straight; i += 1) stepArcade(state);
   assert.equal(coin.vy, vy, "a HEMI does not fall at all during its burn");
   stepArcade(state);
   assert.ok(coin.vy > vy, "and falls once the burn is out");
@@ -81,9 +86,39 @@ test("one barrel setting does not feed every coin: at the same charge the three 
   assert.equal(direct("metal", 13).size, 0, "a Bitcoin at a medium charge falls short");
   assert.ok(direct("metal", ARENA.maxPower).size >= 8, "and a full charge has a wide window");
   // HEMI flies straight, so the charge barely moves where it has to be pointed.
+  // (Ether is nearly charge-blind too; Bitcoin is the one the charge is for.)
   const low = [...direct("pepper", 11)]; const high = [...direct("pepper", ARENA.maxPower)];
   assert.ok(low.length >= 4 && high.length >= 4);
   assert.ok(Math.abs(low.reduce((a, b) => a + b, 0) / low.length - high.reduce((a, b) => a + b, 0) / high.length) <= 4);
+});
+
+test("no barrel angle feeds all three coins, at any charge, at any size: each coin has its own band", () => {
+  // The complaint was a barrel set once and left. Late in a shift the mouth is
+  // huge, so this is checked on the grown creature too: Bitcoin is the steep
+  // lob, Ether the middle, HEMI the flat line, at every size.
+  for (const size of [1, 1.4, 1.8, 2.4]) {
+    const state = createArcade(1234);
+    state.creature.size = size; state.size = size;
+    state.beatAt = state.crateAt = state.cravingNextAt = state.junkAt = 1e9;
+    for (let i = 0; i < 300; i += 1) { state.hunger = 70; stepArcade(state); }
+    state.projectiles = []; state.crates = [];
+    const band = (food) => {
+      const out = new Set();
+      for (let power = ARENA.minPower; power <= ARENA.maxPower; power += 1) {
+        for (let angle = ARENA.minAngle; angle <= ARENA.maxAngle; angle += 1) {
+          const r = probeFlight(state, food, angle, power, 240);
+          if (r.fed && r.bank === 0 && r.bounces === 0) out.add(angle);
+        }
+      }
+      return out;
+    };
+    const [btc, eth, hemi] = FOODS.map(band);
+    for (const b of [btc, eth, hemi]) assert.ok(b.size >= 6, `every coin can be fed at ×${size}`);
+    const all = [...btc].filter((a) => eth.has(a) && hemi.has(a));
+    assert.equal(all.length, 0, `no angle feeds all three at ×${size}`);
+    const mean = (b) => [...b].reduce((x, y) => x + y, 0) / b.size;
+    assert.ok(mean(btc) < mean(eth) - 6 && mean(eth) < mean(hemi) - 4, `Bitcoin steepest, HEMI flattest, apart, at ×${size}`);
+  }
 });
 
 test("a crate comes down through the hatch, shuttles along the rail, and is hoisted away if nobody breaks it", () => {

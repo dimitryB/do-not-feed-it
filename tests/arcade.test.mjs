@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  ARENA, BOUNCERS, FOODS, TUNING, GAME_VERSION, bankMultiplier, cooldownFor, createArcade, drainPerTick,
+  ARENA, BOUNCERS, FOODS, TUNING, GAME_VERSION, bankMultiplier, cooldownFor, createArcade, drainPerTick, launchSpeed,
   endingFor, flameCone, getHazard, launchFood, levelFor, previewFlight, probeFlight, replayArcade, servingsForLevel, slamHatch, stepArcade,
 } from "../lib/game/arcade.ts";
 
@@ -327,7 +327,10 @@ test("METAL: metal curves in, cutlery storms fly, a fork in the mouth pays, a fo
   const before = state.nextEventId;
   stepArcade(state);
   assert.equal(state.utensils, 1);
-  assert.equal(state.score - score, TUNING.utensilScore);
+  // The fork's bonus, plus the passive pay if this tick is a pay tick.
+  const passive = state.tick % 10 === 0 && state.hunger > TUNING.payFloor ? state.score - score - TUNING.utensilScore : 0;
+  assert.ok(passive >= 0 && passive < 20);
+  assert.equal(state.score - score - passive, TUNING.utensilScore);
   assert.ok(newEvents(state, before).some((e) => e.type === "utensil" && e.name === "caught"));
   assert.equal(state.creature.chewUntil, chewUntil, "a fork does not start a chew");
   // A fork onto the launcher jams it.
@@ -669,7 +672,7 @@ test("food capacity, cooldown, event history, launch angles and flight time are 
   advance(state, state.tick + ARENA.cooldownTicks);
   assert.ok(launchFood(state, "metal", -400, 99));
   const last = state.projectiles[state.projectiles.length - 1];
-  assert.ok(Math.abs(Math.hypot(last.vx, last.vy) - ARENA.maxPower) < 0.01);
+  assert.ok(Math.abs(Math.hypot(last.vx, last.vy) - launchSpeed("metal", ARENA.maxPower)) < 0.01, "clamped to full charge");
   assert.throws(() => launchFood(state, "soup", -40, 13));
   // Nothing stays in the air forever, however it rebounds, and the event log is bounded.
   const chaos = fresh(3);

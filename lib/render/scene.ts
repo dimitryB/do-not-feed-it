@@ -1,5 +1,5 @@
 import {
-  ARENA, TUNING, crateAt, flameCone, flightOf, getHazard, inFrenzy, previewFlight,
+  ARENA, TUNING, crateAt, flameCone, flightOf, getHazard, inFrenzy, launchSpeed, previewFlight, straightTicks,
   type ArcadeState, type Bouncer, type Crate, type Ingredient, type Projectile,
 } from '../game/arcade';
 import { CreatureAnimator } from './creature/pose';
@@ -279,19 +279,25 @@ export function createScene() {
           burst(e.x, e.y, reduced ? 4 : 10, '#fff7d6', 300, time, 'spark', e.id + 1, 0.5);
           const value = e.value ?? 0;
           if (e.label.startsWith('CRATE')) {
-            // Each coin out of a block is its own gulp at the mouth, a small
-            // pop over the upper teeth, and a pip lit on the block's card,
-            // which carries the running total.
+            // Each coin out of a block is its own gulp at the mouth (a splash
+            // and a ring), its worth over the top lip in its colour, and a pip
+            // lit on the block's card, which carries the running total.
             rings.push({ x: e.x, y: e.y, born: time, color: tint, big: true });
-            burst(e.x, e.y, reduced ? 8 : 22, tint, 380, time, 'dot', e.id + 3, 0.7);
-            burst(e.x, e.y, reduced ? 4 : 12, '#fff6dc', 420, time, 'spark', e.id + 4, 0.5);
+            burst(e.x, e.y, reduced ? 10 : 40, tint, 520, time, 'dot', e.id + 3, 0.75);
+            burst(e.x, e.y, reduced ? 6 : 20, '#fff6dc', 560, time, 'spark', e.id + 4, 0.55);
+            rings.push({ x: e.x, y: e.y, born: time + 0.05, color: '#fff6dc', big: true });
             cardEaten += 1; cardTotal += value; cardPulseAt = time;
+            // Each coin's worth, big, in its colour, just over the top lip.
+            const lip = state.creature.y - state.creature.ry * (state.creature.gape ?? 1) - 26;
+            pops.push({ x: e.x - 40 + cardEaten * 30, y: lip, text: `+${value}`, color: tint, born: time, size: 32, tag: 'pour' });
             const last = cardEaten >= TUNING.crateCoins;
-            // Chomp, chomp, CHOMP: a nudge of the camera for each, harder for the last,
-            // and then one total beside the mouth instead of three on the face.
+            // Chomp, chomp, CHOMP: a nudge of the camera for each, harder for the last.
             if (!reduced) shake = Math.max(shake, last ? 0.6 : 0.28);
-            // The total lives on the card; the mouth rings once in the coin's colour.
-            if (last) { mouthPulseAt = time; mouthPulseColor = tint; }
+            // The last coin: the mouth rings once, and the block's total rises over the lip, biggest of all.
+            if (last) {
+              mouthPulseAt = time; mouthPulseColor = tint;
+              pops.push({ x: e.x, y: lip - 44, text: `+${cardTotal}`, color: tint, born: time, size: 64, tag: 'pour' });
+            }
           } else {
             // Feeds close together add up into one rising number instead of a pile.
             const near = pops.find(p => p.tag === 'feed' && time - p.born < 0.3 && Math.abs(p.x - e.x) < 140);
@@ -442,11 +448,11 @@ export function createScene() {
             blockAt = time;
             burst(e.x, e.y + 14, reduced ? 3 : 8, '#b9ae95', 80, time, 'dust', e.id, 0.6, 120);
             // Whose it is: a tag that rides under the block, out of the shot path.
-            if (e.ingredient) blockTag = { text: BLOCK_NAMES[e.ingredient], color: tint, born: time, life: 1.6 };
+            // Whose it is rides under it on its tag for as long as it hangs (drawBlockTags).
           } else {
             blockAt = time;
             burst(e.x, e.y, reduced ? 3 : 8, '#cdd8c4', 120, time, 'spark', e.id, 0.4);
-            say(CAPTIONS.blockMissed, '#cdd8c4', 1, time, 36, 1.0);
+            // MISSED THE BLOCK. was on its tag while it went up; nothing more here.
           }
           break;
         default:
@@ -891,7 +897,7 @@ export function createScene() {
     const swing = Math.atan2(at.x - trolley, Math.max(1, at.y - railY)) + knock;
     // Drawn a little larger than its collision radius: a coin's own edge
     // touches the cube when the rules say it hits.
-    const s = 36; const d = 13;
+    const s = 40; const d = 14;
     // Fading as it is hoisted, so it never reaches the mutation chips at the top.
     const hoisting = tick - c.born > c.life - ARENA.rail.lower;
     const hoist = hoisting ? clampAlpha((at.y - 60) / 60) : 1;
@@ -965,33 +971,19 @@ export function createScene() {
     ctx.save();
     ctx.shadowColor = tint; ctx.shadowBlur = wanted ? (reduced ? 8 : 8 + 10 * pulse) : 0;
     ctx.strokeStyle = tint; ctx.lineJoin = 'round';
-    ctx.lineWidth = wanted ? 3.5 : 3; ctx.globalAlpha = (wanted ? 0.7 + 0.3 * pulse : 0.75) * hoist;
+    ctx.lineWidth = wanted ? 5 : 4; ctx.globalAlpha = (wanted ? 0.75 + 0.25 * pulse : 0.8) * hoist;
     ctx.beginPath(); ctx.roundRect(-s, -s, 2 * s, 2 * s, 3); ctx.stroke();
     ctx.restore();
     // The enamel plate on its front, in its coin's colour, set in a bevelled ring.
-    ctx.fillStyle = '#0d0f0f'; ctx.beginPath(); ctx.arc(0, 0, 31, 0, Math.PI * 2); ctx.fill();
-    const enamel = ctx.createRadialGradient(-8, -10, 4, 0, 0, 29);
+    ctx.fillStyle = '#0d0f0f'; ctx.beginPath(); ctx.arc(0, 0, 34, 0, Math.PI * 2); ctx.fill();
+    const enamel = ctx.createRadialGradient(-8, -10, 4, 0, 0, 32);
     enamel.addColorStop(0, withAlpha(tint, wanted ? 1 : 0.85)); enamel.addColorStop(1, withAlpha(tint, wanted ? 0.55 + 0.3 * pulse : 0.45));
-    ctx.fillStyle = enamel; ctx.beginPath(); ctx.arc(0, 0, 29, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#b39a7c'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 30, Math.PI * 0.95, Math.PI * 1.85); ctx.stroke();
+    ctx.fillStyle = enamel; ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#b39a7c'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 33, Math.PI * 0.95, Math.PI * 1.85); ctx.stroke();
     ctx.restore();
     ctx.save(); ctx.globalAlpha = hoist;
-    coin(ctx, c.ingredient, at.x, at.y, 50, swing, reduced ? 0.8 : time * 1.4 + c.id, wanted ? 1 : 0.6);
+    coin(ctx, c.ingredient, at.x, at.y, 56, swing, reduced ? 0.8 : time * 1.4 + c.id, wanted ? 1 : 0.6);
     ctx.restore();
-    if (blockTag && time - blockTag.born < blockTag.life) {
-      const age = time - blockTag.born; const f = age / blockTag.life;
-      const a = (f > 0.8 ? (1 - f) / 0.2 : 1) * hoist;
-      const pop = reduced ? 1 : 0.7 + 0.3 * easeOut(age / 0.12);
-      ctx.save(); ctx.translate(at.x, at.y + s + 26); ctx.scale(pop, pop);
-      ctx.font = `700 22px ${DISPLAY}`;
-      const w = ctx.measureText(blockTag.text).width + 20;
-      ctx.globalAlpha = a; ctx.fillStyle = '#060e0ce8'; ctx.strokeStyle = blockTag.color; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.roundRect(-w / 2, -15, w, 30, 7); ctx.fill(); ctx.stroke();
-      ctx.restore();
-      ctx.save(); ctx.translate(at.x, at.y + s + 26); ctx.scale(pop, pop);
-      drawText(ctx, blockTag.text, 0, 1, 22, blockTag.color, a, DISPLAY, 'center', 0);
-      ctx.restore();
-    }
     // A wrong coin: a red cross over its mark for a moment.
     if (kick && kickAge < 0.35) {
       ctx.save(); ctx.translate(at.x, at.y); ctx.rotate(swing);
@@ -1024,8 +1016,11 @@ export function createScene() {
     ctx.globalAlpha = 1;
     if (p.ingredient === 'pepper') {
       ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
-      for (const [w, col] of [[16, 'rgba(255,70,20,0.7)'], [6, 'rgba(255,240,210,0.95)']] as const) {
-        ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(p.x - p.vx * 7, p.y - p.vy * 7); ctx.lineTo(p.x, p.y); ctx.stroke();
+      // Tapered and fading, so a string of HEMI coins never reads as one bar.
+      for (const [w, a, col] of [[14, 0.7, '255,70,20'], [5, 0.95, '255,240,210']] as const) {
+        const g = ctx.createLinearGradient(p.x, p.y, p.x - p.vx * 4.5, p.y - p.vy * 4.5);
+        g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(1, `rgba(${col},0)`);
+        ctx.strokeStyle = g; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(p.x - p.vx * 4.5, p.y - p.vy * 4.5); ctx.lineTo(p.x, p.y); ctx.stroke();
       }
       ctx.restore();
     }
@@ -1051,12 +1046,12 @@ export function createScene() {
     const fl = flightOf(p.ingredient);
     // Where it was `back` ticks ago, on its own arc (gravity only after the burn).
     const past = (back: number) => {
-      const g = p.age - back > fl.burn ? fl.gravity : 0;
+      const g = p.age - back > (p.straight ?? 0) ? fl.gravity : 0;
       return { x: p.x - p.vx * back, y: p.y - p.vy * back + 0.5 * g * back * back };
     };
     const span = Math.min(p.age, reduced ? 10 : p.ingredient === 'metal' ? 26 : 20);
     ctx.save();
-    if (p.ingredient === 'pepper' && p.age <= fl.burn + 4) {
+    if (p.ingredient === 'pepper' && p.age <= (p.straight ?? 0) + 4) {
       // The turbo: a long white-hot jet straight back along the shot.
       const speed = Math.max(0.01, Math.hypot(p.vx, p.vy));
       const ux = p.vx / speed; const uy = p.vy / speed;
@@ -1070,14 +1065,16 @@ export function createScene() {
         ctx.beginPath(); ctx.moveTo(p.x - ux * 16, p.y - uy * 16); ctx.lineTo(p.x - ux * length, p.y - uy * length); ctx.stroke();
       }
     } else if (p.ingredient === 'balloon') {
-      // Bubbles rising off a floating coin, clear of the coin itself.
-      ctx.lineWidth = 2.4;
+      // A soft mint ribbon along its arc, then bubbles rising off it, clear of the coin itself.
+      ctx.save(); ctx.lineCap = 'round'; ctx.strokeStyle = 'rgba(155,233,223,0.2)'; ctx.lineWidth = 12;
+      ctx.beginPath(); for (let k = 0; k <= span; k += 2) { const q = past(k); if (k === 0) ctx.moveTo(q.x, q.y); else ctx.lineTo(q.x, q.y); } ctx.stroke(); ctx.restore();
+      ctx.lineWidth = 2.6;
       for (let i = 2; i <= Math.floor(span / 4) + 1; i++) {
         const at = past(i * 4);
         const wob = reduced ? 0 : Math.sin(time * 6 + p.id + i * 1.7) * 5;
-        const r = Math.max(6, 10.5 - i * 0.6);
-        ctx.globalAlpha = Math.max(0, 1 - i * 0.12);
-        ctx.fillStyle = 'rgba(155,233,223,0.4)'; ctx.strokeStyle = 'rgba(224,255,250,0.95)';
+        const r = Math.max(7, 12 - i * 0.6);
+        ctx.globalAlpha = Math.max(0, 1 - i * 0.11);
+        ctx.fillStyle = 'rgba(155,233,223,0.5)'; ctx.strokeStyle = 'rgba(224,255,250,0.95)';
         ctx.beginPath(); ctx.arc(at.x + wob, at.y - i * 3, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(at.x + wob - r * 0.35, at.y - i * 3 - r * 0.35, Math.max(1, r * 0.22), 0, Math.PI * 2); ctx.fill();
       }
@@ -1146,10 +1143,11 @@ export function createScene() {
   function lancePath(food: Ingredient, rad: number, power: number, px: number, py: number): { x: number; y: number }[] {
     const fl = flightOf(food);
     let x = px + Math.cos(rad) * ARENA.barrelLength; let y = py + Math.sin(rad) * ARENA.barrelLength;
-    const vx = Math.cos(rad) * power * fl.speed; let vy = Math.sin(rad) * power * fl.speed;
+    const speed = launchSpeed(food, power); const straight = straightTicks(food, power);
+    const vx = Math.cos(rad) * speed; let vy = Math.sin(rad) * speed;
     const out = [{ x, y }];
     for (let age = 1; age <= 60; age++) {
-      if (age > fl.burn) vy += fl.gravity;
+      if (age > straight) vy += fl.gravity;
       x += vx; y += vy; out.push({ x, y });
     }
     return out;
@@ -1200,6 +1198,36 @@ export function createScene() {
   }
 
   /**
+   * The tag that rides under a block: whose it is while it hangs, WRONG
+   * TOKEN. for a moment when another coin glances off, MISSED THE BLOCK.
+   * while it is hoisted away. Drawn after the coins, well under the cube's
+   * swing, so a glancing coin never covers it.
+   */
+  function drawBlockTags(ctx: CanvasRenderingContext2D, state: ArcadeState, tick: number, time: number, reduced: boolean) {
+    for (const c of state.crates ?? []) {
+      const at = crateAt(c, tick);
+      const t = tick - c.born;
+      const hoisting = t > c.life - ARENA.rail.lower;
+      const lowering = t < ARENA.rail.lower;
+      let text = BLOCK_NAMES[c.ingredient]; let color = COLORS[c.ingredient]; let a = 0.9; let born = c.born / 60;
+      if (blockTag && blockTag.text === CAPTIONS.wrongToken && time - blockTag.born < blockTag.life) { text = blockTag.text; color = blockTag.color; a = 1; born = -1; }
+      else if (hoisting) { text = CAPTIONS.blockMissed; color = '#cdd8c4'; a = 0.9; }
+      if (lowering) a *= clampAlpha(t / ARENA.rail.lower);
+      if (hoisting) a *= clampAlpha((at.y - 60) / 60);
+      if (a <= 0.02) continue;
+      const pop = reduced || born < 0 ? 1 : 1;
+      const y = at.y + 40 + 44;
+      ctx.save(); ctx.translate(at.x, y); ctx.scale(pop, pop);
+      ctx.font = `700 22px ${DISPLAY}`;
+      const w = ctx.measureText(text).width + 20;
+      ctx.globalAlpha = a; ctx.fillStyle = '#060e0ce8'; ctx.strokeStyle = color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.roundRect(-w / 2, -15, w, 30, 7); ctx.fill(); ctx.stroke();
+      ctx.restore();
+      drawText(ctx, text, at.x, y + 1, 22, color, a, DISPLAY, 'center', 0);
+    }
+  }
+
+  /**
    * Plates of a broken block: its dark riveted iron, tumbling and falling,
    * lamplight on the top edge and a thin edge of its coin's colour. Drawn
    * before the caption, so they never cover the BLOCK REWARD. card, and
@@ -1222,10 +1250,17 @@ export function createScene() {
       const plate = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
       plate.addColorStop(0, '#5b5f5c'); plate.addColorStop(0.45, '#2f3434'); plate.addColorStop(1, '#151818');
       ctx.fillStyle = plate; ctx.beginPath(); quad.forEach(([qx, qy], k) => (k ? ctx.lineTo(qx, qy) : ctx.moveTo(qx, qy))); ctx.closePath(); ctx.fill();
+      // A piece of the cube's own face: its strap and a row of rivets, lamplight on the top edge.
+      ctx.save(); ctx.clip();
+      ctx.fillStyle = '#23282a'; ctx.fillRect(-s / 2, -h / 6, s, h / 3);
+      ctx.fillStyle = `${RIM}0.35)`; ctx.fillRect(-s / 2, -h / 6, s, 1.2);
+      ctx.restore();
       ctx.strokeStyle = `${RIM}0.85)`; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(quad[0][0], quad[0][1]); ctx.lineTo(quad[1][0], quad[1][1]); ctx.stroke();
-      ctx.fillStyle = '#a58d70'; ctx.beginPath(); ctx.arc(quad[0][0] * 0.6, quad[0][1] * 0.6, 2.6, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#f3d9b0'; ctx.beginPath(); ctx.arc(quad[0][0] * 0.6 - 0.8, quad[0][1] * 0.6 - 0.8, 0.9, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = p.color; ctx.lineWidth = 2;
+      for (const k of [-0.25, 0.25]) {
+        ctx.fillStyle = '#a58d70'; ctx.beginPath(); ctx.arc(k * s, 0, 2.6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#f3d9b0'; ctx.beginPath(); ctx.arc(k * s - 0.8, -0.8, 0.9, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(quad[1][0], quad[1][1]); ctx.lineTo(quad[2][0], quad[2][1]); ctx.lineTo(quad[3][0], quad[3][1]); ctx.stroke();
       ctx.restore();
     }
@@ -1484,6 +1519,7 @@ export function createScene() {
         else if (p.kind === 'food') drawFood(ctx, p, t, reduced);
         else if (p.kind === 'pour') drawPour(ctx, p, reduced);
       }
+      drawBlockTags(ctx, state, tick, t, reduced);
     }
 
     if (playing && state?.threat && state.threat.kind === 'lunge') {
@@ -1530,7 +1566,7 @@ export function createScene() {
       ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       ctx.globalAlpha = loaded ? .65 : .3; ctx.strokeStyle = '#040a09'; ctx.lineWidth = 11;
       strokeAlong(ctx, lance, 4, solid);
-      ctx.globalAlpha = loaded ? 1 : .4; ctx.strokeStyle = loaded ? lanceTint : '#7f8f6e'; ctx.lineWidth = 6;
+      ctx.globalAlpha = loaded ? 1 : .5; ctx.strokeStyle = lanceTint; ctx.lineWidth = 6;
       strokeAlong(ctx, lance, 4, solid);
       ctx.globalAlpha = loaded ? .85 : .2; ctx.lineWidth = 4; ctx.setLineDash([8, 8]);
       strokeAlong(ctx, lance, solid, solid + 110); ctx.setLineDash([]);
@@ -1637,8 +1673,12 @@ export function createScene() {
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
         // Three or four frames of the whole room lit in its coin's colour —
         // added light, so nothing is veiled, and the HUD is drawn after it.
+        if (age < 0.04 && !reduced) {
+          // A frame or two of white light over the room first...
+          ctx.fillStyle = `rgba(255,250,235,${0.12 * (1 - age / 0.04)})`; ctx.fillRect(-200, -200, 1600, 1100);
+        }
         if (age < 0.12 && !reduced) {
-          // The room drops a stop for a few frames so the burst beats the lamps...
+          // ...then the room drops a stop for a few frames so the burst beats the lamps...
           ctx.globalCompositeOperation = 'source-over';
           ctx.fillStyle = `rgba(2,5,5,${0.3 * (1 - age / 0.12)})`; ctx.fillRect(-200, -200, 1600, 1100);
           const halo = ctx.createRadialGradient(flashX, flashY, r * 0.4, flashX, flashY, r * 1.5);

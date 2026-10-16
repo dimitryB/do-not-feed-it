@@ -89,20 +89,25 @@ for (let p = ARENA.maxPower; p >= ARENA.minPower; p -= 1) POWERS.push(p);
  * own gravity, speed and straight burn included. A free-flight model only
  * seeds the candidates; the rules' `probeFlight` decides.
  */
-function solveAngles(tx, ty, power, ingredient = "metal") {
-  const flight = arcade.flightOf ? arcade.flightOf(ingredient) : { gravity: 0.16, speed: 1, burn: 0 };
+function solveAngles(tx, ty, power, ingredient = "metal", reach = 70) {
+  const flight = arcade.flightOf(ingredient);
+  const speed = arcade.launchSpeed(ingredient, power);
+  const straight = arcade.straightTicks(ingredient, power);
   const errs = [];
   for (let angle = ARENA.minAngle; angle <= ARENA.maxAngle; angle += 1) {
     const r = angle * Math.PI / 180;
     let x = ARENA.launcher.x + Math.cos(r) * ARENA.barrelLength;
     let y = ARENA.launcher.y + Math.sin(r) * ARENA.barrelLength;
-    let vx = Math.cos(r) * power * flight.speed;
-    let vy = Math.sin(r) * power * flight.speed;
+    let vx = Math.cos(r) * speed;
+    let vy = Math.sin(r) * speed;
+    // How close the free flight passes to the target, anywhere along it: a
+    // steep lob drops into the mouth from above long before it reaches the
+    // mouth's centre line, so the error at that line would miss it.
     let err = Infinity;
-    for (let age = 1; age <= 240 && x < tx + 4 && y < 720; age += 1) {
-      if (age > flight.burn) vy += flight.gravity;
+    for (let age = 1; age <= 240 && x < tx + 120 && y < 720; age += 1) {
+      if (age > straight) vy += flight.gravity;
       x += vx; y += vy;
-      if (x >= tx) { err = Math.abs(y - ty); break; }
+      err = Math.min(err, Math.hypot(x - tx, y - ty));
     }
     errs.push({ angle, err });
   }
@@ -110,7 +115,7 @@ function solveAngles(tx, ty, power, ingredient = "metal") {
   const out = [];
   for (let i = 0; i < errs.length; i += 1) {
     const e = errs[i];
-    if (e.err > 70) continue;
+    if (e.err > reach) continue;
     const left = i > 0 ? errs[i - 1].err : Infinity;
     const right = i < errs.length - 1 ? errs[i + 1].err : Infinity;
     if (e.err <= left && e.err <= right) out.push(e.angle);
@@ -185,12 +190,18 @@ function bestAction(view, config, pending, wantBank, now = view.tick) {
     const value = robustness * 30 + (wantBank && !urgent && bank > 1 ? bank * 60 : 0) - result.ticks * (urgent ? 2 : 1);
     if (!best || value > best.value) best = { verb: "launch", ingredient, angle, power, ticks: result.ticks, bank, robustness, value };
   };
-  /** The centre of the widest run of landing angles in a window around `centre`. */
+  /**
+   * The centre of the widest run of landing angles in a window around
+   * `centre`. The window is twice the hand's spread: the free-flight seed
+   * aims at the mouth's centre, and the coins that land enter its open half,
+   * a few degrees off the seed.
+   */
   const widest = (centre, power) => {
     let runStart = null;
     let bestRun = null;
-    for (let angle = centre - spread; angle <= centre + spread + 1; angle += 1) {
-      const lands = angle <= centre + spread && angle >= ARENA.minAngle && angle <= ARENA.maxAngle && probe(angle, power).fed;
+    const span = 2 * spread;
+    for (let angle = centre - span; angle <= centre + span + 1; angle += 1) {
+      const lands = angle <= centre + span && angle >= ARENA.minAngle && angle <= ARENA.maxAngle && probe(angle, power).fed;
       if (lands && runStart === null) runStart = angle;
       if (!lands && runStart !== null) {
         const length = angle - runStart;
@@ -201,7 +212,10 @@ function bestAction(view, config, pending, wantBank, now = view.tick) {
     return bestRun;
   };
   for (const power of POWERS) {
-    for (const degrees of solveAngles(mouth.x, mouth.y, power, ingredient)) {
+    // Seeds: angles whose free flight passes within the mouth's own reach of
+    // its centre (a grown mouth is a bigger target, entered off-centre).
+    const reach = Math.max(70, (mouth.ry ?? 69) * (mouth.gape ?? 1) * 1.1);
+    for (const degrees of solveAngles(mouth.x, mouth.y, power, ingredient, reach)) {
       const run = widest(clampAngle(degrees), power);
       if (run) offer(Math.round(run.start + (run.length - 1) / 2), power, run.length);
     }
