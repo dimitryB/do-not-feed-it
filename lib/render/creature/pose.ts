@@ -682,6 +682,17 @@ export class CreatureAnimator {
     const belly = latest(state, ["bounce"], 0.6, "belly");
     if (feed && (!miss || feed.age <= miss.age)) gaze = this.applyGulp(target, feed, reduced) ?? gaze;
     else if (miss) this.applyFlinch(target, miss, reduced);
+    // The last coin out of a block: a bigger swallow than any ordinary feed.
+    const lastPour = state ? [...state.events].reverse().find((e) => e.type === "feed" && e.label.startsWith("CRATE")) : undefined;
+    const pourAge = lastPour && state ? (state.tick - lastPour.tick) / 60 : 9;
+    if (state && pourAge <= 0.45 && state.projectiles.every((p) => p.kind !== "pour")) {
+      const k = Math.exp(-pourAge * 6);
+      target.squashX += 0.1 * k; target.squashY -= 0.06 * k;
+      target.cheekPuff = Math.max(target.cheekPuff, 0.9 * k); target.bellySwell += 0.3 * k;
+      target.pupilScale = Math.max(target.pupilScale, 1 + 0.5 * k);
+      target.browRaise = Math.max(target.browRaise, k);
+      this.wear("startle", 0.9 * k);
+    }
     // A block broken open: eyes wide, brows up, up on its toes for what is coming.
     const block = latest(state, ["crate"], 1.0, "hit");
     if (block) {

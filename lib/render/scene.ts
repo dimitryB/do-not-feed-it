@@ -422,7 +422,7 @@ export function createScene() {
             burst(e.x, e.y, reduced ? 4 : 12, tint, 340, time, 'spark', e.id, 0.65);
             rings.push({ x: e.x, y: e.y, born: time, color: tint, big: true, huge: true });
             flashAt = time; flashColor = tint; flashX = e.x; flashY = e.y; flashSeed = e.id;
-            if (!reduced) { shake = Math.max(shake, 1.0); freezeUntil = time + 0.07; frozenAt = time; }
+            if (!reduced) { shake = Math.max(shake, 1.0); freezeUntil = time + 0.09; frozenAt = time; }
           } else if (e.name === 'spawn') {
             // Every block says whose it is, in its coin's colour, at the lowest priority.
             blockAt = time;
@@ -813,12 +813,14 @@ export function createScene() {
     // The hatch the blocks come down through: a riveted plate, a dark slot
     // whose two doors swing down while a block is let down or hoisted.
     ctx.fillStyle = '#2a211b'; ctx.beginPath(); ctx.roundRect(from - 34, 0, 68, y - 8, 3); ctx.fill();
-    ctx.fillStyle = '#050707'; ctx.beginPath(); ctx.roundRect(from - 22 - 6 * open, y - 16, 44 + 12 * open, 7 + 6 * open, 2); ctx.fill();
+    ctx.fillStyle = '#050707'; ctx.beginPath(); ctx.roundRect(from - 24 - 8 * open, y - 16, 48 + 16 * open, 7 + 8 * open, 2); ctx.fill();
     if (open > 0.02) {
-      ctx.fillStyle = '#3a2c22'; ctx.strokeStyle = `${RIM}0.6)`; ctx.lineWidth = 1;
+      // Lamplight spilling out of the open slot, and the two doors hanging down.
+      ctx.fillStyle = `rgba(255,186,108,${0.25 * open})`; ctx.fillRect(from - 22, y - 9, 44, 4 + 6 * open);
+      ctx.fillStyle = '#4a3a2c'; ctx.strokeStyle = `${RIM}0.75)`; ctx.lineWidth = 1.2;
       for (const side of [-1, 1]) {
-        ctx.save(); ctx.translate(from + side * (22 + 6 * open), y - 10); ctx.rotate(side * open * 1.1);
-        ctx.beginPath(); ctx.rect(side > 0 ? 0 : -20, 0, 20, 4); ctx.fill(); ctx.stroke(); ctx.restore();
+        ctx.save(); ctx.translate(from + side * (24 + 8 * open), y - 9); ctx.rotate(side * open * 1.25);
+        ctx.beginPath(); ctx.rect(side > 0 ? 0 : -26, 0, 26, 5); ctx.fill(); ctx.stroke(); ctx.restore();
       }
     }
     ctx.fillStyle = '#8a6d52';
@@ -872,7 +874,9 @@ export function createScene() {
     const speed = (crateAt(c, tick + 1).hookX - crateAt(c, tick - 1).hookX) / 2;
     const trolley = at.hookX + (reduced ? 0 : clamp(speed * 14, -26, 26));
     const swing = Math.atan2(at.x - trolley, Math.max(1, at.y - railY)) + knock;
-    const s = 30; const d = 12;
+    // Drawn a little larger than its collision radius: a coin's own edge
+    // touches the cube when the rules say it hits.
+    const s = 36; const d = 13;
     ctx.save();
     // The trolley riding the pipe: two wheels on top, a plate, a hook.
     ctx.fillStyle = '#2f2620'; ctx.beginPath(); ctx.roundRect(trolley - 14, railY + 2, 28, 12, 3); ctx.fill();
@@ -890,55 +894,58 @@ export function createScene() {
     const back = ctx.createRadialGradient(at.x, at.y, 20, at.x, at.y, 96);
     back.addColorStop(0, 'rgba(2,5,5,0.72)'); back.addColorStop(0.55, 'rgba(2,5,5,0.5)'); back.addColorStop(1, 'rgba(2,5,5,0)');
     ctx.fillStyle = back; ctx.beginPath(); ctx.arc(at.x, at.y, 96, 0, Math.PI * 2); ctx.fill();
-    // Its coin's light on the wall behind it, so it reads at stream size.
-    const pulse = reduced ? 0.6 : 0.5 + 0.5 * Math.sin(time * 3.6 + c.id);
-    const glow = ctx.createRadialGradient(at.x, at.y, 10, at.x, at.y, 92);
+    // Its coin's light on the wall behind it, so it reads at stream size —
+    // brighter, and breathing, when its coin is the one loaded.
+    const pulse = reduced ? 0.6 : 0.5 + 0.5 * Math.sin(time * 2 * Math.PI * 2 + c.id);
+    const glow = ctx.createRadialGradient(at.x, at.y, 10, at.x, at.y, 96);
     glow.addColorStop(0, `${tint}55`); glow.addColorStop(1, `${tint}00`);
-    ctx.globalAlpha = wanted ? 0.7 + 0.3 * pulse : 0.5; ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.arc(at.x, at.y, 92, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
-    // Wanted: a ring pulsing out of it twice a second.
-    if (wanted && !reduced) {
-      const k = (time * 2 + c.id * 0.37) % 1;
-      ctx.save(); ctx.globalAlpha = 0.75 * (1 - k); ctx.strokeStyle = tint; ctx.lineWidth = 3.5 * (1 - k) + 1;
-      ctx.beginPath(); ctx.arc(at.x, at.y, 42 + k * 22, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
-    }
-    // The cube, swinging with its chain.
+    ctx.globalAlpha = wanted ? 0.55 + 0.45 * pulse : 0.3; ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(at.x, at.y, 96, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+    // The cube, swinging with its chain: painted gunmetal like the launcher,
+    // lit by the lamps on its lid and top edge, riveted along its edges.
     ctx.translate(at.x, at.y); ctx.rotate(swing);
-    softShadow(ctx, 8, s + 14, s + 8, 6, 0.3);
-    // Top face: lit by the lamps.
+    softShadow(ctx, 8, s + 14, s + 8, 6, 0.35);
     const lid = ctx.createLinearGradient(0, -s - d, 0, -s);
-    lid.addColorStop(0, '#7a6450'); lid.addColorStop(1, '#3e3530');
+    lid.addColorStop(0, '#8f7c66'); lid.addColorStop(1, '#3d3f3c');
     ctx.fillStyle = lid;
     ctx.beginPath(); ctx.moveTo(-s, -s); ctx.lineTo(-s + d, -s - d); ctx.lineTo(s + d, -s - d); ctx.lineTo(s, -s); ctx.closePath(); ctx.fill();
-    // Side face: in shadow.
-    ctx.fillStyle = '#100d0b';
+    ctx.fillStyle = '#121414';
     ctx.beginPath(); ctx.moveTo(s, -s); ctx.lineTo(s + d, -s - d); ctx.lineTo(s + d, s - d); ctx.lineTo(s, s); ctx.closePath(); ctx.fill();
-    // Front face: dark steel, two straps, rivets.
     const face = ctx.createLinearGradient(-s, -s, s, s);
-    face.addColorStop(0, '#5a4433'); face.addColorStop(0.5, '#2e241c'); face.addColorStop(1, '#17110d');
+    face.addColorStop(0, '#4b4d48'); face.addColorStop(0.45, '#2f3434'); face.addColorStop(1, '#151818');
     ctx.fillStyle = face; ctx.beginPath(); ctx.roundRect(-s, -s, 2 * s, 2 * s, 3); ctx.fill();
-    ctx.fillStyle = '#4a3c31';
-    for (const sy of [-s + 6, s - 12]) ctx.fillRect(-s, sy, 2 * s, 6);
-    // Lamplight along its top edge, and rivets big enough to read.
-    ctx.fillStyle = `${RIM}0.75)`; ctx.fillRect(-s + 2, -s, 2 * s - 4, 2.5);
-    ctx.fillStyle = '#c9a072';
-    for (const [rx, ry] of [[-s + 6, -s + 6], [s - 6, -s + 6], [-s + 6, s - 6], [s - 6, s - 6]]) { ctx.beginPath(); ctx.arc(rx, ry, 3, 0, Math.PI * 2); ctx.fill(); }
-    // Its coin's colour on the edges: thin, with a soft glow, not a neon frame.
+    // Two straps across the face, lit along their top edges.
+    for (const sy of [-s + 7, s - 14]) {
+      ctx.fillStyle = '#23282a'; ctx.fillRect(-s, sy, 2 * s, 7);
+      ctx.fillStyle = `${RIM}0.35)`; ctx.fillRect(-s, sy, 2 * s, 1.2);
+    }
+    ctx.fillStyle = `${RIM}0.8)`; ctx.fillRect(-s + 2, -s, 2 * s - 4, 2.5);
+    ctx.fillStyle = `${RIM}0.3)`; ctx.fillRect(-s, -s + 2, 2, 2 * s - 4);
+    // Rivets: four along the top and bottom straps, two down each side.
+    const rivets: [number, number][] = [];
+    for (const rx of [-s + 6, -s / 3, s / 3, s - 6]) rivets.push([rx, -s + 10.5], [rx, s - 10.5]);
+    for (const ry of [-s / 3 + 4, s / 3 - 4]) rivets.push([-s + 5, ry], [s - 5, ry]);
+    for (const [rx, ry] of rivets) {
+      ctx.fillStyle = '#16191a'; ctx.beginPath(); ctx.arc(rx + 0.6, ry + 0.8, 2.8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#a58d70'; ctx.beginPath(); ctx.arc(rx, ry, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f3d9b0'; ctx.beginPath(); ctx.arc(rx - 0.8, ry - 0.8, 0.9, 0, Math.PI * 2); ctx.fill();
+    }
+    // Its coin's colour on the rim: a thin seam, not a neon frame, that
+    // brightens and breathes when its coin is the one loaded.
     ctx.save();
-    ctx.shadowColor = tint; ctx.shadowBlur = wanted ? (reduced ? 8 : 12 + 8 * pulse) : 6;
-    ctx.strokeStyle = tint; ctx.lineWidth = wanted ? 5 : 3.5; ctx.lineJoin = 'round';
-    if (!wanted) ctx.globalAlpha = 0.8;
+    ctx.shadowColor = tint; ctx.shadowBlur = wanted ? (reduced ? 8 : 8 + 10 * pulse) : 0;
+    ctx.strokeStyle = tint; ctx.lineJoin = 'round';
+    ctx.lineWidth = wanted ? 3 : 2; ctx.globalAlpha = wanted ? 0.85 : 0.5;
     ctx.beginPath(); ctx.roundRect(-s, -s, 2 * s, 2 * s, 3); ctx.stroke();
-    ctx.globalAlpha = 0.7;
-    ctx.beginPath(); ctx.moveTo(-s, -s); ctx.lineTo(-s + d, -s - d); ctx.lineTo(s + d, -s - d); ctx.lineTo(s + d, s - d); ctx.lineTo(s, s); ctx.moveTo(s + d, -s - d); ctx.lineTo(s, -s); ctx.stroke();
     ctx.restore();
-    // The plate the coin is set into: a dark recess with a bevelled rim.
-    ctx.fillStyle = '#0b0908'; ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.fill();
-    // The recess lit in its coin's colour, so even an Ether block is never grey on grey.
-    ctx.fillStyle = withAlpha(tint, 0.3); ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#8a6d52'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 26, Math.PI * 0.9, Math.PI * 1.9); ctx.stroke();
+    // The enamel plate on its front, in its coin's colour, set in a bevelled ring.
+    ctx.fillStyle = '#0d0f0f'; ctx.beginPath(); ctx.arc(0, 0, 31, 0, Math.PI * 2); ctx.fill();
+    const enamel = ctx.createRadialGradient(-8, -10, 4, 0, 0, 29);
+    enamel.addColorStop(0, withAlpha(tint, wanted ? 1 : 0.85)); enamel.addColorStop(1, withAlpha(tint, wanted ? 0.55 + 0.3 * pulse : 0.45));
+    ctx.fillStyle = enamel; ctx.beginPath(); ctx.arc(0, 0, 29, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#b39a7c'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 30, Math.PI * 0.95, Math.PI * 1.85); ctx.stroke();
     ctx.restore();
-    coin(ctx, c.ingredient, at.x, at.y, 48, swing, reduced ? 0.8 : time * 1.4 + c.id, wanted ? 1 : 0.6);
+    coin(ctx, c.ingredient, at.x, at.y, 50, swing, reduced ? 0.8 : time * 1.4 + c.id, wanted ? 1 : 0.6);
     // A wrong coin: a red cross over its mark for a moment.
     if (kick && kickAge < 0.35) {
       ctx.save(); ctx.translate(at.x, at.y); ctx.rotate(swing);
@@ -1186,7 +1193,9 @@ export function createScene() {
       else {
         const f = age / caption.life;
         const inA = reduced ? 1 : easeOut(age / 0.12);
-        const alpha = f > 0.78 ? (1 - f) / 0.22 : 1;
+        // A block's card stays at full strength and goes quickly; other lines fade out.
+        const fadeFrom = caption.coins ? 0.9 : 0.78;
+        const alpha = f > fadeFrom ? (1 - f) / (1 - fadeFrom) : 1;
         let scale = reduced ? 1 : 0.6 + 0.4 * inA + (caption.card ? 0.08 * Math.exp(-age * 6) : 0);
         const low = !!state && ((state.crates?.length ?? 0) > 0 || t - blockAt < 1.6);
         const slot = low ? CAPTION_LOW : CAPTION;
@@ -1309,10 +1318,14 @@ export function createScene() {
         cord(ctx, x + w / 2, y, 1.5);
         softShadow(ctx, x + w / 2 - 6, y + h / 2 + 8, w + 14, h / 2 + 14, 0.4);
         const tin = ctx.createLinearGradient(x, 0, x + w, 0);
-        tin.addColorStop(0, '#0a0f0e'); tin.addColorStop(0.5, '#222a27'); tin.addColorStop(1, '#141a18');
+        tin.addColorStop(0, '#1c2421'); tin.addColorStop(0.5, '#3e4843'); tin.addColorStop(1, '#232b28');
         ctx.fillStyle = tin; ctx.beginPath(); ctx.roundRect(x, y, w, h, 2); ctx.fill();
         ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.lineWidth = 1;
-        for (let i = 1; i < 6; i++) { ctx.beginPath(); ctx.moveTo(x + 2, y + i * h / 6); ctx.lineTo(x + w - 2, y + i * h / 6); ctx.stroke(); }
+        for (let i = 1; i < 6; i++) {
+          ctx.beginPath(); ctx.moveTo(x + 2, y + i * h / 6); ctx.lineTo(x + w - 2, y + i * h / 6); ctx.stroke();
+          ctx.strokeStyle = `${RIM}0.35)`; ctx.beginPath(); ctx.moveTo(x + 2, y + i * h / 6 + 1.5); ctx.lineTo(x + w - 2, y + i * h / 6 + 1.5); ctx.stroke();
+          ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+        }
         ctx.strokeStyle = warning ? 'rgba(238,166,109,0.9)' : `${RIM}0.8)`; ctx.lineWidth = 1.6;
         ctx.beginPath(); ctx.moveTo(x + w - 1, y + 2); ctx.lineTo(x + w - 1, y + h - 2); ctx.stroke();
         ctx.restore();
@@ -1561,27 +1574,35 @@ export function createScene() {
       if (age >= 0 && age < 0.26) {
         const fade = age < 0.06 ? 1 : 1 - (age - 0.06) / 0.2;
         const k = reduced ? 0.6 : 1;
-        const r = 150 + (reduced ? 0 : 60 * easeOut(age / 0.26));
+        const r = 140 + (reduced ? 0 : 40 * easeOut(age / 0.26));
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
         // Three or four frames of the whole room lit in its coin's colour —
         // added light, so nothing is veiled, and the HUD is drawn after it.
         if (age < 0.08 && !reduced) { ctx.fillStyle = withAlpha(flashColor, 0.2 * (1 - age / 0.08)); ctx.fillRect(-200, -200, 1600, 1100); }
-        // Short thick rays thrown out of the white core.
+        // Eight thick wedges of light thrown out of the core, in its coin's
+        // colour with a hot centre line, stopping short of the creature.
         if (!reduced) {
-          ctx.lineCap = 'round';
-          for (let i = 0; i < 10; i++) {
-            const a = (i / 10) * Math.PI * 2 + hashed(flashSeed + i) * 0.4;
-            const r0 = 30 + 40 * easeOut(age / 0.26); const r1 = r0 + 70 + 70 * hashed(flashSeed * 3 + i);
-            for (const [w, col] of [[11, withAlpha(flashColor, 0.8 * fade)], [4, `rgba(255,255,245,${0.95 * fade})`]] as const) {
-              ctx.strokeStyle = col; ctx.lineWidth = w * (0.4 + 0.6 * fade);
-              ctx.beginPath(); ctx.moveTo(flashX + Math.cos(a) * r0, flashY + Math.sin(a) * r0); ctx.lineTo(flashX + Math.cos(a) * r1, flashY + Math.sin(a) * r1); ctx.stroke();
-            }
+          ctx.save();
+          ctx.beginPath(); ctx.rect(-200, -200, 840, 1100); ctx.clip();
+          for (let i = 0; i < 8; i++) {
+            const a = (i / 8) * Math.PI * 2 + hashed(flashSeed + i) * 0.35;
+            const r1 = 70 + 60 * hashed(flashSeed * 3 + i) + 40 * easeOut(age / 0.26);
+            const half = 0.16 * (0.5 + 0.5 * fade);
+            ctx.fillStyle = withAlpha(flashColor, 0.75 * fade);
+            ctx.beginPath(); ctx.moveTo(flashX + Math.cos(a - half) * 14, flashY + Math.sin(a - half) * 14);
+            ctx.lineTo(flashX + Math.cos(a) * r1, flashY + Math.sin(a) * r1);
+            ctx.lineTo(flashX + Math.cos(a + half) * 14, flashY + Math.sin(a + half) * 14); ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = `rgba(255,252,236,${0.85 * fade})`; ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.moveTo(flashX + Math.cos(a) * 16, flashY + Math.sin(a) * 16); ctx.lineTo(flashX + Math.cos(a) * r1 * 0.8, flashY + Math.sin(a) * r1 * 0.8); ctx.stroke();
           }
+          ctx.restore();
         }
         const g = ctx.createRadialGradient(flashX, flashY, 0, flashX, flashY, r);
+        // A filled bloom: a white core inside a broad body of the coin's colour.
         g.addColorStop(0, `rgba(255,255,248,${0.95 * fade * k})`);
-        g.addColorStop(0.3, `rgba(255,244,214,${0.7 * fade * k})`);
-        g.addColorStop(0.65, withAlpha(flashColor, 0.5 * fade * k));
+        g.addColorStop(0.18, `rgba(255,244,214,${0.8 * fade * k})`);
+        g.addColorStop(0.35, withAlpha(flashColor, 0.75 * fade * k));
+        g.addColorStop(0.7, withAlpha(flashColor, 0.35 * fade * k));
         g.addColorStop(1, withAlpha(flashColor, 0));
         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(flashX, flashY, r, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
