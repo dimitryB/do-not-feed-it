@@ -19,8 +19,8 @@ fixtures regenerated) and on screen.
 2. **Blocks on the rail** (D141, D147). The rules' `crates`: one at a time,
    lowered through a ceiling hatch between the pan and the head, shuttling
    and swinging, hoisted away after 5.5–7.5 s. Only its own coin opens one;
-   the three coins inside pop out one after another and each lobs into the
-   middle of the mouth (`movePour`, D148), swallowed whole at ×2. The rail
+   the three coins inside pop out one after another and each swoops into
+   the mouth at mouth height (`movePour`, D148), swallowed whole at ×2. The rail
    (`ARENA.rail`, x 420–545) ends left of the head and the head takes its
    right end as the creature grows (`crateLane`); past about ×1.6 no more
    blocks come. The pan moved to (370, 185) to make room (D147). Drawn as a

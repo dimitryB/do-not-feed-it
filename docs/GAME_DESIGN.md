@@ -318,8 +318,8 @@ toward its mutation, and fed into a full creature they gorge it. Where a
 block is at any tick is a pure function of the block and the tick
 (`crateAt`), so the guide, the probe, the bots and the replay all see it
 coming exactly. The coins pop up out of the broken block one after
-another and each drops into the middle of the mouth on its own lob, so the
-pour reads as a pour.
+another and each swoops into the mouth at mouth height, under the eyes, so
+the pour reads as a pour.
 
 The rail stays clear of the creature: it ends left of the head, and the
 head takes the right end of it as the creature grows. Past about ×1.6

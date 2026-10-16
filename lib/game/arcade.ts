@@ -296,9 +296,13 @@ export const TUNING = Object.freeze({
   pourPopGravity: 0.45,
   /** ...at this speed... */
   pourSpeed: 8,
-  /** ...then turns, over this many ticks, onto a lob under `pourGravity` into the mouth. */
+  /**
+   * ...then turns, over this many ticks, onto its path into the mouth. The
+   * path's "gravity" is negative: it drops fast and levels out, so the coin
+   * comes in at mouth height, under the eyes, as if inhaled.
+   */
   pourTurn: 6,
-  pourGravity: 0.14,
+  pourGravity: -0.15,
 });
 
 /** How a coin flies: its gravity and the multiplier on launch power. */
@@ -950,9 +954,9 @@ function movePour(food: Projectile, env: Env): Outcome {
   const g = TUNING.pourGravity;
   // Ticks left to the mouth, this one included.
   const left = Math.max(1, arrive - food.age + 1);
-  // Aimed a little low and left of the mouth's middle, so it drops in under the eyes.
-  const dx = env.mouthX - env.mouthRx * env.gape * 0.22 - food.x;
-  const dy = env.mouthY + env.mouthRy * env.gape * 0.17 - food.y;
+  // Aimed into the left third of the mouth, a little low, so it comes in under the eyes.
+  const dx = env.mouthX - env.mouthRx * env.gape * 0.3 - food.x;
+  const dy = env.mouthY + env.mouthRy * env.gape * 0.1 - food.y;
   // The velocity that lands it there in `left` ticks under `g`.
   const wantX = dx / left;
   const wantY = (dy - g * left * (left + 1) / 2) / left;
@@ -1381,7 +1385,7 @@ function breakCrate(state: ArcadeState, food: Projectile, into: Projectile[]): v
     // Straight up out of the top of the crate one after another, fanned a
     // little and leaning back over the open air (away from the lamp and the
     // creature's eyes), then each on its own lob into the mouth.
-    const a = -Math.PI / 2 - 0.18 + (i - (TUNING.crateCoins - 1) / 2) * 0.2;
+    const a = -Math.PI / 2 - 0.35 + (i - (TUNING.crateCoins - 1) / 2) * 0.2;
     const speed = TUNING.pourSpeed;
     into.push({
       id: state.nextProjectileId++, ingredient: crate.ingredient, kind: "pour",
