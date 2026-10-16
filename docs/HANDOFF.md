@@ -50,6 +50,19 @@ comparison and the critic's scores: `docs/qa/aim/STAGE6.md`. Captures:
 `scripts/aim-shots.mjs --iter N` → `docs/qa/aim/iter-N` (the moments), and
 `scripts/loop-shots.mjs` for a whole shift.
 
+**Where it stands.** Every FEAST gate passes at 200 shifts; a barrel set
+once gets about a quarter of the moderate bot's feeds and a tenth of its
+score (it used to get half the feeds and 29 % of the score). Ten rounds of fresh-context visual
+critics (`docs/qa/aim/STAGE6.md`, "Captures and the critic") took the six
+scores from 5 / 6 / 4 / 4 / 6 / 5 to 7 / 7 / 7 / 7 / 7 / 6; Payoff reached
+8 in three rounds, but no round cleared the exit bar on every criterion at
+once. The next pass, in order: (1) a per-coin flight retune so Bitcoin and
+Ether need visibly different angles late in a shift, where the windows
+now overlap at about −45° (STAGE6.md, Open); (2) the block lower, in clear
+air, on a longer chain (`crateDropMin/Max`) — both move the pacing gates,
+so rerun `loop-bots.mjs --shifts 200` after each; (3) round 10's renderer
+asks, listed at the end of the critic section.
+
 Tests: `tests/aim.test.mjs` (flight per coin, no shared lane, the crate's
 life, breaking one, a wrong coin glancing off, seeded and replayable); four
 `tests/arcade.test.mjs` cases moved to the new default coin.

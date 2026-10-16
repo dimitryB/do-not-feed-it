@@ -164,8 +164,107 @@ bots re-solve every shot from scratch on either version — which is why the
 
 ## Captures and the critic
 
-CRITIC_SECTION
+Two harnesses, both replaying the rules tick for tick in a real browser
+through the development play hook, so every frame is a state the rules
+reach:
+
+- `node --experimental-strip-types scripts/aim-shots.mjs --iter N` →
+  `docs/qa/aim/iter-N`: the moments the aim work is about — the three
+  lances at one angle and charge, three coins in the air at once, a block on
+  the rail, a block broken by its own coin (one for each coin), a wrong coin
+  glancing off, and a late, grown creature with no block.
+- `node --experimental-strip-types scripts/loop-shots.mjs --iter N
+  [--bot good]` → `docs/qa/loop/iter-N`: a whole shift, time strips and
+  close clips around the moments that matter (the first block among them).
+
+Both now fail on any page error (D150). Each round was judged by a fresh
+critic that had not seen the code or the earlier rounds, against
+`docs/qa/aim/CRITIC_BRIEF.md`, at the stream size of 960 px. Exit bar: every
+criterion ≥ 7 and Payoff ≥ 8.
+
+| Round | Captures | Coin identity | Block readability | Payoff | Clarity | Aim agency | Cohesion | What changed after it |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | aim iter-3, loop iter-300 | 5 | 6 | 4 | 4 | 6 | 5 | Blocks off the face: the rail moved left of the head and shrinks as it grows, the pan moved, captions moved (D147) |
+| 2 | aim iter-7, loop iter-301 | 6 | 6 | 6 | 6 | 6 | 7 | The pour pops out one coin at a time and lobs into the mouth (D148); gold Bitcoin, red-orange HEMI; a local burst instead of the room-wide veil; a small card with coin pips; per-coin block names; the trolley leads the block (D149) |
+| 3 | aim iter-8, loop iter-302 | 7 | 6 | 4 | 3 | 6 | 6 | **Found a crash**: the card's first mini-coin frame threw and froze the canvas behind the dev overlay for the rest of the filmed shift. Fixed, guarded, and the harnesses now fail on page errors (D150). Captions under the coins; a bigger break; every coin's block break filmed |
+| 4 | aim iter-10, loop iter-303 | 7 | 7 | 6 | 7 | 6 | 6 | Rays and a stronger room flash at the break; the coins pop straight up out of the block before they lob in (rules); the card lands solid in the coin's colour, carries the running total and lights a pip per coin swallowed; the block calls for its coin when it is loaded (outline, pulse ring) and steps back when it is not; darker iron rail, a hatch that opens, iron shards with hot edges that never reach the creature; the creature's eyes snap to a breaking block |
+| 5 | aim iter-12, loop iter-304 (the good bot) | 8 | 6 | 7 | 6 | 7 | 7 | The coins pop up and back over the open air (rules: leaning left, 10 ticks apart), drawn 1.6× with their own trails; no per-coin pops on the face — the card counts up and thumps per coin, a nudge per coin and one total beside the mouth at the end; the block keeps its coin's colour when it is not the one loaded; a stronger backplate; plates drawn under the card; the FOMO wordmark moved left of the rail |
+| 6 | aim iter-13, loop iter-305 (the good bot) | 7 | 7 | **8** | 7 | 6 | 6 | The block repainted as gunmetal like the launcher — lamp-lit lid and top edge, riveted straps, an enamel plate in its coin's colour, a thin rim that brightens and breathes when its coin is loaded (the floating ring removed); the burst a filled bloom with eight wedges, clipped short of the creature; 90 ms of hit-stop; the hatch's doors and light spill bigger; the last coin of a block swallowed with a bigger reaction than a feed (cheeks, belly, eyes); the card at full strength until it goes; the vent flap lit |
+| 7 | aim iter-14, loop iter-306 (the good bot) | 7 | 7 | 7 | 6 | 6 | 7 | Rules: the pour leans further back and swoops into the left third of the mouth at mouth height (negative path gravity), under the eyes (D148). The last coin puts one total at the mouth and rings the mouth in the coin's colour; feeds close together merge into one rising number; the card stays solid for half a second with bigger pips; the cube breaks into two halves and plates; a faint wake behind a shuttling block; a steel chain; a longer lance; the scene overscans while shaking; the FOMO wordmark further left |
+| 8 | aim iter-15, loop iter-307 (the good bot) | 7 | 7 | **8** | 6 | 7 | 7 | The total lives on the card only (no number over the mouth); the craving ring is kept clear of the UPTIME readout when the camera pushes in; a hoisted block fades before it reaches the mutation chips; the room drops a stop for a few frames and a dark halo sits behind the burst so it beats the lamps; the burst is bigger; HEMI's tint more saturated (`#ff6a2e`); Bitcoin's wake eight discs |
+| 9 | aim iter-16, loop iter-308 (the good bot) | 7 | 6 | **8** | 7 | 7 | 6 | Whose block it is and WRONG TOKEN. ride under the block as a small tag instead of a caption in the shot path; the block arrives opaque (it fades only while hoisted); its rim never goes dark (3 px, pulsing when its coin is loaded) and its face takes a little of its coin's colour; the card is smaller, lands with less overshoot and never reaches the creature; the plates are torn steel quads with a rivet and a coin-coloured edge; a bigger splash for each coin swallowed |
+| 10 | aim iter-17, loop iter-309 (the good bot) | 7 | 7 | 7 | 7 | 7 | 6 | — (stopped here; see below) |
+
+From round 5 on, the whole-shift capture follows the good bot
+(`loop-shots.mjs --bot good`), which goes for every block, so the strips
+show what a player who uses the blocks sees; earlier rounds followed the
+moderate bot, which goes for 60 % of them. The staged scenes are the same
+throughout.
+
+**The exit bar was not met.** Payoff reached 8 in rounds 6, 8 and 9, and
+every criterion reached 7 at least once; round 10 had five of the six at 7
+(Payoff 7, Cohesion 6). No single round cleared all six. Two things are
+worth knowing when reading the table:
+
+- **The critics disagreed with each other, not only with the work.** The
+  room-wide flash was the problem in round 2 and was asked back in rounds 3
+  and 4;
+  the block's total was wanted at the mouth in round 7, off the mouth in
+  round 8 and back at the mouth in round 10; round 3 offered coins over the
+  captions and rounds 4 and 6 wanted captions over the coins. Each round was
+  still applied on its own terms, which is why the scores move by a point
+  either way from round to round rather than climbing.
+- **What every late round still asked for needs the rules, not the
+  renderer:** a block that hangs lower in clear air on a longer chain
+  (rounds 6–10), and Bitcoin and Ether needing visibly different barrel
+  angles late in the shift (rounds 6–10, Aim agency). Both move the
+  pacing gates and were left for a deliberate pass (Open).
+
+Round 10's remaining asks, for the next pass: the block's reward as the
+loudest number on screen (a popup per coin at the mouth and one total,
+the card at full saturation under the FOMO grade); a bigger break (about
+110 px at 960, a brief white flash) with chunks that keep the cube's
+riveted face; HEMI's reward jets tapered so the coins do not read as a
+barbell; a bigger cube, its tag kept while it hangs; bigger mint Ether
+bubbles; a coloured lance while reloading; MISSED THE BLOCK. only while
+the block is visible.
 
 ## Open
 
-OPEN_SECTION
+- **The barrel still settles late in a shift.** The landing windows widen
+  with the mouth. Direct landings, probe sweep (`probeFlight`), by size:
+
+  | Size | Bitcoin | Ether | HEMI | One angle lands all three (at different charges) |
+  | --- | --- | --- | --- | --- |
+  | ×1 | −65°…−39° (charge 15–16) | −64°…−32° | −39°…−26° | −39° only |
+  | ×1.6 | −65°…−41° | −64°…−34° | −44°…−28° | −44°…−41° |
+  | ×2.0 | −65°…−42° | −64°…−35° | −48°…−29° | −48°…−42° |
+  | ×2.4 | −65°…−42° | −64°…−36° | −50°…−31° | −50°…−42° |
+
+  So a grown creature can be fed all three coins from about −45° by
+  changing only the charge (Bitcoin full, Ether high, HEMI low), and the
+  blocks have stopped coming by then (D147). Every critic from round 6 on
+  named it (strips 0140 and 0200). The fix is a
+  per-coin flight retune that keeps the coins a mouth-height apart at the
+  same charge as the mouth grows — it moves every pacing gate, so it was
+  not started late in this session. The `fixed` bot never sees it (it
+  dies at about 95 s, before ×1.6).
+- **Blocks do not separate a fixed barrel from an aiming one** (above): a
+  barrel left at −61° breaks 45 % of blocks by luck. Every stretch of air
+  Bitcoin can reach is crossed by some shots that feed the mouth; making
+  luck rarer would mean blocks Bitcoin cannot reach.
+- **The block hangs high, in front of the shelf, the pan and the lamp.**
+  Rounds 6–10 asked for it lower, in clear air, on a longer chain. Its
+  height is the rules' (`crateDropMin/Max`, y 135–160); lower means more
+  of the shots that feed the mouth cross it (a probe sweep: about 10–14 %
+  of mouth shots cross today's lane, 20–34 % at y 200) and it sits in the
+  flight lane, so it needs its own pass with the bots.
+- **Critic notes outside the two changes**, left alone: BLOCK FULL. (the
+  camera pull-back card, stage 5) now reads as being about the blocks; at
+  the late camera the backdrop shows a seam and a doubled lantern; the
+  vent flap the creature bit off (stage 4) hangs next to the rail and is
+  read as a grey rod by every critic (lit a little in round 6, not moved —
+  it is a rules bouncer).
+- The sounds (`block-in`, `block-hit`, `block-gone`, `wrong-token`) have
+  not been reviewed by anyone; the critics see stills.
+- Not merged, not pushed (`feat/aim` on top of `feat/feast`).
